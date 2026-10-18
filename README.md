@@ -1,1 +1,1 @@
-# samfun
+# sam-toys

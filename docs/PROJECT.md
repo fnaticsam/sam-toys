@@ -1,10 +1,10 @@
-# Samfun (samfun, sam.toys, toys, playa): checked 2026-10-02, main 6935a37
+# Sam Toys (sam-toys, sam.toys, toys, playa): checked 2026-10-02, main 6935a37
 
 Product URL: https://sam.toys (listed in [index.html](../index.html); current production response was not checked).
 
 ## What exists
 
-- **IMPLEMENTED** — Samfun is the sam.toys index and hosts multiple small product surfaces, defined in [index.html](../index.html).
+- **IMPLEMENTED** — Sam Toys is the sam.toys index and hosts multiple small product surfaces, defined in [index.html](../index.html).
 - **IMPLEMENTED** — The index links product cards for Vroom, Tracks, Voicenotes, Out / London, Co-produce, Phone and Tantra.
 - **IMPLEMENTED** — The index also links larger external products including TradeGG, Splittt, Taotime, Hike Fan, Finca, Drift & Sea, DrFit and Seer.
 - **IMPLEMENTED** — The repository contains serverless handlers for transcription, London data/refresh, track playlist/OCR, and product-specific routes under [api/](../api/).

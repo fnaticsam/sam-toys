@@ -20,6 +20,24 @@ function fakeBlob() {
     BlobNotFoundError,
     fail: false,
     beforePut: null,
+    listPageSize: Infinity,
+    async list(options) {
+      calls.push({ fn: 'list', options });
+      if (client.fail) throw new Error('private upstream error must not escape');
+      const paths = [...records.keys()].filter((path) => path.startsWith(options.prefix)).sort();
+      const start = Number(options.cursor || 0);
+      const limit = Math.min(options.limit || 1000, client.listPageSize);
+      const end = Math.min(start + limit, paths.length);
+      return {
+        blobs: paths.slice(start, end).map((pathname) => ({
+          pathname,
+          size: Buffer.byteLength(records.get(pathname).body),
+          uploadedAt: new Date(),
+        })),
+        hasMore: end < paths.length,
+        cursor: end < paths.length ? String(end) : undefined,
+      };
+    },
     async get(path, options) {
       calls.push({ fn: 'get', path, options });
       if (client.fail) throw new Error('private upstream error must not escape');

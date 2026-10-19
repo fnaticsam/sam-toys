@@ -183,6 +183,18 @@ async function serveShortlist(req, send, store) {
   return send(200, await store.saveShortlist([...new Set(value.ids)], req.headers['if-match']));
 }
 
+async function serveExport(req, send, store) {
+  if (!sameOrigin(req)) return send(403, { error: 'cross-site' });
+  if (!/^application\/json(?:\s*;|$)/i.test(req.headers['content-type'] || '')) return send(415, { error: 'content-type' });
+  const raw = await body(req, 256 * 1024);
+  let value;
+  try { value = JSON.parse(raw); }
+  catch { return send(400, { error: 'invalid-json' }); }
+  if (!value || typeof value !== 'object' || Object.keys(value).some((key) => !['kind', 'size', 'ids'].includes(key)))
+    return send(400, { error: 'invalid-request' });
+  return send(202, await store.requestExport(value));
+}
+
 // Redirects only the validated media match with its private cache policy.
 async function serveMedia(res, store, media) {
   const url = await store.media(media[1], media[2]);
@@ -234,7 +246,8 @@ function createHandler(store = createStore()) {
       if (admission.trusted) res.setHeader('Set-Cookie', cookie(secret));
       if (!route) return send(404, { error: 'not-found' });
       const shortlist = route === '/playa/api/shortlist';
-      const allowed = shortlist ? ['GET', 'HEAD', 'PUT'] : root ? ['GET', 'HEAD', 'POST'] : ['GET', 'HEAD'];
+      const exporting = route === '/playa/api/export';
+      const allowed = exporting ? ['POST'] : shortlist ? ['GET', 'HEAD', 'PUT'] : root ? ['GET', 'HEAD', 'POST'] : ['GET', 'HEAD'];
       if (!allowed.includes(req.method)) {
         res.setHeader('Allow', allowed.join(', '));
         return send(405, 'Method not allowed.', 'text/plain; charset=utf-8');
@@ -248,6 +261,16 @@ function createHandler(store = createStore()) {
       if (shortlist) {
         return await serveShortlist(req, send, store);
       }
+      if (exporting) return await serveExport(req, send, store);
+      const exportStatus = /^\/playa\/api\/export\/([0-9a-f]{32})$/.exec(route);
+      if (exportStatus) return send(200, await store.exportStatus(exportStatus[1]));
+      const download = /^\/playa\/m\/dl\/2048\/([0-9a-f]{64})\.jpg$/.exec(route);
+      if (download) {
+        res.setHeader('Location', await store.download(download[1]));
+        res.setHeader('Cache-Control', 'private, max-age=300');
+        res.statusCode = 302;
+        return res.end();
+      }
       const media = /^\/playa\/m\/(thumb|preview)\/([0-9a-f]{64})\.webp$/.exec(route);
       if (media) {
         return await serveMedia(res, store, media);
@@ -259,6 +282,8 @@ function createHandler(store = createStore()) {
         return;
       }
       res.setHeader('Cache-Control', 'private, no-store');
+      if ([400, 404, 429].includes(error.status) && ['invalid-request', 'not-published', 'not-found', 'export-busy'].includes(error.code))
+        return send(error.status, { error: error.code });
       const status = [400, 412, 413].includes(error.status) ? error.status : 503;
       return send(status, {
         error: status === 412 ? 'shortlist-conflict' : status === 503 ? 'gallery-not-published' : 'invalid-request',

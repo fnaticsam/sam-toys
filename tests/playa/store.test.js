@@ -48,21 +48,22 @@ test('catalog: authenticated If-None-Match returns 304', async () => {
 for (const size of ['thumb', 'preview']) {
   for (const method of ['GET', 'HEAD']) {
     test(`media: authenticated ${size} ${method} 302 exact signed pathname and max-age 300`, async () => {
-      blob.calls.length = 0;
+      const { call, blob } = setup();
+      blob.records.set('catalog/catalog.json', { etag: '"media"', body: JSON.stringify({ photos: [{ id: id(1) }] }) });
       const now = Date.now(),
         value = id(1);
       const r = await call({ method, url: `/playa/m/${size}/${value}.webp`, headers: cookie() });
       assert.equal(r.statusCode, 302);
       assert.equal(r.body, '');
+      const [issue, sign] = blob.calls.filter((entry) => ['issueSignedToken', 'presignUrl'].includes(entry.fn));
       assert.equal(
         r.headers.location,
-        `/${size}/${value.slice(0, 2)}/${value}.webp?signature=synthetic&expires=${blob.calls[1].options.validUntil}`,
+        `/${size}/${value.slice(0, 2)}/${value}.webp?signature=synthetic&expires=${issue.options.validUntil}`,
       );
       assert.equal(r.headers['cache-control'], 'private, max-age=300');
       const signedPath = new URL(r.headers.location, origin).pathname;
       assert.equal(signedPath, `/${size}/${value.slice(0, 2)}/${value}.webp`);
       privateHeaders(r);
-      const [issue, sign] = blob.calls;
       assert.equal(issue.fn, 'issueSignedToken');
       assert.deepEqual(issue.options.operations, ['get']);
       assert.equal(issue.options.pathname, `${size}/${value.slice(0, 2)}/${value}.webp`);
@@ -75,7 +76,63 @@ for (const size of ['thumb', 'preview']) {
       assert.equal(sign.options.validUntil, issue.options.validUntil);
     });
   }
+  test(`media: ${size} refuses unpublished ids with 404 and no grant`, async () => {
+    const { call, blob } = setup();
+    blob.records.set('catalog/catalog.json', { etag: '"media"', body: catalog });
+    const r = await call({ url: `/playa/m/${size}/${id('unpublished')}.webp`, headers: cookie() });
+    assert.equal(r.statusCode, 404);
+    assert.deepEqual(JSON.parse(r.body), { error: 'not-found' });
+    assert.equal(r.headers.location, undefined);
+    assert.equal(blob.calls.filter((entry) => ['issueSignedToken', 'presignUrl'].includes(entry.fn)).length, 0);
+    privateHeaders(r);
+  });
+  test(`media: ${size} shares a publication cache and refreshes at 60 seconds`, async () => {
+    const { call, blob } = setup(), realNow = Date.now, start = realNow();
+    let now = start;
+    Date.now = () => now;
+    const publish = (n) => blob.records.set('catalog/catalog.json', {
+      etag: `"media-${n}"`, body: JSON.stringify({ photos: [{ id: id(n) }] }),
+    });
+    const get = (n) => call({ url: `/playa/m/${size}/${id(n)}.webp`, headers: cookie() });
+    const reads = () => blob.calls.filter((entry) => entry.fn === 'get' && entry.path === 'catalog/catalog.json');
+    try {
+      publish(1);
+      const responses = await Promise.all(Array.from({ length: 12 }, () => get(1)));
+      assert.ok(responses.every((r) => r.statusCode === 302));
+      assert.equal(reads().length, 1);
+      publish(2);
+      now = start + 59999;
+      assert.equal((await get(1)).statusCode, 302);
+      assert.equal((await get(2)).statusCode, 404);
+      assert.equal(reads().length, 1);
+      now = start + 60000;
+      blob.calls.length = 0;
+      const hidden = await get(1);
+      assert.equal(hidden.statusCode, 404);
+      assert.equal(blob.calls.filter((entry) => ['issueSignedToken', 'presignUrl'].includes(entry.fn)).length, 0);
+      assert.equal((await get(2)).statusCode, 302);
+      assert.equal(reads().length, 1);
+    } finally { Date.now = realNow; }
+  });
 }
+test('media: a failed refresh fails closed and the next request retries', async () => {
+  const { call, blob } = setup(), realNow = Date.now, start = realNow();
+  let now = start;
+  Date.now = () => now;
+  const get = () => call({ url: `/playa/m/thumb/${id(1)}.webp`, headers: cookie() });
+  try {
+    blob.records.set('catalog/catalog.json', { etag: '"media"', body: JSON.stringify({ photos: [{ id: id(1) }] }) });
+    assert.equal((await get()).statusCode, 302);
+    now += 60000;
+    blob.calls.length = 0;
+    blob.fail = true;
+    assert.equal((await get()).statusCode, 503);
+    assert.equal(blob.calls.length, 1);
+    assert.equal(blob.calls[0].fn, 'get');
+    blob.fail = false;
+    assert.equal((await get()).statusCode, 302);
+  } finally { Date.now = realNow; }
+});
 test('store boundary: invalid media rejected before Blob', async () => {
   blob.calls.length = 0;
   await assert.rejects(createStore(blob, () => 'fake').media('original', id(1)));

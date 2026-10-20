@@ -62,6 +62,7 @@
         color: var(--text);
         display: inline-flex;
         align-items: center;
+        vertical-align: middle;
         min-height: 44px;
         padding: 8px;
         text-decoration: none;
@@ -308,6 +309,79 @@
         border: 1px solid var(--line);
         font-size: 13px;
       }
+      .download-wrap {
+        position: relative;
+        width: auto;
+        max-width: 100%;
+      }
+      .download-wrap details > summary {
+        cursor: pointer;
+        list-style: none;
+        min-height: 44px;
+        padding: 12px 16px;
+        border-radius: 24px;
+        font-size: 14px;
+      }
+      .download-wrap summary::-webkit-details-marker {
+        display: none;
+      }
+      #shortDownload, #shortDownload summary {
+        width: 100%;
+      }
+      #shortDownload summary {
+        text-align: center;
+      }
+      summary:focus-visible {
+        outline: 2px solid var(--accent);
+        outline-offset: 2px;
+      }
+      .download-options {
+        position: absolute;
+        z-index: 3;
+        bottom: 100%;
+        left: 0;
+        width: 184px;
+        padding: 4px;
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        box-shadow: 0 8px 24px #0008;
+      }
+      .download-options > * {
+        display: flex;
+        width: 100%;
+        min-height: 44px;
+        padding: 10px;
+      }
+      .download-status {
+        display: block;
+        min-height: 36px;
+        margin: 4px 0 0;
+        font-size: 12px;
+        color: var(--dim);
+        overflow-wrap: anywhere;
+      }
+      .download-status a {
+        display: inline-flex;
+        align-items: center;
+        min-height: 44px;
+        padding: 0 4px;
+        color: var(--accent);
+        text-decoration: underline;
+        font-size: 13px;
+      }
+      #photoDownload .download-status {
+        position: absolute;
+        top: 100%;
+        left: auto;
+        right: 0;
+        width: max-content;
+        max-width: 240px;
+        min-height: 0;
+      }
+      #shortDownload .download-status {
+        min-height: 44px;
+      }
       #status {
         line-height: 1.6;
         color: var(--dim);
@@ -532,7 +606,11 @@
         <div id="shortScroll"><div id="shortItems" role="list"></div></div>
         <p id="saveState" role="status">Loading shortlist…</p>
         <button id="retry" class="chip" hidden>Retry saving</button
-        ><button disabled class="download">Downloads arrive with the next update</button>
+        >
+        <div id="shortDownload" class="download-wrap">
+          <details><summary class="download">↓ Download</summary><div class="download-options"></div></details>
+          <div class="download-status" role="status" aria-live="polite"></div>
+        </div>
       </aside>
     </div>
     <dialog id="lightbox" aria-label="Photo viewer">
@@ -556,8 +634,11 @@
             <p id="aiReason"></p>
             <div id="tags"></div>
           </div>
-          <button class="download" disabled>Downloads arrive with the next update</button
-          ><button id="togglePhoto" class="chip"></button>
+          <div id="photoDownload" class="download-wrap">
+            <details><summary class="download">↓ Download</summary><div class="download-options"></div></details>
+            <div class="download-status" role="status" aria-live="polite"></div>
+          </div>
+          <button id="togglePhoto" class="chip"></button>
         </div>
         <div id="filmstrip"></div>
         <div class="keys">← → navigate · S shortlist · Esc close</div>
@@ -584,6 +665,8 @@
         shortReady: false,
         restore: null,
         gridKey: null,
+        photoJobs: new Map(),
+        shortlistJob: null,
       };
       // Creates DOM content with textContent so runtime labels remain inert.
       function element(tag, text, className) {
@@ -662,6 +745,7 @@
       }
       // Removes the photo from the hash while keeping its gallery view.
       function closePhoto() {
+        for (const menu of $('lightbox').querySelectorAll('.download-wrap details[open]')) menu.open = false;
         go(routeHash(state.route));
       }
       // Restores the opener, rebuilding its virtual grid cell when necessary.
@@ -833,6 +917,7 @@
         $('togglePhoto').disabled = !state.shortReady;
         $('previous').disabled = index === 0;
         $('next').disabled = index === state.list.length - 1;
+        renderDownloads();
         const first = Math.max(0, Math.min(index - 3, state.list.length - 7));
         $('filmstrip').replaceChildren(
           ...state.list.slice(first, first + 7).map((p) => {
@@ -906,6 +991,7 @@
           nodes.push(row);
         }
         items.replaceChildren(...nodes);
+        renderDownloads();
       }
       // Uses same-origin credentials and sends expired sessions back to login.
       async function api(url, options = {}) {
@@ -986,6 +1072,133 @@
           $('retry').hidden = false;
         }
       }
+      // A job keeps its original selection even when the viewer or shortlist changes.
+      function downloadJob(kind) {
+        return kind === 'photo' ? state.photoJobs.get(state.current?.id) : state.shortlistJob;
+      }
+      function downloadIds(kind) {
+        return kind === 'photo' ? (state.current ? [state.current.id] : []) : [...state.short];
+      }
+      function pendingDownload(job) {
+        return job && ['submitting', 'queued', 'building'].includes(job.state);
+      }
+      function renderDownloads() {
+        for (const kind of ['photo', 'zip']) {
+          const wrap = $(kind === 'photo' ? 'photoDownload' : 'shortDownload');
+          const ids = downloadIds(kind), job = downloadJob(kind), busy = pendingDownload(job);
+          const instant = wrap.querySelector('a[data-instant]');
+          if (instant) {
+            instant.href = ids[0] ? `/playa/m/dl/2048/${ids[0]}.jpg` : '#';
+            const photo = state.byId.get(ids[0]);
+            instant.download = photo ? `playa-${photo.y}-${photo.id.slice(0, 10)}.jpg` : '';
+            instant.hidden = !ids.length;
+          }
+          for (const control of wrap.querySelectorAll('button'))
+            control.disabled = busy || !ids.length || (kind === 'zip' && (ids.length > 2000 || !state.shortReady));
+          const status = wrap.querySelector('.download-status');
+          const key = JSON.stringify(job ? [job.ids, job.state, job.done, job.total, job.size, job.url, job.bytes, job.message] : [ids.length > 2000]);
+          if (status.dataset.content === key) continue;
+          status.dataset.content = key;
+          status.replaceChildren();
+          if (job) {
+            if (busy) {
+              const done = Number.isInteger(job.done) ? job.done : 0;
+              status.textContent = kind === 'photo' ? 'Preparing…' : `Preparing… ${done}/${job.total}`;
+            } else if (job.state === 'ready') {
+              const link = element('a', 'Save file');
+              link.href = job.url;
+              link.download = job.name;
+              // A ready link can sit on screen beyond its five-minute grant.
+              // Renew it on the same click without buffering the file in JS.
+              link.addEventListener('click', async (event) => {
+                if (Date.now() - job.signedAt < 4 * 60 * 1000) return;
+                event.preventDefault();
+                await pollDownload(job);
+                if (job.state === 'ready') location.assign(job.url);
+              });
+              const bytes = Number.isFinite(job.bytes) ? `${Number((job.bytes / 1000000).toFixed(1))} MB` : '';
+              status.append(link, document.createTextNode(bytes ? ` · ${bytes}` : ''));
+            } else status.textContent = job.state === 'expired' ? 'Expired. Choose a size again.' : job.message;
+          } else if (kind === 'zip' && ids.length > 2000) status.textContent = 'Choose up to 2,000 photos.';
+        }
+      }
+      const exportErrors = {
+        'too-large': 'This download is too large.',
+        'not-published': 'A photo is no longer available.',
+        busy: 'Busy. Try again shortly.',
+        'export-busy': 'Busy. Try again shortly.',
+        integrity: 'Could not prepare this download.',
+        'invalid-request': 'Could not prepare this download.',
+        internal: 'Could not prepare this download.',
+      };
+      async function pollDownload(job) {
+        try {
+          const response = await api(`/playa/api/export/${job.rid}`);
+          if (!response.ok) throw new Error('status');
+          const data = await response.json();
+          if (!['queued', 'building', 'ready', 'failed', 'expired'].includes(data.state)) throw new Error('status');
+          job.state = data.state;
+          if (Number.isInteger(data.done) && data.done >= 0) job.done = Math.min(data.done, job.total);
+          if (data.state === 'ready') {
+            const url = new URL(data.url);
+            if (url.protocol !== 'https:' || typeof data.name !== 'string') throw new Error('status');
+            Object.assign(job, { url: url.href, bytes: data.bytes, name: data.name, signedAt: Date.now() });
+          }
+          if (data.state === 'failed') job.message = exportErrors[data.error] || exportErrors.internal;
+          renderDownloads();
+          if (job.state === 'ready' && !job.downloadStarted) {
+            job.downloadStarted = true;
+            location.assign(job.url);
+          }
+          if (pendingDownload(job)) setTimeout(() => pollDownload(job), 2000);
+        } catch {
+          job.state = 'failed';
+          job.message = 'Download unavailable. Try again.';
+          renderDownloads();
+        }
+      }
+      async function queueDownload(kind, size) {
+        if (pendingDownload(downloadJob(kind))) return;
+        const ids = downloadIds(kind);
+        if (!ids.length || (kind === 'zip' && ids.length > 2000)) return;
+        const job = { state: 'submitting', ids: ids.slice(), size, total: ids.length, done: 0 };
+        if (kind === 'photo') state.photoJobs.set(ids[0], job);
+        else state.shortlistJob = job;
+        $(kind === 'photo' ? 'photoDownload' : 'shortDownload').querySelector('details').open = false;
+        renderDownloads();
+        try {
+          const response = await api('/playa/api/export', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ kind, size, ids }),
+          });
+          const data = await response.json();
+          if (response.status !== 202 || !/^[0-9a-f]{32}$/.test(data.rid)) {
+            job.message = exportErrors[data.error] || exportErrors.internal;
+            job.state = 'failed';
+            renderDownloads();
+            return;
+          }
+          job.rid = data.rid;
+          job.state = 'queued';
+          await pollDownload(job);
+        } catch {
+          job.state = 'failed';
+          job.message = 'Download unavailable. Try again.';
+          renderDownloads();
+        }
+      }
+      // Native disclosures keep the size choices reachable by keyboard and touch.
+      for (const kind of ['photo', 'zip']) {
+        const wrap = $(kind === 'photo' ? 'photoDownload' : 'shortDownload');
+        const options = wrap.querySelector('.download-options');
+        for (const [size, label] of [['2048', '2048 px'], ['4096', '4096 px'], ['original', 'Original']]) {
+          if (kind === 'photo' && size === '2048') {
+            const link = element('a', label);
+            link.dataset.instant = '';
+            link.addEventListener('click', () => { wrap.querySelector('details').open = false; });
+            options.append(link);
+          } else options.append(button(label, () => queueDownload(kind, size)));
+        }
+      }
       $('retry').addEventListener('click', () => (state.shortReady ? save() : initializeShortlist()));
       $('allPicks').addEventListener('click', () => {
         if (!state.shortReady) return;
@@ -1017,24 +1230,32 @@
       $('next').addEventListener('click', () => step(1));
       $('togglePhoto').addEventListener('click', () => state.current && toggle(state.current.id));
       $('lightbox').addEventListener('cancel', (event) => {
+        const menu = $('lightbox').querySelector('.download-wrap details[open]');
+        if (menu) {
+          event.preventDefault();
+          menu.open = false;
+          menu.querySelector('summary').focus();
+          return;
+        }
         event.preventDefault();
         closePhoto();
       });
       $('lightbox').addEventListener('keydown', (event) => {
-        if (event.key === 'ArrowLeft') {
+        const actionFocused = event.target.closest('a, summary, input, .download-wrap, #togglePhoto');
+        if (!actionFocused && event.key === 'ArrowLeft') {
           event.preventDefault();
           step(-1);
         }
-        if (event.key === 'ArrowRight') {
+        if (!actionFocused && event.key === 'ArrowRight') {
           event.preventDefault();
           step(1);
         }
-        if (event.key.toLowerCase() === 's' && !event.ctrlKey && !event.metaKey && !event.altKey) {
+        if (!actionFocused && event.key.toLowerCase() === 's' && !event.ctrlKey && !event.metaKey && !event.altKey) {
           event.preventDefault();
           toggle(state.current.id);
         }
         if (event.key === 'Tab') {
-          const buttons = [...$('lightbox').querySelectorAll('button:not(:disabled)')];
+          const buttons = [...$('lightbox').querySelectorAll('button:not(:disabled), a[href], summary')].filter((node) => node.getClientRects().length);
           const first = buttons[0],
             last = buttons.at(-1);
           if (event.shiftKey && document.activeElement === first) {

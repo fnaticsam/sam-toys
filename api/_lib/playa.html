@@ -62,6 +62,7 @@
         color: var(--text);
         display: inline-flex;
         align-items: center;
+        vertical-align: middle;
         min-height: 44px;
         padding: 8px;
         text-decoration: none;
@@ -310,14 +311,22 @@
       }
       .download-wrap {
         position: relative;
-        width: 184px;
+        width: auto;
         max-width: 100%;
       }
       .download-wrap details > summary {
         cursor: pointer;
+        list-style: none;
         min-height: 44px;
-        padding: 12px;
-        border-radius: 6px;
+        padding: 12px 16px;
+        border-radius: 24px;
+        font-size: 14px;
+      }
+      .download-wrap summary::-webkit-details-marker {
+        display: none;
+      }
+      #shortDownload, #shortDownload summary {
+        width: 100%;
       }
       summary:focus-visible {
         outline: 2px solid var(--accent);
@@ -350,7 +359,23 @@
         overflow-wrap: anywhere;
       }
       .download-status a {
+        display: inline-flex;
+        align-items: center;
+        min-height: 44px;
         padding: 0 4px;
+        color: var(--accent);
+        text-decoration: underline;
+        font-size: 13px;
+      }
+      #photoDownload .download-status {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        min-height: 0;
+      }
+      #shortDownload .download-status {
+        min-height: 44px;
       }
       #status {
         line-height: 1.6;
@@ -578,7 +603,7 @@
         <button id="retry" class="chip" hidden>Retry saving</button
         >
         <div id="shortDownload" class="download-wrap">
-          <details><summary class="download">Download shortlist</summary><div class="download-options"></div></details>
+          <details><summary class="download">↓ Download</summary><div class="download-options"></div></details>
           <div class="download-status" role="status" aria-live="polite"></div>
         </div>
       </aside>
@@ -605,7 +630,7 @@
             <div id="tags"></div>
           </div>
           <div id="photoDownload" class="download-wrap">
-            <details><summary class="download">Download</summary><div class="download-options"></div></details>
+            <details><summary class="download">↓ Download</summary><div class="download-options"></div></details>
             <div class="download-status" role="status" aria-live="polite"></div>
           </div>
           <button id="togglePhoto" class="chip"></button>
@@ -715,6 +740,7 @@
       }
       // Removes the photo from the hash while keeping its gallery view.
       function closePhoto() {
+        for (const menu of $('lightbox').querySelectorAll('.download-wrap details[open]')) menu.open = false;
         go(routeHash(state.route));
       }
       // Restores the opener, rebuilding its virtual grid cell when necessary.
@@ -1051,13 +1077,6 @@
       function pendingDownload(job) {
         return job && ['submitting', 'queued', 'building'].includes(job.state);
       }
-      // Estimates are intentionally broad: the catalog carries no file byte sizes.
-      function sizeEstimate(size, count) {
-        if (size === 'original') return 'Size unknown';
-        const low = count * (size === '2048' ? 1 : 3), high = count * (size === '2048' ? 4 : 12);
-        const unit = high >= 1000 ? 'GB' : 'MB', scale = unit === 'GB' ? 1000 : 1;
-        return `Est. ${Number((low / scale).toFixed(1))}–${Number((high / scale).toFixed(1))} ${unit}`;
-      }
       function renderDownloads() {
         for (const kind of ['photo', 'zip']) {
           const wrap = $(kind === 'photo' ? 'photoDownload' : 'shortDownload');
@@ -1079,7 +1098,7 @@
           if (job) {
             if (busy) {
               const done = Number.isInteger(job.done) ? job.done : 0;
-              status.textContent = `Preparing… ${done}/${job.total} · ${sizeEstimate(job.size, job.total)}`;
+              status.textContent = kind === 'photo' ? 'Preparing…' : `Preparing… ${done}/${job.total}`;
             } else if (job.state === 'ready') {
               const link = element('a', 'Save file');
               link.href = job.url;
@@ -1094,15 +1113,15 @@
               });
               const bytes = Number.isFinite(job.bytes) ? `${Number((job.bytes / 1000000).toFixed(1))} MB` : '';
               status.append(link, document.createTextNode(bytes ? ` · ${bytes}` : ''));
-            } else status.textContent = job.state === 'expired' ? 'Download expired. Choose a size to prepare again.' : job.message;
+            } else status.textContent = job.state === 'expired' ? 'Expired. Choose a size again.' : job.message;
           } else if (kind === 'zip' && ids.length > 2000) status.textContent = 'Choose up to 2,000 photos.';
         }
       }
       const exportErrors = {
         'too-large': 'This download is too large.',
         'not-published': 'A photo is no longer available.',
-        busy: 'Downloads are busy. Try again shortly.',
-        'export-busy': 'Downloads are busy. Try again shortly.',
+        busy: 'Busy. Try again shortly.',
+        'export-busy': 'Busy. Try again shortly.',
         integrity: 'Could not prepare this download.',
         'invalid-request': 'Could not prepare this download.',
         internal: 'Could not prepare this download.',
@@ -1122,6 +1141,10 @@
           }
           if (data.state === 'failed') job.message = exportErrors[data.error] || exportErrors.internal;
           renderDownloads();
+          if (job.state === 'ready' && !job.downloadStarted) {
+            job.downloadStarted = true;
+            location.assign(job.url);
+          }
           if (pendingDownload(job)) setTimeout(() => pollDownload(job), 2000);
         } catch {
           job.state = 'failed';
@@ -1162,7 +1185,7 @@
       for (const kind of ['photo', 'zip']) {
         const wrap = $(kind === 'photo' ? 'photoDownload' : 'shortDownload');
         const options = wrap.querySelector('.download-options');
-        for (const [size, label] of [['2048', '2048'], ['4096', '4096'], ['original', 'Original']]) {
+        for (const [size, label] of [['2048', '2048 px'], ['4096', '4096 px'], ['original', 'Original']]) {
           if (kind === 'photo' && size === '2048') {
             const link = element('a', label);
             link.dataset.instant = '';
@@ -1202,6 +1225,13 @@
       $('next').addEventListener('click', () => step(1));
       $('togglePhoto').addEventListener('click', () => state.current && toggle(state.current.id));
       $('lightbox').addEventListener('cancel', (event) => {
+        const menu = $('lightbox').querySelector('.download-wrap details[open]');
+        if (menu) {
+          event.preventDefault();
+          menu.open = false;
+          menu.querySelector('summary').focus();
+          return;
+        }
         event.preventDefault();
         closePhoto();
       });

@@ -6,6 +6,8 @@ const EMPTY_ETAG = '"empty"';
 const failure = (status, code) => Object.assign(new Error('export'), { status, code });
 const validId = (id) => typeof id === 'string' && id.length === 64 && ID.test(id);
 const validRid = (rid) => typeof rid === 'string' && rid.length === 32 && RID.test(rid);
+const yearLabel = (year) => (typeof year === 'number' || typeof year === 'string') &&
+  String(year).length === 4 && /^\d{4}$/.test(String(year)) ? String(year) : 'unknown';
 // Requests are bounded and canonical before either publication or reuse.
 function exportInput(value) {
   if (!value || !['photo', 'zip'].includes(value.kind) || !['2048', '4096', 'original'].includes(value.size) ||
@@ -23,6 +25,7 @@ function createStore(client = require('@vercel/blob'), token = () => process.env
   // Serializes admissions sharing this instance. See the documented cross-instance
   // limitation: the frozen request layout has no atomic global reservation key.
   let admissions = Promise.resolve();
+  let mediaCatalog;
   // Requires the dedicated linked-store token for every Blob operation.
   function options() {
     const value = token();
@@ -45,14 +48,25 @@ function createStore(client = require('@vercel/blob'), token = () => process.env
   async function published(ids) {
     const data = await json('catalog/catalog.json');
     if (!data || !Array.isArray(data.photos)) throw new Error('invalid-catalog');
-    const photos = new Map(data.photos.filter((p) => p && validId(p.id) && String(p.y).length === 4 &&
-      /^\d{4}$/.test(String(p.y))).map((p) => [p.id, p]));
+    const photos = new Map(data.photos.filter((p) => p && validId(p.id)).map((p) => [p.id, p]));
     if (ids.some((id) => !photos.has(id))) throw failure(400, 'not-published');
     return photos;
   }
+  // Share one refresh across concurrent media requests. A failed refresh signs
+  // nothing and is retried on the next request, never served from a stale catalog.
+  async function mediaPublished() {
+    if (!mediaCatalog || Date.now() >= mediaCatalog.refreshAt) {
+      const entry = { refreshAt: Date.now() + 60 * 1000 };
+      entry.ids = published([]).then((photos) => new Set(photos.keys()), (error) => {
+        if (mediaCatalog === entry) mediaCatalog = undefined;
+        throw error;
+      });
+      mediaCatalog = entry;
+    }
+    return mediaCatalog.ids;
+  }
   // Never accept a pathname from a request or a worker as signing authority.
-  async function sign(pathname, download = false) {
-    const validUntil = Date.now() + 5 * 60 * 1000;
+  async function sign(pathname, download = false, validUntil = Date.now() + 5 * 60 * 1000) {
     const signed = await client.issueSignedToken({ ...options(), pathname, operations: ['get'], validUntil });
     const { presignedUrl } = await client.presignUrl(signed, { access: 'private', operation: 'get', pathname, validUntil });
     // SDK 2.6.1's getDownloadUrl adds this same unsigned disposition switch.
@@ -75,25 +89,28 @@ function createStore(client = require('@vercel/blob'), token = () => process.env
   // Count every request without a terminal status, across all list pages. No
   // catalog, media or arbitrary prefixes are ever listed.
   async function unfinished() {
-    let cursor, count = 0;
+    let cursor, retained = 0, count = 0;
+    const ids = [];
     const cursors = new Set();
     do {
-      const page = await client.list({ ...options(), prefix: 'exports/req/', limit: 1000, ...(cursor ? { cursor } : {}) });
-      const ids = page.blobs.map((blob) => /^exports\/req\/([0-9a-f]{32})\.json$/.exec(blob.pathname)?.[1]).filter(Boolean);
-      // Terminal records remain for 24 h; bounded parallel reads avoid a serial
-      // network round trip for every retained request without an unbounded fanout.
-      for (let offset = 0; offset < ids.length; offset += 16) {
-        const batch = ids.slice(offset, offset + 16);
-        const statuses = await Promise.all(batch.map((rid) => json(`exports/status/${rid}.json`)));
-        count += statuses.filter((status, i) => !status || status.v !== 1 || status.rid !== batch[i] ||
-          !['ready', 'failed'].includes(status.state)).length;
-        if (count >= 8) return count;
-      }
+      const page = await client.list({ ...options(), prefix: 'exports/req/', limit: 100 - retained, ...(cursor ? { cursor } : {}) });
+      retained += page.blobs.length;
+      if (retained >= 100) throw failure(429, 'export-busy');
+      ids.push(...page.blobs.map((blob) => /^exports\/req\/([0-9a-f]{32})\.json$/.exec(blob.pathname)?.[1]).filter(Boolean));
       if (!page.hasMore) break;
       if (!page.cursor || cursors.has(page.cursor)) throw new Error('invalid-list');
       cursor = page.cursor;
       cursors.add(cursor);
     } while (true);
+    // Count retained objects before reading any status; at most 99 statuses
+    // can be read, in batches of 16, even when terminal jobs are retained.
+    for (let offset = 0; offset < ids.length; offset += 16) {
+      const batch = ids.slice(offset, offset + 16);
+      const statuses = await Promise.all(batch.map((rid) => json(`exports/status/${rid}.json`)));
+      count += statuses.filter((status, i) => !status || status.v !== 1 || status.rid !== batch[i] ||
+        !['ready', 'failed'].includes(status.state)).length;
+      if (count >= 8) return count;
+    }
     return count;
   }
   // Returns validated stored IDs and the Blob ETag, or an empty initial state.
@@ -118,6 +135,7 @@ function createStore(client = require('@vercel/blob'), token = () => process.env
       // Validate again at the signing boundary; no caller can sign an arbitrary path.
       if (!['thumb', 'preview'].includes(size) || typeof id !== 'string' || id.length !== 64 || !ID.test(id))
         throw new Error('invalid-media');
+      if (!(await mediaPublished()).has(id)) throw failure(404, 'not-found');
       const pathname = `${size}/${id.slice(0, 2)}/${id}.webp`;
       return sign(pathname);
     },
@@ -125,8 +143,7 @@ function createStore(client = require('@vercel/blob'), token = () => process.env
       if (!validId(id)) throw failure(400, 'invalid-request');
       const photos = await published([id]);
       // Same save-as label rule as the box uploader: four-digit year, otherwise "unknown".
-      const y = photos.get(id).y;
-      const year = Number.isInteger(y) && y >= 1000 && y <= 9999 ? y : 'unknown';
+      const year = yearLabel(photos.get(id).y);
       return sign(`dl/2048/${id.slice(0, 2)}/${id}/playa-${year}-${id.slice(0, 10)}.jpg`, true);
     },
     async requestExport(value) {
@@ -162,7 +179,7 @@ function createStore(client = require('@vercel/blob'), token = () => process.env
           status.done !== status.total) throw new Error('invalid-export');
       let validName;
       if (input.kind === 'photo') {
-        const stem = `playa-${photos.get(input.ids[0]).y}-${input.ids[0].slice(0, 10)}.`;
+        const stem = `playa-${yearLabel(photos.get(input.ids[0]).y)}-${input.ids[0].slice(0, 10)}.`;
         const extension = file.name.startsWith(stem) ? file.name.slice(stem.length) : '';
         validName = input.size === '4096' ? extension === 'jpg' : extension.length >= 1 &&
           extension.length <= 10 && !/[^a-z0-9]/.test(extension);
@@ -174,7 +191,8 @@ function createStore(client = require('@vercel/blob'), token = () => process.env
       if (!validName) throw new Error('invalid-export');
       const pathname = `exports/out/${rid}/${file.name}`;
       if (file.path !== pathname) throw new Error('invalid-export');
-      return { ...result, url: await sign(pathname, true), bytes: file.bytes, name: file.name };
+      const validUntil = Math.min(Date.now() + 5 * 60 * 1000, Date.parse(status.expires_at));
+      return { ...result, url: await sign(pathname, true, validUntil), bytes: file.bytes, name: file.name };
     },
     shortlist,
     // Preserves atomic first creation and ETag-conditional updates.

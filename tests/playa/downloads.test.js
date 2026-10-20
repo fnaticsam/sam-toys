@@ -7,6 +7,7 @@ const origin = 'https://gallery.invalid';
 const exportRoute = '/playa/api/export';
 const rid = (n) => id(`request-${n}`).slice(0, 32);
 const name = (value = id(1), ext = 'jpg') => `playa-2024-${value.slice(0, 10)}.${ext}`;
+const unknownName = (value = id(1), ext = 'jpg') => `playa-unknown-${value.slice(0, 10)}.${ext}`;
 const request = (value, extra = {}) => ({
   v: 1, rid: value, kind: 'photo', size: '4096', ids: [id(1)], created_at: new Date().toISOString(), ...extra,
 });
@@ -111,6 +112,27 @@ test('downloads instant: an unpublished id receives no grant', async () => {
   assert.equal(r.statusCode, 400);
   assert.deepEqual(JSON.parse(r.body), { error: 'not-published' });
   assert.equal(signCalls(f).length, 0);
+});
+test('downloads instant: every non-four-digit year uses the unknown download label', async () => {
+  for (const year of [undefined, null, 'invalid', 99, '2024\n', [2024], { toString: 7 }]) {
+    const f = fixture();
+    const photo = { id: id(1) };
+    if (year !== undefined) photo.y = year;
+    record(f, 'catalog/catalog.json', { version: 1, years: [], photos: [photo] });
+    const r = await f.call({ url: routes[0], headers: cookie() });
+    const pathname = `dl/2048/${id(1).slice(0, 2)}/${id(1)}/${unknownName()}`;
+    assert.equal(r.statusCode, 302);
+    assert.equal(new URL(r.headers.location, origin).pathname, `/${pathname}`);
+    assert.equal(signCalls(f)[0].options.pathname, pathname);
+  }
+});
+test('downloads instant: a four-digit string year retains its year label', async () => {
+  const f = fixture();
+  record(f, 'catalog/catalog.json', { version: 1, years: ['2024'], photos: [{ id: id(1), y: '2024' }] });
+  const r = await f.call({ url: routes[0], headers: cookie() });
+  assert.equal(r.statusCode, 302);
+  assert.equal(new URL(r.headers.location, origin).pathname,
+    `/dl/2048/${id(1).slice(0, 2)}/${id(1)}/${name()}`);
 });
 for (const path of [
   `/playa/m/dl/2048/${id(1).toUpperCase()}.jpg`, `/playa/m/dl/2048/${id(1).slice(1)}.jpg`,
@@ -255,10 +277,21 @@ test('downloads request: the ninth unfinished request is refused across list pag
   assert.ok(f.blob.calls.filter((c) => c.fn === 'list').every((c) => c.options.prefix === 'exports/req/'));
   privateHeaders(r);
 });
-test('downloads request: ready and failed requests do not consume unfinished capacity', async () => {
+test('downloads request: 100 retained requests refuse before any status reads across pages', async () => {
   const f = fixture();
-  f.blob.listPageSize = 2;
-  for (let n = 0; n < 10; n++) {
+  f.blob.listPageSize = 3;
+  for (let n = 0; n < 100; n++) reqRecord(f, rid(n));
+  const r = await post(f);
+  assert.equal(r.statusCode, 429);
+  assert.deepEqual(JSON.parse(r.body), { error: 'export-busy' });
+  assert.ok(f.blob.calls.filter((c) => c.fn === 'list').length > 1);
+  assert.equal(f.blob.calls.filter((c) => c.fn === 'get' && c.path.startsWith('exports/status/')).length, 0);
+  assert.equal(f.blob.calls.filter((c) => c.fn === 'put').length, 0);
+});
+test('downloads request: fewer than 100 completed retained requests still admit', async () => {
+  const f = fixture();
+  f.blob.listPageSize = 17;
+  for (let n = 0; n < 99; n++) {
     reqRecord(f, rid(n));
     statRecord(f, rid(n), n % 2 ? 'failed' : 'ready', n % 2 ? { error: 'internal' } : {
       file: { path: `exports/out/${rid(n)}/${name()}`, name: name(), bytes: 10 },
@@ -266,6 +299,14 @@ test('downloads request: ready and failed requests do not consume unfinished cap
   }
   const r = await post(f);
   assert.equal(r.statusCode, 202);
+});
+test('downloads request: unknown-year photos are admitted for photo and zip exports', async () => {
+  const f = fixture();
+  record(f, 'catalog/catalog.json', { version: 1, years: [], photos: [{ id: id(1) }, { id: id(2), y: '2024' }] });
+  const photo = await post(f, { kind: 'photo', size: '4096', ids: [id(1)] });
+  const zip = await post(f, { kind: 'zip', size: '2048', ids: [id(1), id(2)] });
+  assert.equal(photo.statusCode, 202);
+  assert.equal(zip.statusCode, 202);
 });
 test('downloads request: concurrent submissions in one gate instance enforce the unfinished cap', async () => {
   const f = fixture();
@@ -321,6 +362,37 @@ for (const [kind, size, ext] of [['photo', '4096', 'jpg'], ['photo', 'original',
     privateHeaders(r);
   });
 }
+test('downloads status: unknown-year photo and zip output names validate', async () => {
+  const f = fixture();
+  record(f, 'catalog/catalog.json', { version: 1, years: [], photos: [{ id: id(1), y: null }, { id: id(2), y: 2024 }] });
+  const photoRid = rid('unknown-photo'), photoName = unknownName();
+  reqRecord(f, photoRid, { ids: [id(1)] });
+  statRecord(f, photoRid, 'ready', { file: { path: `exports/out/${photoRid}/${photoName}`, name: photoName, bytes: 10 } });
+  const photo = await getStatus(f, photoRid);
+  assert.equal(photo.statusCode, 200);
+  assert.equal(JSON.parse(photo.body).name, photoName);
+  const zipRid = rid('unknown-zip'), zipName = 'playa-shortlist-2024-01-02-2048.zip';
+  reqRecord(f, zipRid, { kind: 'zip', size: '2048', ids: [id(1), id(2)] });
+  statRecord(f, zipRid, 'ready', { done: 2, total: 2, file: { path: `exports/out/${zipRid}/${zipName}`, name: zipName, bytes: 10 } });
+  const zip = await getStatus(f, zipRid);
+  assert.equal(zip.statusCode, 200);
+  assert.equal(JSON.parse(zip.body).name, zipName);
+});
+test('downloads status: ready grant never outlives the file expiry', async () => {
+  const f = fixture(), value = rid('short-expiry');
+  const expiresAt = Date.now() + 90 * 1000;
+  reqRecord(f, value);
+  statRecord(f, value, 'ready', {
+    expires_at: new Date(expiresAt).toISOString(),
+    file: { path: `exports/out/${value}/${name()}`, name: name(), bytes: 10 },
+  });
+  const r = await getStatus(f, value);
+  assert.equal(r.statusCode, 200);
+  const [grant, signed] = signCalls(f);
+  assert.ok(grant.options.validUntil <= Date.parse(new Date(expiresAt).toISOString()));
+  assert.ok(grant.options.validUntil <= Date.now() + 5 * 60 * 1000);
+  assert.equal(signed.options.validUntil, grant.options.validUntil);
+});
 test('downloads status: expired ready file is never signed', async () => {
   const f = fixture(), value = rid(1);
   reqRecord(f, value);

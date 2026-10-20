@@ -98,6 +98,9 @@ gallery; the box processes one request at a time. Strict global enforcement need
 object or transactional service; neither is added by this packet.
 Status reads use batches of at most 16 and examine at most 99 retained requests.
 The 100-object bound caps admission cost during the box's 24-hour retention window.
+Thumb and preview signing checks the published catalog through a per-instance cache refreshed at most
+every 60 s, so a newly hidden photo can stay signable (and a newly published one return 404) for up to a
+minute; accepted for this single-user gallery.
 
 Missing status plus a request returns `{state:"queued"}`; neither returns 404
 `not-found`. Valid statuses expose only state and bounded progress; failed adds

@@ -328,6 +328,9 @@
       #shortDownload, #shortDownload summary {
         width: 100%;
       }
+      #shortDownload summary {
+        text-align: center;
+      }
       summary:focus-visible {
         outline: 2px solid var(--accent);
         outline-offset: 2px;
@@ -370,8 +373,10 @@
       #photoDownload .download-status {
         position: absolute;
         top: 100%;
-        left: 0;
+        left: auto;
         right: 0;
+        width: max-content;
+        max-width: 240px;
         min-height: 0;
       }
       #shortDownload .download-status {

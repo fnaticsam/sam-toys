@@ -30,8 +30,9 @@ leaves this variable unset for now. Only the platform's connection-derived `x-re
   to clients. A missing object reads as an empty shortlist; first creation uses
   `allowOverwrite: false`. Updates use `allowOverwrite: true` with Blob `ifMatch`.
   Reads bypass the CDN cache so a conflict retry sees the latest state.
-- `dl/2048/<aa>/<id>.jpg`: prebuilt private JPEG, written by the box. The gate
-  signs only the exact object for an ID in the current published catalog.
+- `dl/2048/<aa>/<id>/playa-<year>-<first 10 hex of id>.jpg`: prebuilt private
+  JPEG, written by the box. The gate gets `<year>` from the current published
+  catalog and signs only that exact object for a published ID.
 - `exports/req/<rid>.json`: gate-written `{v:1,rid,kind,size,ids,created_at}`.
   `rid` is 32 lowercase hex from a CSPRNG. `kind:photo` accepts exactly one ID
   and `4096` or `original`; `kind:zip` accepts 1–2,000 unique IDs and `2048`,
@@ -106,12 +107,9 @@ the existing path/operation signature. See the official
 and [signed URL documentation](https://vercel.com/changelog/signed-urls-are-now-available-for-vercel-blob).
 No live store was contacted to test CDN behavior.
 
-Queued objects already have the required safe basename. For prebuilt 2048
-objects the basename is the full hash, so a signed redirect cannot guarantee
-`playa-<year>-<short hash>.jpg` with this SDK. The closest safe behavior is an
-attachment with the hash basename; the same-origin UI link also suggests the
-preferred name via `download`, which browsers may ignore after redirecting to
-Blob. A redirect response's own Content-Disposition would not rename its target.
+Queued objects and prebuilt 2048 objects use the required safe basename.
+Because Blob SDK 2.6.1 has no GET filename override, the prebuilt 2048 object
+path itself supplies `playa-<year>-<short hash>.jpg` when `download=1` is used.
 
 The inline UI offers one Download disclosure per photo and Download shortlist
 with the three sizes. Jobs snapshot selected IDs, show preparing progress and

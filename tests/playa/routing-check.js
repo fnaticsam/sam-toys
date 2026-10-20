@@ -46,7 +46,7 @@ test('Vercel invocation harness: download, export creation and status retain nes
   });
   const download = await invoke(`/playa/m/dl/2048/${id(1)}.jpg`, cookie());
   assert.equal(download.statusCode, 302);
-  assert.match(download.headers.location, new RegExp(`^/dl/2048/${id(1).slice(0, 2)}/${id(1)}\\.jpg\\?`));
+  assert.match(download.headers.location, new RegExp(`^/dl/2048/${id(1).slice(0, 2)}/${id(1)}/playa-2024-${id(1).slice(0, 10)}\\.jpg\\?`));
   const created = await invoke('/playa/api/export', {
     ...cookie(), host: 'gallery.invalid', origin: 'https://gallery.invalid', 'content-type': 'application/json',
   }, { method: 'POST', body: JSON.stringify({ kind: 'photo', size: '4096', ids: [id(1)] }) });

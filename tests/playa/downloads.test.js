@@ -95,12 +95,14 @@ for (const [route, methods, allow] of [
 });
 for (const method of ['GET', 'HEAD']) test(`downloads instant: ${method} scopes a five-minute grant to the published derivative`, async () => {
   const f = fixture(), before = Date.now();
+  const year = 2023;
+  record(f, 'catalog/catalog.json', { version: 1, years: [year], photos: [{ id: id(1), y: year }] });
   const r = await f.call({ method, url: routes[0], headers: cookie() });
   assert.equal(r.statusCode, 302);
   assert.equal(r.body, '');
-  assert.equal(new URL(r.headers.location, origin).pathname, `/dl/2048/${id(1).slice(0, 2)}/${id(1)}.jpg`);
+  assert.equal(new URL(r.headers.location, origin).pathname, `/dl/2048/${id(1).slice(0, 2)}/${id(1)}/playa-${year}-${id(1).slice(0, 10)}.jpg`);
   assert.equal(new URL(r.headers.location, origin).searchParams.get('download'), '1');
-  exactGrant(f, `dl/2048/${id(1).slice(0, 2)}/${id(1)}.jpg`, before);
+  exactGrant(f, `dl/2048/${id(1).slice(0, 2)}/${id(1)}/playa-${year}-${id(1).slice(0, 10)}.jpg`, before);
   privateHeaders(r);
 });
 test('downloads instant: an unpublished id receives no grant', async () => {

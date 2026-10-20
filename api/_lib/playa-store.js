@@ -123,8 +123,11 @@ function createStore(client = require('@vercel/blob'), token = () => process.env
     },
     async download(id) {
       if (!validId(id)) throw failure(400, 'invalid-request');
-      await published([id]);
-      return sign(`dl/2048/${id.slice(0, 2)}/${id}.jpg`, true);
+      const photos = await published([id]);
+      // Same save-as label rule as the box uploader: four-digit year, otherwise "unknown".
+      const y = photos.get(id).y;
+      const year = Number.isInteger(y) && y >= 1000 && y <= 9999 ? y : 'unknown';
+      return sign(`dl/2048/${id.slice(0, 2)}/${id}/playa-${year}-${id.slice(0, 10)}.jpg`, true);
     },
     async requestExport(value) {
       const input = exportInput(value);

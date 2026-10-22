@@ -5,24 +5,8 @@ const MODEL = 'gemini-3.5-flash';
 const MAX_B64_CHARS = 5_000_000; // backstop; Vercel rejects bodies >4.5 MB before we run
 const GEMINI_TIMEOUT_MS = 55_000;
 
-const ALLOWED_ORIGINS = /^https?:\/\/(sam\.toys|www\.sam\.toys|localhost(:\d+)?|127\.0\.0\.1(:\d+)?|sam-toys-[\w-]+\.vercel\.app)$/;
-
-// warm-instance rate limit — not airtight across cold starts, but caps bulk quota burn
-const RL_WINDOW_MS = 5 * 60_000;
-const RL_MAX = 10;
-const hits = new Map();
-function rateLimited(ip) {
-  const now = Date.now();
-  if (hits.size > 1000) {
-    for (const [k, v] of hits) if (now - v.t > RL_WINDOW_MS) hits.delete(k);
-  }
-  const rec = hits.get(ip);
-  if (!rec || now - rec.t > RL_WINDOW_MS) {
-    hits.set(ip, { n: 1, t: now });
-    return false;
-  }
-  return ++rec.n > RL_MAX;
-}
+// Origin + durable per-client quota + global daily ceiling: see api/_lib/gemini-quota.js
+const { originAllowed, reserveGeminiCall } = require('./_lib/gemini-quota');
 
 const PROMPT = `You are given one voice note (often a WhatsApp voice message). Do two things:
 
@@ -67,18 +51,12 @@ module.exports = async (req, res) => {
     return fail(res, 405, 'Use POST with JSON { audio, mime }.');
   }
 
-  const origin = req.headers.origin;
-  if (origin && !ALLOWED_ORIGINS.test(origin)) {
+  if (!originAllowed(req)) {
     return fail(res, 403, 'This endpoint only serves sam.toys.');
   }
   if (!String(req.headers['content-type'] || '').includes('application/json')) {
     return fail(res, 415, 'Send JSON (Content-Type: application/json).');
   }
-  const ip = String(req.headers['x-forwarded-for'] || '').split(',')[0].trim() || 'unknown';
-  if (rateLimited(ip)) {
-    return fail(res, 429, 'Easy tiger — that\'s a lot of voice notes. Wait a few minutes and try again.');
-  }
-
   let body = req.body;
   if (typeof body === 'string') {
     try { body = JSON.parse(body); } catch { return fail(res, 400, 'Body must be JSON.'); }
@@ -106,6 +84,14 @@ module.exports = async (req, res) => {
 
   const key = process.env.GEMINI_API_KEY;
   if (!key) return fail(res, 500, 'Server is missing its transcription key.');
+
+  const quota = await reserveGeminiCall('transcribe', req);
+  if (!quota.ok) {
+    res.setHeader('Retry-After', quota.scope === 'global' ? '3600' : '300');
+    return fail(res, 429, quota.scope === 'global'
+      ? 'Voice notes are switched off for the rest of today. Try again tomorrow.'
+      : 'Easy tiger — that\'s a lot of voice notes. Wait a few minutes and try again.');
+  }
 
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), GEMINI_TIMEOUT_MS);

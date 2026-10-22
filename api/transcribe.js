@@ -1,3 +1,5 @@
+const controls = require('./_lib/abuse-controls');
+const { jsonBody } = require('./_lib/json-body');
 // POST /api/transcribe — voice note (base64 audio) → { tldr, bullets[], transcript, language }
 // Used by /voicenotes. Gemini handles ogg-opus (WhatsApp voice notes) natively.
 
@@ -79,10 +81,9 @@ module.exports = async (req, res) => {
     return fail(res, 429, 'Easy tiger — that\'s a lot of voice notes. Wait a few minutes and try again.');
   }
 
-  let body = req.body;
-  if (typeof body === 'string') {
-    try { body = JSON.parse(body); } catch { return fail(res, 400, 'Body must be JSON.'); }
-  }
+  const parsedBody = jsonBody(req);
+  if (!parsedBody.ok) return fail(res, 400, 'Body must be JSON.');
+  const body = parsedBody.value;
   if (!body || typeof body !== 'object') return fail(res, 400, 'Body must be JSON { audio, mime }.');
 
   const { audio, mime, filename } = body;
@@ -107,6 +108,12 @@ module.exports = async (req, res) => {
   const key = process.env.GEMINI_API_KEY;
   if (!key) return fail(res, 500, 'Server is missing its transcription key.');
 
+  let reservation;
+  try { reservation = await controls.reservePaid(req); }
+  catch (error) { return fail(res, error.status === 429 ? 429 : 503, error.status === 429
+    ? 'The daily allowance or concurrent request limit is reached. Try again later.'
+    : 'This service is temporarily unavailable. Try again later.'); }
+
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), GEMINI_TIMEOUT_MS);
 
@@ -127,6 +134,7 @@ module.exports = async (req, res) => {
           }],
           generationConfig: {
             responseMimeType: 'application/json',
+            maxOutputTokens: 8192,
             responseSchema: {
               type: 'OBJECT',
               properties: {
@@ -143,8 +151,8 @@ module.exports = async (req, res) => {
     );
 
     if (!geminiRes.ok) {
-      const detail = (await geminiRes.text().catch(() => '')).slice(0, 300);
-      console.error('gemini error', geminiRes.status, detail);
+      if (geminiRes.body) await geminiRes.body.cancel().catch(() => {});
+      console.error('gemini error', geminiRes.status);
       if (geminiRes.status === 429) return fail(res, 429, 'Transcription is rate-limited right now. Wait a minute and retry.');
       return fail(res, 502, 'Transcription failed. If this is a fresh WhatsApp download, retry; otherwise the file may be corrupt.');
     }
@@ -152,7 +160,7 @@ module.exports = async (req, res) => {
     const data = await geminiRes.json().catch(() => null);
     text = data?.candidates?.[0]?.content?.parts?.map((p) => p.text || '').join('') || '';
     if (!text) {
-      console.error('gemini empty response', JSON.stringify(data)?.slice(0, 300));
+      console.error('gemini empty response');
       return fail(res, 502, 'The transcriber returned nothing. Retry, or check the file plays.');
     }
   } catch (err) {
@@ -162,6 +170,7 @@ module.exports = async (req, res) => {
       : 'Could not reach the transcription service. Try again.');
   } finally {
     clearTimeout(timer);
+    await reservation.release();
   }
 
   let parsed = null;

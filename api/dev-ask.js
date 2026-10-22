@@ -1,3 +1,4 @@
+const controls = require('./_lib/abuse-controls');
 // POST /dev/ask — { q } -> { answer, sections:[{id,title}], fromGuide, model }
 //
 // "Ask dev": answers a question about the private operator guide at /dev using
@@ -273,6 +274,11 @@ module.exports = async (req, res) => {
   if (!key) { console.error("dev-ask: GEMINI_API_KEY is not set"); return fail(res, 503, "not_configured"); }
   if (!GUIDE) return fail(res, 503, "not_configured");
 
+  let reservation;
+  try { reservation = await controls.reservePaid(req); }
+  catch (error) { return fail(res, error.status === 429 ? 429 : 503,
+    error.status === 429 ? "rate_limited" : "temporarily_unavailable"); }
+
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), GEMINI_TIMEOUT_MS);
   let text = "";
@@ -296,8 +302,8 @@ module.exports = async (req, res) => {
       }),
     });
     if (!r.ok) {
-      const detail = (await r.text().catch(() => "")).slice(0, 300);
-      console.error("dev-ask: model error", r.status, detail);
+      if (r.body) await r.body.cancel().catch(() => {});
+      console.error("dev-ask: model error", r.status);
       return fail(res, 502, "model_error");
     }
     const data = await r.json().catch(() => null);
@@ -306,19 +312,20 @@ module.exports = async (req, res) => {
       : null;
     text = Array.isArray(parts) ? parts.map((p) => (p && p.text) || "").join("") : "";
     if (!text) {
-      console.error("dev-ask: model returned no text", JSON.stringify(data || {}).slice(0, 300));
+      console.error("dev-ask: model returned no text");
       return fail(res, 502, "model_error");
     }
   } catch (err) {
-    console.error("dev-ask: model call failed", (err && err.name) || "Error", String((err && err.message) || "").slice(0, 300));
+    console.error("dev-ask: model call failed", err && err.name === "AbortError" ? "timeout" : "network");
     return fail(res, 502, "model_error");
   } finally {
     clearTimeout(timer);
+    await reservation.release();
   }
 
   const out = parseModelJson(text);
   if (!out || typeof out !== "object" || Array.isArray(out)) {
-    console.error("dev-ask: model reply was not JSON", String(text).slice(0, 300));
+    console.error("dev-ask: model reply was not JSON");
     return fail(res, 502, "model_error");
   }
   const answer = typeof out.answer === "string" ? out.answer.trim() : "";

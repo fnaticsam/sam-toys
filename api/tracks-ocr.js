@@ -1,3 +1,5 @@
+const controls = require('./_lib/abuse-controls');
+const { jsonBody } = require('./_lib/json-body');
 // POST /api/tracks-ocr — { images: [{ data(base64), mime }] } -> { rows: [{artist,title,remixer,bpm,key,label,genre}] }
 // Reads a Rekordbox track-list screenshot with Gemini vision. Screenshot rows are a
 // lower-confidence convenience path (dense/dark tables misread) — the prompt forces
@@ -69,8 +71,9 @@ module.exports = async (req, res) => {
   const ip = String(req.headers['x-real-ip'] || req.headers['x-forwarded-for'] || '').split(',')[0].trim() || 'unknown';
   if (rateLimited(ip)) return fail(res, 429, 'Easy — too many screenshots in a short window. Wait a few minutes.');
 
-  let body = req.body;
-  if (typeof body === 'string') { try { body = JSON.parse(body); } catch { return fail(res, 400, 'Body must be JSON.'); } }
+  const parsedBody = jsonBody(req);
+  if (!parsedBody.ok) return fail(res, 400, 'Body must be JSON.');
+  const body = parsedBody.value;
   const images = body && body.images;
   if (!Array.isArray(images) || !images.length) return fail(res, 400, 'Missing "images" (array of { data, mime }).');
   if (images.length > MAX_IMAGES) return fail(res, 400, `Too many images — ${MAX_IMAGES} max per request.`);
@@ -94,6 +97,12 @@ module.exports = async (req, res) => {
   const key = process.env.GEMINI_API_KEY;
   if (!key) return fail(res, 500, 'Server is missing its vision key.');
 
+  let reservation;
+  try { reservation = await controls.reservePaid(req); }
+  catch (error) { return fail(res, error.status === 429 ? 429 : 503, error.status === 429
+    ? 'The daily allowance or concurrent request limit is reached. Try again later.'
+    : 'This service is temporarily unavailable. Try again later.'); }
+
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), GEMINI_TIMEOUT_MS);
   let text = '';
@@ -106,24 +115,25 @@ module.exports = async (req, res) => {
         contents: [{ parts }],
         generationConfig: {
           responseMimeType: 'application/json',
+          maxOutputTokens: 8192,
           responseSchema: { type: 'OBJECT', properties: { rows: { type: 'ARRAY', items: ROW_SCHEMA } }, required: ['rows'] },
         },
       }),
     });
     if (!r.ok) {
-      const detail = (await r.text().catch(() => '')).slice(0, 300);
-      console.error('gemini ocr error', r.status, detail);
+      if (r.body) await r.body.cancel().catch(() => {});
+      console.error('gemini ocr error', r.status);
       if (r.status === 429) return fail(res, 429, 'Vision is rate-limited right now. Wait a minute and retry.');
       return fail(res, 502, 'Could not read that screenshot. Retry, or send a sharper, closer crop.');
     }
     const data = await r.json().catch(() => null);
     text = data?.candidates?.[0]?.content?.parts?.map((p) => p.text || '').join('') || '';
-    if (!text) { console.error('gemini ocr empty', JSON.stringify(data)?.slice(0, 300)); return fail(res, 502, 'The reader returned nothing. Retry with a clearer image.'); }
+    if (!text) { console.error('gemini ocr empty'); return fail(res, 502, 'The reader returned nothing. Retry with a clearer image.'); }
   } catch (err) {
     return fail(res, err && err.name === 'AbortError' ? 504 : 502, err && err.name === 'AbortError'
       ? 'Reading the screenshot timed out. Try fewer/smaller images.'
       : 'Could not reach the vision service. Try again.');
-  } finally { clearTimeout(timer); }
+  } finally { clearTimeout(timer); await reservation.release(); }
 
   let parsed = null;
   try { parsed = JSON.parse(text.replace(/^```(json)?\s*/i, '').replace(/```\s*$/, '')); } catch { /* below */ }

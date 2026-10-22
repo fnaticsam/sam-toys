@@ -7,6 +7,7 @@ const fs = require("fs");
 const path = require("path");
 
 const REPO = process.env.REPO_DIR || path.resolve(__dirname, "..", "..");
+require("../security/install-test-controls").install(REPO);
 const PASS = process.env.DEV_PASSWORD || "test-pass-123";
 const KEY = "test-gemini-key-not-real";
 process.env.DEV_PASSWORD = PASS;

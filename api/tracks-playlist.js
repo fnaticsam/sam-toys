@@ -1,3 +1,4 @@
+const { jsonBody } = require('./_lib/json-body');
 // POST /api/tracks-playlist — { url } -> { kind, name, tracks[], truncated }
 // Reads Spotify's PUBLIC embed page and parses its __NEXT_DATA__ island. This is the
 // only ToS-gray surface in the toy (personal use) — kept isolated so it can be swapped
@@ -95,8 +96,9 @@ module.exports = async (req, res) => {
   const ip = String(req.headers['x-real-ip'] || req.headers['x-forwarded-for'] || '').split(',')[0].trim() || 'unknown';
   if (rateLimited(ip)) return fail(res, 429, 'Slow down a sec — too many playlists in a short window.');
 
-  let body = req.body;
-  if (typeof body === 'string') { try { body = JSON.parse(body); } catch { return fail(res, 400, 'Body must be JSON.'); } }
+  const parsedBody = jsonBody(req);
+  if (!parsedBody.ok) return fail(res, 400, 'Body must be JSON.');
+  const body = parsedBody.value;
   const url = body && body.url;
   if (typeof url !== 'string' || !url.trim()) return fail(res, 400, 'Missing "url".');
 

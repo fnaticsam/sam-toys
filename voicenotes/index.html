@@ -166,6 +166,7 @@
   }
   .attach svg { width: 20px; height: 20px; fill: #06110c; }
   .hint { color: var(--text-dim); font-size: 13.5px; }
+  .queue-status { padding: 8px 12px; background: var(--panel); color: var(--text-dim); font-size: 12.5px; }
   input[type=file] { display: none; }
 </style>
 </head>
@@ -189,14 +190,16 @@
       <button class="filebtn" onclick="document.getElementById('file').click()">Choose a voice note</button>
       <div style="margin-top:8px;font-size:12.5px;color:var(--text-dim)">Getting the file out of WhatsApp — <b>Mac/desktop</b>: hover the note → ⌄ menu → Download. <b>iPhone</b>: press-hold → Forward → share icon → Save to Files. <b>Android</b>: press-hold → Share.</div>
       <div style="margin-top:6px;font-size:12.5px;color:var(--text-dim)">.opus works as-is. Also fine: .ogg, .m4a, .mp3, .wav. Up to ~25 min each.</div>
+      <div style="margin-top:6px;font-size:12.5px;color:var(--text-dim)">Audio is sent through sam.toys to Google Gemini. This tool has no saved history; Google's retention depends on the service configuration.</div>
     </div>
   </div>
 
+  <div class="queue-status" id="queue-status" role="status" hidden></div>
   <div class="bar">
     <button class="attach" onclick="document.getElementById('file').click()" aria-label="Choose a voice note file">
       <svg viewBox="0 0 24 24"><path d="M11 5h2v6h6v2h-6v6h-2v-6H5v-2h6z"/></svg>
     </button>
-    <span class="hint">Attach a voice note — it never leaves this page except to be transcribed.</span>
+    <span class="hint">Attach up to 10 notes — processed one at a time. Keep this page open.</span>
     <input type="file" id="file" multiple accept="audio/*,.opus,.ogg,.oga,.m4a,.mp3,.wav,.aac">
   </div>
 </div>
@@ -206,9 +209,45 @@
   var chat = document.getElementById('chat');
   var fileInput = document.getElementById('file');
   var MAX_BYTES = 3.2 * 1024 * 1024; // base64 must stay under Vercel's 4.5 MB request body limit
+  var MAX_QUEUED = 10, REQUEST_TIMEOUT_MS = 70000;
+  var queue = [], active = false;
+
+  function updateQueue() {
+    var status = document.getElementById('queue-status');
+    status.hidden = !active && !queue.length;
+    status.textContent = 'Transcribing one note' + (queue.length ? ' · ' + queue.length + ' queued' : '') + '. Keep this page open.';
+  }
+  function enqueueFiles(files) {
+    if (files.length + queue.length + (active ? 1 : 0) > MAX_QUEUED) {
+      addError('Up to 10 notes can be queued at once. Choose fewer, or wait for the current notes to finish.');
+      return;
+    }
+    Array.prototype.forEach.call(files, function (file) {
+      if (file.size > MAX_BYTES) {
+        addError('The upload limit is ~3 MB per note. Trim the recording or convert it to .opus/.ogg.', file.name);
+      } else if (file.size < 100) {
+        addError('That file looks empty. Re-save the voice note and try again.', file.name);
+      } else {
+        queue.push(file);
+      }
+    });
+    drainQueue();
+  }
+  function drainQueue() {
+    if (active || !queue.length) { updateQueue(); return; }
+    active = true;
+    var file = queue.shift();
+    updateQueue();
+    handleFile(file).catch(function (error) {
+      addError(error && error.message ? error.message : 'Could not finish this note. Check your connection before resending.', file.name);
+    }).finally(function () {
+      active = false;
+      drainQueue();
+    });
+  }
 
   fileInput.addEventListener('change', function () {
-    Array.prototype.forEach.call(fileInput.files, handleFile);
+    enqueueFiles(fileInput.files);
     fileInput.value = '';
   });
   ['dragover', 'dragenter'].forEach(function (ev) {
@@ -219,7 +258,7 @@
   });
   document.addEventListener('drop', function (e) {
     if (e.dataTransfer && e.dataTransfer.files) {
-      Array.prototype.forEach.call(e.dataTransfer.files, handleFile);
+      enqueueFiles(e.dataTransfer.files);
     }
   });
 
@@ -237,8 +276,9 @@
     });
   }
 
-  // waveform: real peaks if the browser can decode the file, else bars derived from the bytes
+  // Decorative byte-derived bars avoid expanding compressed audio into large PCM buffers.
   function buildWave(container, bytes) {
+    container.setAttribute('aria-hidden', 'true');
     var BARS = 40, i;
     var bars = [];
     for (i = 0; i < BARS; i++) {
@@ -251,110 +291,73 @@
     }
     return bars;
   }
-  function tryRealWave(buf, bars, durNode, fallbackDur) {
-    durNode.textContent = fallbackDur;
+  function readFile(file) {
+    return new Promise(function (resolve, reject) {
+      var reader = new FileReader();
+      reader.onload = function () { resolve(reader.result); };
+      reader.onerror = function () { reject(new Error('Could not read that file. Re-download the voice note and try again.')); };
+      reader.onabort = function () { reject(new Error('Reading that file was cancelled. Choose it again if needed.')); };
+      reader.readAsArrayBuffer(file);
+    });
+  }
+
+  async function handleFile(file) {
+    var bytes = new Uint8Array(await readFile(file));
+
+    // outgoing voice-note bubble
+    var msg = el('div', 'msg out');
+    var vn = el('div', 'vn busy');
+    var mic = el('div', 'mic', '<svg viewBox="0 0 24 24"><path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 6 6.92V21h2v-3.08A7 7 0 0 0 19 11h-2z"/></svg>');
+    var wave = el('div', 'wave');
+    var dur = el('span', 'dur');
+    vn.appendChild(mic); vn.appendChild(wave); vn.appendChild(dur);
+    msg.appendChild(vn);
+    msg.appendChild(el('div', 'fname', esc(file.name)));
+    msg.appendChild(el('span', 'meta', stamp() + ' ✓✓'));
+    chat.appendChild(msg);
+
+    buildWave(wave, bytes);
+    dur.textContent = (file.size / 1000000).toFixed(1) + ' MB';
+    dur.title = 'File size; the bars are decorative';
+
+    // typing indicator
+    var typing = el('div', 'msg in');
+    typing.appendChild(el('div', 'typing', '<span class="tdot"></span><span class="tdot"></span><span class="tdot"></span><span class="sr-only">Transcribing your voice note…</span>'));
+    chat.appendChild(typing);
+    scrollDown();
+
+    var controller = new AbortController();
+    var timer = setTimeout(function () { controller.abort(); }, REQUEST_TIMEOUT_MS);
     try {
-      var AC = window.AudioContext || window.webkitAudioContext;
-      if (!AC) return;
-      var ctx = new AC();
-      ctx.decodeAudioData(buf.slice(0), function (audio) {
-        durNode.textContent = fmtDur(audio.duration);
-        var data = audio.getChannelData(0);
-        var step = Math.floor(data.length / bars.length);
-        for (var i = 0; i < bars.length; i++) {
-          var peak = 0;
-          for (var j = i * step; j < (i + 1) * step; j += 50) {
-            var a = Math.abs(data[j] || 0);
-            if (a > peak) peak = a;
-          }
-          bars[i].style.height = (5 + Math.min(1, peak * 1.9) * 23) + 'px';
-        }
-        ctx.close();
-      }, function () { ctx.close(); });
-    } catch (e) { /* keep byte-derived bars */ }
-  }
-  function fmtDur(s) {
-    s = Math.round(s);
-    return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0');
-  }
-
-  function handleFile(file) {
-    if (file.size > MAX_BYTES) {
-      addError('That file is ' + (file.size / 1048576).toFixed(1) + ' MB — the upload limit is ~3 MB (about 25 minutes of WhatsApp audio). If it’s an .mp3 or .wav, convert it to .opus/.ogg or trim it.');
-      return;
-    }
-    if (file.size < 100) {
-      addError('That file looks empty. Re-save the voice note and try again.');
-      return;
-    }
-
-    var reader = new FileReader();
-    reader.onload = function () {
-      var buf = reader.result;
-      var bytes = new Uint8Array(buf);
-
-      // outgoing voice-note bubble
-      var msg = el('div', 'msg out');
-      var vn = el('div', 'vn busy');
-      var mic = el('div', 'mic', '<svg viewBox="0 0 24 24"><path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 6 6.92V21h2v-3.08A7 7 0 0 0 19 11h-2z"/></svg>');
-      var wave = el('div', 'wave');
-      var dur = el('span', 'dur');
-      vn.appendChild(mic); vn.appendChild(wave); vn.appendChild(dur);
-      msg.appendChild(vn);
-      msg.appendChild(el('div', 'fname', esc(file.name)));
-      msg.appendChild(el('span', 'meta', stamp() + ' ✓✓'));
-      chat.appendChild(msg);
-
-      var bars = buildWave(wave, bytes);
-      tryRealWave(buf, bars, dur, '~' + fmtDur(file.size / 2000)); // ~16 kbps WhatsApp bitrate estimate
-
-      // typing indicator
-      var typing = el('div', 'msg in');
-      typing.appendChild(el('div', 'typing', '<span class="tdot"></span><span class="tdot"></span><span class="tdot"></span><span class="sr-only">Transcribing your voice note…</span>'));
-      chat.appendChild(typing);
-      scrollDown();
-
-      var b64 = '';
-      var CHUNK = 0x8000;
+      var b64 = '', CHUNK = 0x8000;
       for (var i = 0; i < bytes.length; i += CHUNK) {
         b64 += String.fromCharCode.apply(null, bytes.subarray(i, i + CHUNK));
       }
       b64 = btoa(b64);
-
-      fetch('/api/transcribe', {
+      var response = await fetch('/api/transcribe', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ audio: b64, mime: file.type || '', filename: file.name }),
-      })
-        .then(function (r) {
-          return r.text().then(function (t) {
-            var j = null;
-            try { j = JSON.parse(t); } catch (e) { /* platform errors are plain text */ }
-            return { ok: r.ok, status: r.status, json: j };
-          });
-        })
-        .then(function (r) {
-          typing.remove();
-          vn.classList.remove('busy');
-          if (!r.ok) {
-            throw new Error(r.json && r.json.error ? r.json.error
-              : r.status === 413 ? 'That note is over the ~3 MB upload limit. Trim it or split it and resend.'
-              : 'The transcription service hiccuped (HTTP ' + r.status + '). Resend the note.');
-          }
-          if (!r.json) throw new Error('The transcription service returned something unreadable. Resend the note.');
-          addSummary(r.json, file.name);
-        })
-        .catch(function (err) {
-          typing.remove();
-          vn.classList.remove('busy');
-          var friendly = (err && err.name === 'Error' && err.message)
-            ? err.message
-            : 'Could not send that one. Check your connection and resend.';
-          addError(friendly);
-        });
-    };
-    reader.onerror = function () { addError('Could not read that file. Re-download the voice note and try again.'); };
-    reader.readAsArrayBuffer(file);
+        signal: controller.signal,
+      });
+      var text = await response.text(), data = null;
+      try { data = JSON.parse(text); } catch (e) { /* platform errors are plain text */ }
+      if (!response.ok) {
+        throw new Error(data && data.error ? data.error
+          : response.status === 413 ? 'That note is over the ~3 MB upload limit. Trim it or split it and resend.'
+          : 'The transcription service hiccuped (HTTP ' + response.status + '). This note was not retried.');
+      }
+      if (!data) throw new Error('The transcription service returned something unreadable. This note was not retried.');
+      addSummary(data, file.name);
+    } catch (error) {
+      if (error.name === 'AbortError') throw new Error('Timed out waiting for a reply. This note may already have been processed; resend only if you still need it.');
+      if (error instanceof TypeError) throw new Error('Could not receive a reply. This note may already have been processed; check your connection before resending.');
+      throw error;
+    } finally {
+      clearTimeout(timer);
+      typing.remove();
+      vn.classList.remove('busy');
+    }
   }
 
   function addSummary(data, sourceName) {
@@ -401,8 +404,9 @@
     scrollDown();
   }
 
-  function addError(text) {
+  function addError(text, sourceName) {
     var msg = el('div', 'msg in error');
+    if (sourceName) msg.appendChild(el('div', 'reply-to', '↩ ' + esc(sourceName)));
     msg.appendChild(el('div', 'headline', 'Couldn’t do that one'));
     msg.appendChild(el('div', '', esc(text)));
     msg.appendChild(el('span', 'meta', stamp()));

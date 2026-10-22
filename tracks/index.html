@@ -52,9 +52,12 @@
   .paste input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(1,255,149,.14)}
   .go{background:var(--accent);color:#04120b;border:0;border-radius:12px;padding:0 20px;font:700 14px/1 inherit;cursor:pointer;flex-shrink:0}
   .go:disabled{opacity:.5;cursor:default}
-  .drop{border:1.5px dashed var(--line);border-radius:var(--radius);background:var(--surface);
+  .drop{display:block;width:100%;color:inherit;font:inherit;border:1.5px dashed var(--line);border-radius:var(--radius);background:var(--surface);
     padding:34px 18px;text-align:center;cursor:pointer;transition:.15s}
   .drop:hover,.drop.over{border-color:var(--accent);background:var(--surface-2)}
+  .drop:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+  .drop:disabled{opacity:.5;cursor:wait}
+  .drop span{display:block}
   .drop .big{font-weight:600;margin-bottom:5px}
   .drop .small{color:var(--dim);font-size:13px}
   .hint{color:var(--dim);font-size:12.5px;margin-top:9px}
@@ -123,7 +126,7 @@
   <!-- PASTE -->
   <section class="panel on" id="p-paste" role="tabpanel" aria-labelledby="tab-paste">
     <div class="paste">
-      <input id="paste-url" type="url" inputmode="url" placeholder="Paste a Spotify playlist, album or track link" autocomplete="off" spellcheck="false">
+      <input id="paste-url" type="url" inputmode="url" aria-label="Spotify playlist, album or track link" placeholder="Paste a Spotify playlist, album or track link" autocomplete="off" spellcheck="false">
       <button class="go" id="paste-go">Find</button>
     </div>
     <div class="hint">Reads the public Spotify page — no login. Buy buttons open Beatport &amp; Bandcamp searches for each track (nothing is scraped).</div>
@@ -131,22 +134,23 @@
 
   <!-- XML -->
   <section class="panel" id="p-xml" role="tabpanel" aria-labelledby="tab-xml">
-    <div class="drop" id="xml-drop">
-      <div class="big">Drop your <b>rekordbox.xml</b> here</div>
-      <div class="small">or click to choose · exact data, no OCR</div>
-    </div>
+    <button type="button" class="drop" id="xml-drop">
+      <span class="big">Drop your <b>rekordbox.xml</b> here</span>
+      <span class="small">or choose a file · exact data, no OCR</span>
+    </button>
     <input type="file" id="xml-file" accept=".xml,text/xml,application/xml">
-    <div class="hint">In Rekordbox: <b>File → Export Collection in xml format</b>. Then drop the file here to get a Spotify link for every track.</div>
+    <div class="hint">In Rekordbox: <b>File → Export Collection in xml format</b>. Then drop the file here to get a Spotify link for every track. XML stays in your browser.</div>
   </section>
 
   <!-- SCREENSHOT -->
   <section class="panel" id="p-shot" role="tabpanel" aria-labelledby="tab-shot">
-    <div class="drop" id="shot-drop">
-      <div class="big">Drop Rekordbox screenshot(s)</div>
-      <div class="small">or click to choose · reads the track list with AI</div>
-    </div>
+    <button type="button" class="drop" id="shot-drop">
+      <span class="big">Drop Rekordbox screenshot(s)</span>
+      <span class="small">or choose files · up to 8 images, 3 MB total</span>
+    </button>
     <input type="file" id="shot-file" accept="image/*" multiple>
     <div class="hint">Screenshot any Rekordbox track view. AI reads the rows — dense/dark tables can misread, so results are tagged “verify”.</div>
+    <div class="hint">Screenshots are sent through sam.toys to Google Gemini. This tool has no saved history; Google's retention depends on the service configuration.</div>
   </section>
 
   <!-- OUTPUT -->
@@ -171,6 +175,29 @@
   "use strict";
   var results=document.getElementById('results'), bar=document.getElementById('bar'), count=document.getElementById('count');
   var player=document.getElementById('player'), lastRows=[], lastMode='paste';
+  var activeMode='paste', operation=null;
+  // Match api/tracks-ocr.js, including padding for each separately encoded image.
+  var MAX_IMAGES=8, MAX_TOTAL_B64=4000000;
+
+  function syncBusy(){
+    ['paste-go','xml-drop','xml-file','shot-drop','shot-file'].forEach(function(id){
+      document.getElementById(id).disabled=!!operation;
+    });
+  }
+  function beginOperation(mode){
+    if(operation || activeMode!==mode) return null;
+    operation={mode:mode,controller:new AbortController(),readers:[]};
+    syncBusy();
+    return operation;
+  }
+  function current(op){return operation===op && activeMode===op.mode;}
+  function finishOperation(op){if(current(op)){operation=null;syncBusy();}}
+  function cancelOperation(){
+    var previous=operation;operation=null;syncBusy();
+    if(!previous) return;
+    previous.controller.abort();
+    previous.readers.forEach(function(reader){if(reader.readyState===1) reader.abort();});
+  }
 
   function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
   function el(t,c,h){var n=document.createElement(t);if(c)n.className=c;if(h!==undefined)n.innerHTML=h;return n;}
@@ -272,6 +299,9 @@
   /* ---- mode switching ---- */
   document.querySelectorAll('.modes button').forEach(function(btn){
     btn.onclick=function(){
+      if(activeMode===btn.dataset.mode) return;
+      cancelOperation();activeMode=btn.dataset.mode;
+      player.pause();lastRows=[];
       document.querySelectorAll('.modes button').forEach(function(b){b.setAttribute('aria-selected', b===btn);});
       document.querySelectorAll('.panel').forEach(function(p){p.classList.remove('on');});
       document.getElementById('p-'+btn.dataset.mode).classList.add('on');
@@ -282,18 +312,21 @@
   /* ---- paste flow ---- */
   var pasteUrl=document.getElementById('paste-url'), pasteGo=document.getElementById('paste-go');
   function runPaste(){
+    if(operation || activeMode!=='paste') return;
     var url=pasteUrl.value.trim();
     if(!url){pasteUrl.focus();return;}
-    pasteGo.disabled=true;showSkeletons(8);
-    fetch('/api/tracks-playlist',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({url:url})})
+    var op=beginOperation('paste');if(!op)return;
+    showSkeletons(8);
+    fetch('/api/tracks-playlist',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({url:url}),signal:op.controller.signal})
       .then(function(r){return r.json().then(function(j){return {ok:r.ok,status:r.status,j:j};});})
       .then(function(res){
+        if(!current(op)) return;
         if(!res.ok) throw new Error(res.j&&res.j.error?res.j.error:'HTTP '+res.status);
         showRows(res.j.tracks||[],'paste');
         if(res.j.truncated) showInfo('Long playlist — Spotify’s public page may only show the first ~100 tracks; the full list could be longer.');
       })
-      .catch(function(e){showError(e.message||'Could not read that link. Check it’s a public Spotify link.');})
-      .finally(function(){pasteGo.disabled=false;});
+      .catch(function(e){if(current(op))showError(e.message||'Could not read that link. Check it’s a public Spotify link.');})
+      .finally(function(){finishOperation(op);});
   }
   pasteGo.onclick=runPaste;
   pasteUrl.addEventListener('keydown',function(e){if(e.key==='Enter')runPaste();});
@@ -320,32 +353,42 @@
     return rows;
   }
   function handleXml(file){
+    if(operation || activeMode!=='xml') return;
     if(!/\.xml$/i.test(file.name) && file.type.indexOf('xml')===-1){showError('Please drop your exported rekordbox.xml file.');return;}
     if(file.size>60*1024*1024){showError('That XML is very large (over 60 MB). Export a single playlist rather than your whole collection.');return;}
+    var op=beginOperation('xml');if(!op)return;
     showSkeletons(6);
     var rd=new FileReader();
+    op.readers.push(rd);
     rd.onload=function(){
+      if(!current(op)) return;
       try{var rows=parseRekordboxXml(rd.result);
         if(!rows.length){showError('No tracks found in that XML. Did you export your Collection?');return;}
         showRows(rows,'xml');
       }catch(e){showError(e.message||'Could not read that XML.');}
+      finally{finishOperation(op);}
     };
-    rd.onerror=function(){showError('Could not read that file.');};
+    rd.onerror=function(){if(current(op)){showError('Could not read that file.');finishOperation(op);}};
     rd.readAsText(file);
   }
   wireDrop('xml-drop','xml-file',handleXml,false);
 
   /* ---- screenshot flow ---- */
   function handleShots(files){
+    if(operation || activeMode!=='shot') return;
     var imgs=Array.prototype.filter.call(files,function(f){return /^image\//.test(f.type);});
     if(!imgs.length){showError('Please drop image screenshot(s).');return;}
-    var total=imgs.reduce(function(s,f){return s+f.size;},0);
-    if(total>3.2*1024*1024){showError('Those screenshots are too big together (~'+(total/1048576).toFixed(1)+' MB). Send fewer or crop them — about 3 MB total.');return;}
+    if(imgs.length>MAX_IMAGES){showError('Choose up to '+MAX_IMAGES+' screenshots per request.');return;}
+    var encodedSize=imgs.reduce(function(s,f){return s+4*Math.ceil(f.size/3);},0);
+    if(encodedSize>MAX_TOTAL_B64){showError('Those screenshots exceed the 3 MB total upload limit. Send fewer or crop them.');return;}
+    var op=beginOperation('shot');if(!op)return;
     showSkeletons(6);
-    Promise.all(imgs.map(toB64)).then(function(payload){
-      return fetch('/api/tracks-ocr',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({images:payload})});
+    Promise.all(imgs.map(function(file){return toB64(file,op);})).then(function(payload){
+      if(!current(op)) throw new DOMException('Cancelled','AbortError');
+      return fetch('/api/tracks-ocr',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({images:payload}),signal:op.controller.signal});
     }).then(function(r){return r.json().then(function(j){return {ok:r.ok,status:r.status,j:j};});})
       .then(function(res){
+        if(!current(op)) return;
         if(!res.ok) throw new Error(res.j&&res.j.error?res.j.error:'HTTP '+res.status);
         var rows=(res.j.rows||[]).map(function(x){
           var title=x.title||'';
@@ -355,18 +398,20 @@
         if(!rows.length){showError('Couldn’t read any tracks from that screenshot. Try a sharper, closer crop of the list.');return;}
         showRows(rows,'shot');
       })
-      .catch(function(e){showError(e.message||'Could not read that screenshot.');});
+      .catch(function(e){if(current(op))showError(e.message||'Could not read that screenshot.');})
+      .finally(function(){finishOperation(op);});
   }
-  function toB64(file){
+  function toB64(file,op){
     return new Promise(function(resolve,reject){
-      if(file.size>3.2*1024*1024){reject(new Error('One screenshot is over ~3 MB — crop it tighter.'));return;}
       var rd=new FileReader();
+      op.readers.push(rd);
       rd.onload=function(){
         var bytes=new Uint8Array(rd.result),b='',C=0x8000;
         for(var i=0;i<bytes.length;i+=C) b+=String.fromCharCode.apply(null,bytes.subarray(i,i+C));
         resolve({data:btoa(b),mime:file.type||'image/png'});
       };
       rd.onerror=function(){reject(new Error('Could not read an image.'));};
+      rd.onabort=function(){reject(new DOMException('Cancelled','AbortError'));};
       rd.readAsArrayBuffer(file);
     });
   }
@@ -380,6 +425,7 @@
     ['dragover','dragenter'].forEach(function(ev){zone.addEventListener(ev,function(e){e.preventDefault();zone.classList.add('over');});});
     ['dragleave','drop'].forEach(function(ev){zone.addEventListener(ev,function(e){e.preventDefault();zone.classList.remove('over');});});
     zone.addEventListener('drop',function(e){
+      if(zone.disabled) return;
       var files=e.dataTransfer&&e.dataTransfer.files; if(!files||!files.length)return;
       if(multi&&multiFn) multiFn(files); else single(files[0]);
     });

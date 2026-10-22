@@ -11,18 +11,9 @@ const MAX_IMAGES = 8;
 const MAX_TOTAL_B64 = 4_000_000; // stay under Vercel's 4.5 MB body limit (JSON + base64 overhead)
 const GEMINI_TIMEOUT_MS = 55_000;
 
-const ALLOWED_ORIGINS = /^https?:\/\/(sam\.toys|www\.sam\.toys|localhost(:\d+)?|127\.0\.0\.1(:\d+)?|sam-toys-[\w-]+\.vercel\.app)$/;
+// Origin + durable per-client quota + global daily ceiling: see api/_lib/gemini-quota.js
+const { originAllowed, reserveGeminiCall } = require('./_lib/gemini-quota');
 
-const RL_WINDOW_MS = 5 * 60_000;
-const RL_MAX = 20;
-const hits = new Map();
-function rateLimited(ip) {
-  const now = Date.now();
-  if (hits.size > 1000) for (const [k, v] of hits) if (now - v.t > RL_WINDOW_MS) hits.delete(k);
-  const rec = hits.get(ip);
-  if (!rec || now - rec.t > RL_WINDOW_MS) { hits.set(ip, { n: 1, t: now }); return false; }
-  return ++rec.n > RL_MAX;
-}
 function fail(res, status, error) { return res.status(status).json({ error }); }
 
 // derive the real image type from magic bytes; declared mime only breaks ties
@@ -63,11 +54,8 @@ const ROW_SCHEMA = {
 module.exports = async (req, res) => {
   res.setHeader('Cache-Control', 'no-store');
   if (req.method !== 'POST') { res.setHeader('Allow', 'POST'); return fail(res, 405, 'Use POST { images }.'); }
-  const origin = req.headers.origin;
-  if (origin && !ALLOWED_ORIGINS.test(origin)) return fail(res, 403, 'This endpoint only serves sam.toys.');
+  if (!originAllowed(req)) return fail(res, 403, 'This endpoint only serves sam.toys.');
   if (!String(req.headers['content-type'] || '').includes('application/json')) return fail(res, 415, 'Send JSON.');
-  const ip = String(req.headers['x-real-ip'] || req.headers['x-forwarded-for'] || '').split(',')[0].trim() || 'unknown';
-  if (rateLimited(ip)) return fail(res, 429, 'Easy — too many screenshots in a short window. Wait a few minutes.');
 
   let body = req.body;
   if (typeof body === 'string') { try { body = JSON.parse(body); } catch { return fail(res, 400, 'Body must be JSON.'); } }
@@ -93,6 +81,14 @@ module.exports = async (req, res) => {
 
   const key = process.env.GEMINI_API_KEY;
   if (!key) return fail(res, 500, 'Server is missing its vision key.');
+
+  const quota = await reserveGeminiCall('tracks-ocr', req);
+  if (!quota.ok) {
+    res.setHeader('Retry-After', quota.scope === 'global' ? '3600' : '300');
+    return fail(res, 429, quota.scope === 'global'
+      ? 'Screenshot reading is switched off for the rest of today. Try again tomorrow.'
+      : 'Easy — too many screenshots in a short window. Wait a few minutes.');
+  }
 
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), GEMINI_TIMEOUT_MS);

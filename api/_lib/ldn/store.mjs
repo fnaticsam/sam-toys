@@ -2,7 +2,7 @@
 // Coordination lives in a separately configured PRIVATE store; no public lock.
 import { createRequire } from 'node:module';
 import { randomBytes } from 'node:crypto';
-import { deadline } from './deadline.mjs';
+import { deadline, withinDeadline } from './deadline.mjs';
 import seed from './seed.mjs';
 
 const require = createRequire(import.meta.url);
@@ -22,34 +22,59 @@ function validDataset(value) {
 }
 
 export function createDatasetStore({ client = require('@vercel/blob'), env = process.env,
-  now = Date.now, randomId = () => randomBytes(16).toString('hex') } = {}) {
+  now = Date.now, randomId = () => randomBytes(16).toString('hex'), requestTimeoutMs = 15000 } = {}) {
+  const uncertainPromotions = new Set();
   function options(access, signal) {
     const token = access === 'private' ? env.LDN_REFRESH_CONTROL_TOKEN : env.BLOB_READ_WRITE_TOKEN;
     if (!token) throw new RefreshUnavailable();
     return { access, token, ...(signal ? { abortSignal: signal } : {}) };
   }
   async function read(path, access, signal) {
-    signal?.throwIfAborted();
-    const request = deadline(15000, signal);
     try {
-      const result = await client.get(path, { ...options(access, request.signal), useCache: false });
-      if (!result) return null;
-      const body = await new Response(result.stream).text();
-      request.signal.throwIfAborted();
-      return { body, value: JSON.parse(body), etag: result.blob.etag, url: result.blob.url };
+      return await withinDeadline(requestTimeoutMs, signal, async (requestSignal, assertActive) => {
+        const result = await client.get(path, { ...options(access, requestSignal), useCache: false });
+        try { assertActive(); }
+        catch (error) { void result?.stream?.cancel().catch(() => {}); throw error; }
+        if (!result) return null;
+        // Consume under the same deadline, and cancel even a stream whose source
+        // ignores the SDK's AbortSignal. Never start a write after a late read.
+        const reader = result.stream.getReader(), decoder = new TextDecoder();
+        const cancel = () => { void reader.cancel().catch(() => {}); };
+        requestSignal.addEventListener('abort', cancel, { once: true });
+        let body = '';
+        try {
+          while (true) {
+            assertActive();
+            const chunk = await reader.read();
+            assertActive();
+            if (chunk.done) break;
+            body += decoder.decode(chunk.value, { stream: true });
+          }
+          body += decoder.decode();
+        } finally { requestSignal.removeEventListener('abort', cancel); reader.releaseLock(); }
+        return { body, value: JSON.parse(body), etag: result.blob.etag, url: result.blob.url };
+      });
     } catch (error) {
       if (client.BlobNotFoundError && error instanceof client.BlobNotFoundError) return null;
       throw error;
-    } finally { request.dispose(); }
+    }
   }
   async function put(path, body, opts) {
-    const request = deadline(15000, opts.abortSignal);
     try {
-      request.signal.throwIfAborted();
-      const result = await client.put(path, body, { ...opts, abortSignal: request.signal });
-      request.signal.throwIfAborted();
-      return result;
-    } finally { request.dispose(); }
+      return await withinDeadline(requestTimeoutMs, opts.abortSignal, async (signal, assertActive) => {
+        const result = await client.put(path, body, { ...opts, abortSignal: signal });
+        assertActive();
+        return result;
+      });
+    } catch (error) {
+      if (opts.abortSignal?.aborted || ['AbortError', 'TimeoutError'].includes(error?.name)) {
+        const uncertain = new Error('blob-write-uncertain');
+        uncertain.name = error?.name || 'AbortError';
+        uncertain.uncertainBlobWrite = true;
+        throw uncertain;
+      }
+      throw error;
+    }
   }
   async function control(signal) {
     const record = await read(CONTROL_KEY, 'private', signal);
@@ -95,6 +120,9 @@ export function createDatasetStore({ client = require('@vercel/blob'), env = pro
     }
   }
   async function release(lease, signal) {
+    // A timed-out current write may still complete remotely. Keep this lease
+    // until expiry instead of admitting new paid work into an uncertain run.
+    if (uncertainPromotions.has(lease.owner)) return false;
     try {
       await put(CONTROL_KEY, JSON.stringify({ v: 1, owner: null, expiresAt: 0 }), {
         ...writeOptions('private', signal), allowOverwrite: true, ifMatch: lease.etag,
@@ -131,10 +159,14 @@ export function createDatasetStore({ client = require('@vercel/blob'), env = pro
     } catch (error) {
       // Conditional writes fence stale publishers. A lost success response can
       // still be recognized without repeating a write or discarding the archive.
+      if (error.uncertainBlobWrite) uncertainPromotions.add(lease.owner);
       const recovery = deadline(5000);
       try {
         const actual = await current(recovery.signal);
-        if (actual.body === body) return { url: actual.url, snapshot, previousSnapshot, reconciled: true };
+        if (actual.body === body) {
+          uncertainPromotions.delete(lease.owner);
+          return { url: actual.url, snapshot, previousSnapshot, reconciled: true };
+        }
         if (actual.etag !== baseline.etag) throw new RefreshConflict();
       } finally { recovery.dispose(); }
       throw error;

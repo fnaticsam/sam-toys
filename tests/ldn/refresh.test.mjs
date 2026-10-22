@@ -310,3 +310,62 @@ test('operator restore uses an exact archive and preserves the dataset being rep
   assert.equal(JSON.parse(f.client.records.get(restored.previousSnapshot).body).places[0].id, 'next');
   await store.release(ctx.lease);
 });
+
+test('public dataset read returns seed at the caller deadline when the SDK ignores abort', async () => {
+  let abortSignal;
+  const client = { get: async (_key, options) => { abortSignal = options.abortSignal; return new Promise(() => {}); } };
+  const store = createDatasetStore({ client, env, requestTimeoutMs: 25 });
+  let watchdog;
+  try {
+    const result = await Promise.race([store.readDataset(), new Promise(resolve => { watchdog = setTimeout(() => resolve('overdue'), 500); })]);
+    assert.deepEqual(result, { dataset: seed, source: 'seed' });
+    assert.equal(abortSignal.aborted, true);
+  } finally { clearTimeout(watchdog); }
+});
+
+test('stream consumption shares the read deadline and cancels a stalled body', async () => {
+  let cancelled = false;
+  const client = { get: async () => ({ blob: { etag: '"synthetic"' }, stream: new ReadableStream({
+    start(controller) { controller.enqueue(new TextEncoder().encode('{')); },
+    cancel() { cancelled = true; },
+  }) }) };
+  const store = createDatasetStore({ client, env, requestTimeoutMs: 25 });
+  let watchdog;
+  try {
+    const result = await Promise.race([store.readDataset(), new Promise(resolve => { watchdog = setTimeout(() => resolve('overdue'), 500); })]);
+    assert.deepEqual(result, { dataset: seed, source: 'seed' });
+    assert.equal(cancelled, true);
+  } finally { clearTimeout(watchdog); }
+});
+
+test('a late control read cannot start a lease write after caller timeout', async () => {
+  let resolveRead, writes = 0, cancelled = false;
+  const client = { get: async () => new Promise(resolve => { resolveRead = resolve; }), put: async () => { writes++; } };
+  const store = createDatasetStore({ client, env, requestTimeoutMs: 25 });
+  await assert.rejects(store.acquire(), { name: 'TimeoutError' });
+  resolveRead({ blob: { etag: '"late"' }, stream: new ReadableStream({ cancel() { cancelled = true; } }) });
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(writes, 0); assert.equal(cancelled, true);
+});
+
+test('a timed-out late current write retains its lease until expiry when readback is inconclusive', async () => {
+  const f = fixture(); await initialize(f);
+  const store = createDatasetStore({ client: f.client, env, now: () => 1_800_000_000_000, requestTimeoutMs: 25 });
+  const ctx = await context(store);
+  const originalPut = f.client.put;
+  let resolveLate;
+  f.client.put = async (key, body, options) => {
+    if (key !== CURRENT_KEY) return originalPut(key, body, options);
+    // Model an already-sent remote write that completes despite local abort.
+    await new Promise(resolve => { resolveLate = resolve; });
+    return originalPut(key, body, { ...options, abortSignal: undefined });
+  };
+  await assert.rejects(store.publish(dataset('next'), ctx), { name: 'TimeoutError' });
+  assert.equal(await store.release(ctx.lease), false);
+  await assert.rejects(f.store().acquire(), RefreshBusy);
+  assert.equal(f.client.records.get(CURRENT_KEY).body, ctx.baseline.body);
+  resolveLate();
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(JSON.parse(f.client.records.get(CURRENT_KEY).body).places[0].id, 'next');
+  assert.equal(JSON.parse(f.client.records.get(CONTROL_KEY).body).owner, ctx.lease.owner);
+});

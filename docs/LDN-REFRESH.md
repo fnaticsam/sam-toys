@@ -41,6 +41,12 @@ for Blob. Reconciliation and lease cleanup get their own five-second bounds,
 still below the configured function maximum. Abort signals propagate through
 requests, queue workers and retry delays.
 
+Blob's internal retry backoff may not wake immediately on abort. The application
+therefore races each complete Blob read/write against its deadline, including
+response-stream consumption. Late reads cannot start writes; stalled streams are
+cancelled, and late SDK rejections remain observed. The read endpoint returns its
+seed fallback on time even if the underlying SDK has not settled yet.
+
 Gemini has one transport retry budget, at most three total attempts. Permanent
 HTTP failures do not retry; 408, 429, 5xx and transient network/timeouts can retry.
 Retry-After is honored up to 30 seconds and cancellation interrupts the delay.
@@ -66,6 +72,13 @@ therefore cannot be silently overwritten. A lost response after promotion is
 reconciled by reading current and comparing the exact serialized body; no blind
 second write occurs. If reconciliation is unavailable, the request reports a
 generic failure and the promotion outcome must be checked before rerunning.
+If a current write times out and readback cannot confirm it, the private lease
+is deliberately retained until its natural expiry: an in-flight remote write
+may still complete after the caller stops waiting. This is an uncertain outcome,
+not proof that the live dataset was unchanged. New paid runs remain blocked
+during that lease, and conditional promotion still prevents overwriting an
+intervening dataset. Snapshot-only late writes are immutable and cannot promote
+the live object after the application has abandoned their operation.
 Both snapshots remain available after interrupted promotion. Immutable snapshots
 are retained; any future retention policy must preserve the current recovery
 chain and requires separate operational review.
@@ -89,6 +102,9 @@ credentials. They cover method/authentication combinations, missing configuratio
 independent-instance contention, stale/uncertain leases, archive failures,
 interrupted/uncertain promotion, ETag races and first-creation races, restore,
 seed fallback, cancellation, bounded retryability and freshness timestamps.
+`node --test tests/ldn/blob-deadline.test.mjs` additionally exercises the installed
+Blob SDK against Undici MockAgent's 503 response, with `disableNetConnect()`:
+a 100ms caller deadline returns before the SDK's one-second backoff completes.
 
 The London date-validity remediation owns `validFrom`, `validTo` and carried
 schedule freshness. Places stamps `hoursCheckedAt` and `ratingCheckedAt` only

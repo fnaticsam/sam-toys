@@ -2,6 +2,7 @@
 // or password comparison. No IP address, prompt, password or model output is stored.
 const crypto = require('crypto');
 const { isIP } = require('net');
+const { performance } = require('perf_hooks');
 const DAY_MS = 86400000;
 const LEASE_MS = 90000; // longer than every guarded function's 60s maximum lifetime
 const DEADLINE_MS = 1500;
@@ -48,35 +49,54 @@ function createControls({ client, env = process.env, now = Date.now, sleep = ms 
   };
   async function change(pathname, update) {
     const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), DEADLINE_MS);
-    try {
+    const deadlineAt = performance.now() + DEADLINE_MS;
+    let timer;
+    const deadline = new Promise((_, reject) => {
+      timer = setTimeout(() => {
+        controller.abort();
+        reject(failure(503));
+      }, DEADLINE_MS);
+    });
+    const assertActive = () => {
+      if (controller.signal.aborted || performance.now() >= deadlineAt) {
+        controller.abort();
+        throw failure(503);
+      }
+    };
+    const transaction = async () => {
+      assertActive();
       const options = { access: 'private', token: token(), abortSignal: controller.signal };
       const store = sdk();
       for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
-        if (controller.signal.aborted) throw failure(503);
+        assertActive();
         let read;
         try { read = await store.get(pathname, { ...options, useCache: false }); }
         catch (error) {
           if (!(store.BlobNotFoundError && error instanceof store.BlobNotFoundError)) throw error;
           read = null;
         }
+        assertActive();
         let state = null;
         if (read) {
           if (!read.blob || typeof read.blob.etag !== 'string' || !read.blob.etag) throw failure(503);
           const raw = await new Response(read.stream).text();
+          assertActive();
           if (raw.length > 2000000) throw failure(503);
           state = JSON.parse(raw);
           if (!validState(state)) throw failure(503);
         }
         const next = update(state);
+        assertActive();
         if (next === null) return; // idempotent release; no write needed
         try {
           await store.put(pathname, JSON.stringify(next), {
             ...options, addRandomSuffix: false, contentType: 'application/json',
             allowOverwrite: !!read, ...(read ? { ifMatch: read.blob.etag } : {}),
           });
+          assertActive();
           return;
         } catch (error) {
+          assertActive();
           // First-create collisions can be generic BlobError. Re-read on the
           // bounded retry; never assume a failed/ambiguous write granted admission.
           const conflict = store.BlobPreconditionFailedError && error instanceof store.BlobPreconditionFailedError;
@@ -86,6 +106,13 @@ function createControls({ client, env = process.env, now = Date.now, sleep = ms 
         }
       }
       throw failure(503);
+    };
+    try {
+      // SDK retry backoff and response streams need not honor AbortSignal promptly.
+      // Race the entire operation, not only the transport. Promise.race observes
+      // late rejection; assertActive prevents late reads/writes from granting work.
+      await Promise.race([transaction(), deadline]);
+      assertActive();
     } catch (error) {
       throw failure(error.status === 429 ? 429 : 503);
     } finally { clearTimeout(timer); }

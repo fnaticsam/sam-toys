@@ -39,8 +39,12 @@ A private, deterministic state object for paid work contains the current UTC day
 global and pseudonymous IP counters, and active random lease IDs. A single ETag
 conditional write reserves the global count, IP count and concurrency slot together.
 First creation disallows overwrite. CAS conflicts have bounded retries; uncertain
-writes never grant admission. Reads bypass the CDN. SDK requests share a 1.5-second
-abort deadline per admission/release operation. Stale counts never authorize work.
+writes never grant admission. Reads bypass the CDN. The entire read/body-parse/CAS
+operation has a 1.5-second caller deadline per admission/release, in addition to aborting SDK requests. SDK retry backoff may settle
+later; its promise remains observed, and every continuation checks the monotonic
+deadline before any new write or admission. A timed-out write may still commit, but
+it never grants paid work and its usage remains conservatively reserved. Stale
+counts never authorize work.
 
 The 90-second lease exceeds the guarded function maximum lifetime (currently at
 most 60 seconds). If a worker dies or release fails, the next admission reclaims its
@@ -76,8 +80,11 @@ separately; this code does not establish or change those policies.
 `node --test tests/security/*.test.js` uses synthetic fixtures, an in-memory atomic
 Blob double and stubbed provider fetches. It exercises independent instances,
 conflicting writes, daily/IP exhaustion, concurrency, rollover, abandoned leases,
-failed/ambiguous storage, malformed JSON getters and private log hygiene. Existing
-handler acceptance suites install an explicit test-only control stub; production
+failed/ambiguous storage, malformed JSON getters and private log hygiene. The real
+Blob SDK is also tested against an Undici MockAgent with all network connections
+disabled, including retry backoff and delayed reads. Additional noncooperative
+read/body/write doubles verify that late success/rejection cannot grant work or
+produce an unhandled rejection. Existing handler acceptance suites install an explicit test-only control stub; production
 code has no test bypass environment switch. No live store or model is contacted.
 
 ## Londonplan session migration

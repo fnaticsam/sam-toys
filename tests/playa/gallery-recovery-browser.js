@@ -7,6 +7,7 @@ const test = (name, check) => tests.push([name, check]);
 const unknownYears = [undefined, null, 'invalid', 99, '2024\n', [2024], { value: 2024 }];
 const photos = [2024, '2024', ...unknownYears].map((y, index) => ({ id: id(100 + index), y, w: 1200, h: 800, tags: [], t: 'art' }));
 const unknownId = photos[2].id;
+const recoveryKey = 'playa.export-jobs.v1';
 let browser;
 
 async function scenario(check) {
@@ -46,6 +47,7 @@ async function scenario(check) {
     if (url.pathname.startsWith('/playa/api/export/')) {
       mock.polls.push(url.pathname);
       const reply = mock.replies.shift() || mock.fallback;
+      if (reply.wait) await reply.wait;
       if (reply.abort) return route.abort('failed');
       return route.fulfill({ status: reply.http || 200, contentType: 'application/json', body: JSON.stringify(reply) });
     }
@@ -160,6 +162,132 @@ test('gallery: failed signed-link refresh never downloads a stale URL and resume
   assert.equal(mock.posts.length, 1);
 }));
 
+test('gallery: queued photo survives reload with only bounded metadata and no new POST', () => scenario(async (page, mock) => {
+  await mock.start();
+  await page.waitForFunction((key) => sessionStorage.getItem(key), recoveryKey);
+  const stored = JSON.parse(await page.evaluate((key) => sessionStorage.getItem(key), recoveryKey));
+  assert.equal(stored.v, 1);
+  assert.equal(stored.jobs.length, 1);
+  assert.deepEqual(Object.keys(stored.jobs[0]).sort(), ['createdAt', 'downloadStarted', 'kind', 'rid', 'size', 'total']);
+  assert.equal(stored.jobs[0].kind, 'photo');
+  assert.equal(stored.jobs[0].total, 1);
+  assert.equal(stored.jobs[0].downloadStarted, false);
+  assert.ok(!JSON.stringify(stored).includes(unknownId));
+  const before = mock.polls.length;
+  await page.reload();
+  await page.waitForFunction(() => document.querySelector('#photoDownload .download-status').textContent === 'Previous photo download: Preparing…');
+  assert.ok(mock.polls.length > before);
+  assert.ok(await page.locator('#photoDownload .download-options button').first().isDisabled());
+  assert.equal(mock.posts.length, 1);
+  const download = page.waitForEvent('download');
+  mock.fallback = mock.ready();
+  assert.equal((await download).url(), mock.ready().url);
+  await page.locator('#photoDownload .download-status a').waitFor();
+  const readyRecord = JSON.parse(await page.evaluate((key) => sessionStorage.getItem(key), recoveryKey));
+  assert.equal(readyRecord.jobs[0].downloadStarted, true);
+  assert.ok(!JSON.stringify(readyRecord).includes('https:'));
+  assert.ok(!JSON.stringify(readyRecord).includes('.jpg'));
+  await page.reload();
+  await page.locator('#photoDownload .download-status a').waitFor();
+  assert.equal(mock.files.length, 1, 'reload keeps the fallback without restarting a completed automatic download');
+  assert.equal(mock.posts.length, 1);
+  assert.equal(new Set(mock.polls).size, 1);
+}));
+
+test('gallery: queued shortlist survives reload and resumes its original request', () => scenario(async (page, mock, fixture) => {
+  fixture.blob.records.set('state/shortlist.json', { etag: '"selected"', body: JSON.stringify({ ids: [unknownId] }) });
+  await page.goto('https://gallery.invalid/playa');
+  await page.waitForFunction(() => document.getElementById('shortCount').textContent === '1');
+  await page.locator('#shortToggle').click();
+  await page.locator('#shortDownload summary').click();
+  await page.locator('#shortDownload .download-options button').first().click();
+  await page.waitForFunction((key) => sessionStorage.getItem(key), recoveryKey);
+  await page.reload();
+  await page.waitForFunction(() => document.querySelector('#shortDownload .download-status').textContent === 'Previous shortlist download: Preparing… 0/1');
+  assert.equal(mock.posts.length, 1);
+  assert.equal(mock.posts[0].kind, 'zip');
+  const download = page.waitForEvent('download');
+  mock.fallback = { ...mock.ready(), name: 'playa-shortlist-2024-01-02-2048.zip' };
+  await download;
+  assert.equal(mock.posts.length, 1);
+  assert.equal(new Set(mock.polls).size, 1);
+}));
+
+test('gallery: recovery rejects expired, oversized and invalid records without polling', () => scenario(async (page, mock) => {
+  await page.goto('https://gallery.invalid/playa');
+  await page.locator('#years .card').first().waitFor();
+  const job = { rid: id('restore').slice(0, 32), kind: 'photo', size: '4096', total: 1,
+    createdAt: Date.now(), downloadStarted: false };
+  const records = [
+    '{', ' '.repeat(4097), JSON.stringify({ v: 2, jobs: [job] }),
+    JSON.stringify({ v: 1, jobs: Array(9).fill(job) }),
+    JSON.stringify({ v: 1, jobs: [job, job] }),
+    ...[
+      { createdAt: Date.now() - 24 * 60 * 60 * 1000 - 1 }, { createdAt: Date.now() + 86400000 },
+      { rid: job.rid + '\n' }, { total: 2 }, { size: '2048' }, { kind: 'other' },
+      { downloadStarted: 'false' }, { ids: [unknownId] }, { url: mock.ready().url },
+    ].map((extra) => JSON.stringify({ v: 1, jobs: [{ ...job, ...extra }] })),
+  ];
+  for (const record of records) {
+    await page.evaluate(([key, value]) => sessionStorage.setItem(key, value), [recoveryKey, record]);
+    await page.reload();
+    await page.waitForFunction((key) => sessionStorage.getItem(key) === null, recoveryKey);
+    assert.equal(mock.polls.length, 0);
+    assert.equal(mock.posts.length, 0);
+  }
+}));
+
+test('gallery: eight restored requests keep separate fallback links and issue no POST', () => scenario(async (page, mock) => {
+  await page.goto('https://gallery.invalid/playa');
+  await page.locator('#years .card').first().waitFor();
+  const jobs = Array.from({ length: 8 }, (_, index) => ({ rid: id('restore-' + index).slice(0, 32),
+    kind: 'photo', size: 'original', total: 1, createdAt: Date.now(), downloadStarted: true }));
+  await page.evaluate(([key, value]) => sessionStorage.setItem(key, JSON.stringify(value)), [recoveryKey, { v: 1, jobs }]);
+  mock.fallback = mock.ready();
+  await page.goto(`https://gallery.invalid/playa#year/unknown?photo=${unknownId}`);
+  await page.reload();
+  await page.waitForFunction(() => document.querySelectorAll('#photoDownload .download-status a').length === 8);
+  assert.equal(new Set(mock.polls).size, 8);
+  assert.equal(mock.posts.length, 0);
+  assert.equal(mock.files.length, 0);
+  assert.equal(JSON.parse(await page.evaluate((key) => sessionStorage.getItem(key), recoveryKey)).jobs.length, 8);
+  await page.locator('#photoDownload .download-status a').last().click({ trial: true });
+  assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= 390));
+}));
+
+test('gallery: explicit logout clears recovery and stops status polling', () => scenario(async (page, mock) => {
+  let release;
+  mock.replies = [{ ...mock.ready(), wait: new Promise((resolve) => { release = resolve; }) }];
+  await mock.start();
+  await page.waitForFunction((key) => sessionStorage.getItem(key), recoveryKey);
+  await page.locator('#closePhoto').click();
+  // Keep the document alive to inspect the click handler and late callbacks;
+  // the logged-out login page intentionally has an opaque sandboxed origin.
+  await page.locator('#logout').evaluate((node) => node.addEventListener('click', (event) => event.preventDefault()));
+  await page.locator('#logout').click();
+  await page.waitForFunction((key) => sessionStorage.getItem(key) === null, recoveryKey);
+  const stopped = mock.polls.length;
+  release();
+  await page.waitForTimeout(150);
+  assert.equal(mock.polls.length, stopped);
+  assert.equal(mock.posts.length, 1);
+  assert.equal(mock.files.length, 0);
+  assert.equal(await page.evaluate((key) => sessionStorage.getItem(key), recoveryKey), null);
+}));
+
+test('gallery: unavailable browser storage leaves in-page exports working', () => scenario(async (page, mock) => {
+  await page.addInitScript(() => Object.defineProperty(window, 'sessionStorage', {
+    get() { throw new DOMException('Storage disabled', 'SecurityError'); },
+  }));
+  mock.fallback = mock.ready();
+  const download = page.waitForEvent('download');
+  await mock.start();
+  await download;
+  assert.equal(mock.posts.length, 1);
+  assert.equal(mock.files.length, 1);
+  await page.locator('#photoDownload .download-status a').waitFor();
+}));
+
 for (const [name, reply, message] of [
   ['worker failure', { state: 'failed', error: 'integrity' }, 'Could not prepare this download.'],
   ['missing request', { http: 404 }, 'Download status is no longer available.'],
@@ -182,6 +310,7 @@ test('gallery: expired authentication redirects without retrying the export or s
   await mock.start();
   await page.waitForURL('https://gallery.invalid/playa');
   await page.waitForTimeout(150);
+  assert.equal(await page.evaluate((key) => sessionStorage.getItem(key), recoveryKey), null);
   assert.equal(mock.polls.length, 1);
   assert.equal(mock.posts.length, 1);
 }));

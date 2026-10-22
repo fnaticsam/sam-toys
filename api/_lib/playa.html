@@ -379,6 +379,11 @@
         max-width: 240px;
         min-height: 0;
       }
+      #photoDownload .download-status.recovered {
+        position: static;
+        max-height: 160px;
+        overflow-y: auto;
+      }
       #shortDownload .download-status {
         min-height: 44px;
       }
@@ -571,7 +576,7 @@
       <a class="brand" href="#home" aria-label="Playa, all years"><b>)'(</b>PLAYA</a
       ><a id="crumb" class="mono" href="#home">/ All years</a><span class="spacer"></span
       ><button id="shortToggle" aria-expanded="true" aria-controls="shortlist">Shortlist <span id="shortCount">0</span></button
-      ><a href="/playa?logout" class="mono">Log out</a>
+      ><a id="logout" href="/playa?logout" class="mono">Log out</a>
     </header>
     <div id="layout">
       <main id="main" tabindex="-1">
@@ -667,6 +672,8 @@
         gridKey: null,
         photoJobs: new Map(),
         shortlistJob: null,
+        restoredPhotoJobs: [],
+        leaving: false,
       };
       // Creates DOM content with textContent so runtime labels remain inert.
       function element(tag, text, className) {
@@ -1006,6 +1013,7 @@
       async function api(url, options = {}) {
         const response = await fetch(url, { credentials: 'same-origin', cache: 'no-store', ...options });
         if (response.status === 401) {
+          discardDownloadRecovery();
           location.assign('/playa');
           throw new Error('session');
         }
@@ -1081,6 +1089,63 @@
           $('retry').hidden = false;
         }
       }
+      const recoveryKey = 'playa.export-jobs.v1';
+      const recoveryLifetime = 24 * 60 * 60 * 1000;
+      // Store only tab-scoped request metadata, never selections or signed URLs.
+      function knownDownloads() {
+        return [...state.photoJobs.values(), ...state.restoredPhotoJobs, state.shortlistJob].filter(Boolean);
+      }
+      function persistDownloads() {
+        if (state.leaving) return;
+        const jobs = knownDownloads()
+          .filter((job) => job.rid && !['failed', 'expired'].includes(job.state) &&
+            job.createdAt <= Date.now() && Date.now() - job.createdAt < recoveryLifetime)
+          .sort((a, b) => Number(pendingDownload(b)) - Number(pendingDownload(a)) || b.createdAt - a.createdAt)
+          .slice(0, 8)
+          .map(({ rid, kind, size, total, createdAt, downloadStarted }) =>
+            ({ rid, kind, size, total, createdAt, downloadStarted: !!downloadStarted }));
+        try {
+          if (jobs.length) sessionStorage.setItem(recoveryKey, JSON.stringify({ v: 1, jobs }));
+          else sessionStorage.removeItem(recoveryKey);
+        } catch { /* Storage can be disabled; the current page still works. */ }
+      }
+      function discardDownloadRecovery() {
+        state.leaving = true;
+        for (const job of knownDownloads()) clearTimeout(job.pollTimer);
+        try { sessionStorage.removeItem(recoveryKey); } catch { /* Storage may be disabled. */ }
+      }
+      function restoreDownloads() {
+        if (state.leaving) return;
+        let saved;
+        try {
+          const raw = sessionStorage.getItem(recoveryKey);
+          if (!raw) return;
+          if (raw.length > 4096) throw new Error('recovery');
+          saved = JSON.parse(raw);
+          const valid = (job) => job && typeof job === 'object' &&
+            Object.keys(job).length === 6 &&
+            ['rid', 'kind', 'size', 'total', 'createdAt', 'downloadStarted'].every((key) => Object.hasOwn(job, key)) &&
+            typeof job.rid === 'string' && job.rid.length === 32 && /^[0-9a-f]{32}$/.test(job.rid) &&
+            ['photo', 'zip'].includes(job.kind) &&
+            (job.kind === 'photo' ? ['4096', 'original'] : ['2048', '4096', 'original']).includes(job.size) &&
+            Number.isInteger(job.total) && job.total >= 1 && job.total <= (job.kind === 'photo' ? 1 : 2000) &&
+            Number.isSafeInteger(job.createdAt) && job.createdAt > 0 && job.createdAt <= Date.now() &&
+            typeof job.downloadStarted === 'boolean';
+          if (!saved || saved.v !== 1 || !Array.isArray(saved.jobs) || saved.jobs.length > 8 ||
+            !saved.jobs.every(valid) || new Set(saved.jobs.map((job) => job.rid)).size !== saved.jobs.length ||
+            saved.jobs.filter((job) => job.kind === 'zip').length > 1) throw new Error('recovery');
+        } catch {
+          try { sessionStorage.removeItem(recoveryKey); } catch { /* Storage may be disabled. */ }
+          return;
+        }
+        const jobs = saved.jobs.filter((job) => Date.now() - job.createdAt < recoveryLifetime)
+          .map((job) => ({ ...job, state: 'queued', done: 0, restored: true }));
+        state.restoredPhotoJobs = jobs.filter((job) => job.kind === 'photo');
+        state.shortlistJob = jobs.find((job) => job.kind === 'zip') || null;
+        persistDownloads();
+        renderDownloads();
+        for (const job of jobs) pollDownload(job);
+      }
       // A job keeps its original selection even when the viewer or shortlist changes.
       function downloadJob(kind) {
         return kind === 'photo' ? state.photoJobs.get(state.current?.id) : state.shortlistJob;
@@ -1089,12 +1154,14 @@
         return kind === 'photo' ? (state.current ? [state.current.id] : []) : [...state.short];
       }
       function pendingDownload(job) {
-        return job && (job.statusIssue || ['submitting', 'queued', 'building'].includes(job.state));
+        return !!job && (!!job.statusIssue || ['submitting', 'queued', 'building'].includes(job.state));
       }
       function renderDownloads() {
         for (const kind of ['photo', 'zip']) {
           const wrap = $(kind === 'photo' ? 'photoDownload' : 'shortDownload');
-          const ids = downloadIds(kind), job = downloadJob(kind), busy = pendingDownload(job);
+          const ids = downloadIds(kind), job = downloadJob(kind);
+          const jobs = (kind === 'photo' ? [job, ...state.restoredPhotoJobs] : [job]).filter(Boolean);
+          const busy = jobs.some(pendingDownload);
           const instant = wrap.querySelector('a[data-instant]');
           if (instant) {
             instant.href = ids[0] ? `/playa/m/dl/2048/${ids[0]}.jpg` : '#';
@@ -1105,26 +1172,30 @@
           for (const control of wrap.querySelectorAll('.download-options button'))
             control.disabled = busy || !ids.length || (kind === 'zip' && (ids.length > 2000 || !state.shortReady));
           const status = wrap.querySelector('.download-status');
-          const key = JSON.stringify(job ? [job.ids, job.state, job.done, job.total, job.size, job.url, job.bytes, job.message, job.statusIssue, job.polling] : [ids.length > 2000]);
+          status.classList.toggle('recovered', jobs.some((job) => job.restored));
+          const key = JSON.stringify([ids.length > 2000, jobs.map((job) =>
+            [job.rid, job.ids, job.state, job.done, job.total, job.size, job.url, job.bytes, job.message, job.statusIssue, job.polling])]);
           if (status.dataset.content === key) continue;
           status.dataset.content = key;
           status.replaceChildren();
-          if (job) {
+          for (const job of jobs) {
+            const row = element('div');
+            const prefix = job.restored ? `Previous ${kind === 'photo' ? 'photo' : 'shortlist'} download: ` : '';
             if (job.statusIssue) {
-              status.append(document.createTextNode(job.statusIssue === 'paused'
+              row.append(document.createTextNode(prefix + (job.statusIssue === 'paused'
                 ? 'Status unavailable. Your download may still be preparing. '
-                : 'Connection interrupted. Retrying download status…'));
+                : 'Connection interrupted. Retrying download status…')));
               if (job.statusIssue === 'paused') {
                 const resume = button('Resume status', () => {
                   job.pollFailures = 0;
                   pollDownload(job);
                 }, 'chip');
                 resume.disabled = !!job.polling;
-                status.append(resume);
+                row.append(resume);
               }
-            } else if (busy) {
+            } else if (pendingDownload(job)) {
               const done = Number.isInteger(job.done) ? job.done : 0;
-              status.textContent = kind === 'photo' ? 'Preparing…' : `Preparing… ${done}/${job.total}`;
+              row.textContent = prefix + (kind === 'photo' ? 'Preparing…' : `Preparing… ${done}/${job.total}`);
             } else if (job.state === 'ready') {
               const link = element('a', 'Save file');
               link.href = job.url;
@@ -1138,9 +1209,11 @@
                 if (refreshed && job.state === 'ready') location.assign(job.url);
               });
               const bytes = Number.isFinite(job.bytes) ? `${Number((job.bytes / 1000000).toFixed(1))} MB` : '';
-              status.append(link, document.createTextNode(bytes ? ` · ${bytes}` : ''));
-            } else status.textContent = job.state === 'expired' ? 'Expired. Choose a size again.' : job.message;
-          } else if (kind === 'zip' && ids.length > 2000) status.textContent = 'Choose up to 2,000 photos.';
+              row.append(document.createTextNode(prefix), link, document.createTextNode(bytes ? ` · ${bytes}` : ''));
+            } else row.textContent = prefix + (job.state === 'expired' ? 'Expired. Choose a size again.' : job.message);
+            status.append(row);
+          }
+          if (!jobs.length && kind === 'zip' && ids.length > 2000) status.textContent = 'Choose up to 2,000 photos.';
         }
       }
       const exportErrors = {
@@ -1154,18 +1227,20 @@
       };
       async function pollDownload(job) {
         // A failed status read must never submit another expensive export.
-        if (job.polling) return false;
+        if (state.leaving || job.polling) return false;
         clearTimeout(job.pollTimer);
         job.polling = true;
         renderDownloads();
         try {
           const response = await api(`/playa/api/export/${job.rid}`);
+          if (state.leaving) return false;
           if (!response.ok) {
             const error = new Error('status');
             error.terminal = response.status < 500 && ![408, 429].includes(response.status);
             throw error;
           }
           const data = await response.json();
+          if (state.leaving) return false;
           if (!['queued', 'building', 'ready', 'failed', 'expired'].includes(data.state)) throw new Error('status');
           if (data.state === 'ready') {
             const url = new URL(data.url);
@@ -1179,6 +1254,7 @@
           if (data.state === 'failed') job.message = exportErrors[data.error] || exportErrors.internal;
           if (job.state === 'ready' && !job.downloadStarted) {
             job.downloadStarted = true;
+            persistDownloads();
             location.assign(job.url);
           }
           if (pendingDownload(job)) job.pollTimer = setTimeout(() => pollDownload(job), 2000);
@@ -1191,7 +1267,7 @@
           } else {
             job.pollFailures = (job.pollFailures || 0) + 1;
             job.statusIssue = job.pollFailures <= 5 ? 'retrying' : 'paused';
-            if (job.statusIssue === 'retrying') {
+            if (job.statusIssue === 'retrying' && !state.leaving) {
               const delay = Math.min(2000 * 2 ** (job.pollFailures - 1), 30000);
               job.pollTimer = setTimeout(() => pollDownload(job), delay);
             }
@@ -1199,14 +1275,16 @@
           return false;
         } finally {
           job.polling = false;
+          persistDownloads();
           renderDownloads();
         }
       }
       async function queueDownload(kind, size) {
-        if (pendingDownload(downloadJob(kind))) return;
+        if (state.leaving || pendingDownload(downloadJob(kind)) ||
+          (kind === 'photo' && state.restoredPhotoJobs.some(pendingDownload))) return;
         const ids = downloadIds(kind);
         if (!ids.length || (kind === 'zip' && ids.length > 2000)) return;
-        const job = { state: 'submitting', ids: ids.slice(), size, total: ids.length, done: 0 };
+        const job = { state: 'submitting', kind, ids: ids.slice(), size, total: ids.length, done: 0, createdAt: Date.now() };
         if (kind === 'photo') state.photoJobs.set(ids[0], job);
         else state.shortlistJob = job;
         $(kind === 'photo' ? 'photoDownload' : 'shortDownload').querySelector('details').open = false;
@@ -1224,6 +1302,7 @@
           }
           job.rid = data.rid;
           job.state = 'queued';
+          persistDownloads();
           await pollDownload(job);
         } catch {
           job.state = 'failed';
@@ -1245,6 +1324,7 @@
         }
       }
       $('retry').addEventListener('click', () => (state.shortReady ? save() : initializeShortlist()));
+      $('logout').addEventListener('click', discardDownloadRecovery);
       $('allPicks').addEventListener('click', () => {
         if (!state.shortReady) return;
         const source = state.route.kind === 'year' ? state.photos.filter((p) => String(p.y) === state.route.value) : state.photos;
@@ -1367,6 +1447,7 @@
           $('status').hidden = true;
           renderHome();
           renderRoute();
+          restoreDownloads();
           await initializeShortlist();
         } catch {
           $('status').textContent = 'Gallery not published yet. Reload to try again.';

@@ -138,9 +138,17 @@ Recoverable status failures retain the RID and selection. Network errors, 408,
 “Resume status” action for the same RID. New export submission stays disabled
 until the job reaches a terminal status; resuming never repeats its POST.
 Authentication and other client errors stop automatic polling. A stale ready
-link is used only after a successful status refresh. Jobs remain in memory:
-page reload and an uncertain initial POST response still need a future recovery
-contract, not an automatic retry of an expensive build.
+link is used only after a successful status refresh. Reload recovery uses
+`sessionStorage` for at most eight known RIDs with kind, size, item count,
+creation time and whether the automatic download already started. Records expire
+after 24 hours and are schema-validated before use. Photo IDs, filenames and
+signed URLs are never persisted. Reload checks the same authenticated status
+routes; photo jobs are labelled “Previous photo download” because the original
+selection remains private in memory. Existing download status areas retain their
+Save file links. Explicit logout and expired authentication clear recovery and
+stop polling. If browser storage is unavailable, in-page status still works.
+An uncertain initial POST response still needs a future recovery/idempotency
+contract; the browser never automatically repeats an expensive build.
 No browser fetch buffers the built file. No cancellation or extra backend path
 is introduced; the box owns expiry. The existing CSP and script nonce remain.
 

@@ -7,6 +7,8 @@
 // never overwritten. A strict match guard (distance + name similarity) makes
 // sure we never attach another venue's hours to ours.
 
+import { deadline } from './deadline.mjs';
+
 const API = 'https://places.googleapis.com/v1/places:searchText';
 const FIELDS = 'places.id,places.displayName,places.location,places.rating,places.userRatingCount,places.regularOpeningHours,places.businessStatus,places.googleMapsUri';
 
@@ -63,21 +65,29 @@ export function periodsToHours(regular) {
  *  - top result must sit within `maxDistM` of our verified coords
  *  - and its name must resemble ours (venue name for shows)
  */
-export async function placesLookup(place, { key, maxDistM = 250, signal } = {}) {
+export async function placesLookup(place, { key, maxDistM = 250, signal, requestTimeoutMs = 10000 } = {}) {
+  signal?.throwIfAborted();
   if (!key || place.lat == null || place.lng == null) return null;
   const query = `${place.venue && place.venue !== place.name ? place.venue : place.name}, ${place.area || ''} London`;
-  const res = await fetch(API, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'X-Goog-Api-Key': key, 'X-Goog-FieldMask': FIELDS },
-    body: JSON.stringify({
-      textQuery: query,
-      locationBias: { circle: { center: { latitude: place.lat, longitude: place.lng }, radius: 400 } },
-      maxResultCount: 1
-    }),
-    signal
-  });
-  if (!res.ok) throw new Error(`places ${res.status}: ${(await res.text()).slice(0, 200)}`);
-  const data = await res.json();
+  const request = deadline(requestTimeoutMs, signal);
+  let data;
+  try {
+    const res = await fetch(API, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Goog-Api-Key': key, 'X-Goog-FieldMask': FIELDS },
+      body: JSON.stringify({
+        textQuery: query,
+        locationBias: { circle: { center: { latitude: place.lat, longitude: place.lng }, radius: 400 } },
+        maxResultCount: 1
+      }),
+      signal: request.signal
+    });
+    if (!res.ok) {
+      await res.body?.cancel();
+      throw new Error('places-provider-failed');
+    }
+    data = await res.json();
+  } finally { request.dispose(); }
   const hit = data.places?.[0];
   if (!hit?.location) return null;
   const distM = Math.round(haversineM(place, { lat: hit.location.latitude, lng: hit.location.longitude }));
@@ -104,16 +114,18 @@ const isGoogleSource = s => /^google/i.test(String(s || ''));
  *    ratings are never touched
  *  - CLOSED_* business status is recorded, never silently dropped
  */
-export async function enrichWithPlaces(dataset, { key, concurrency = 4, onProgress } = {}) {
+export async function enrichWithPlaces(dataset, { key, concurrency = 4, onProgress, signal } = {}) {
+  signal?.throwIfAborted();
   if (!key) return { enriched: 0, hoursSet: 0, hoursKeptOfficial: 0, ratingsSet: 0, closedFlags: [], misses: [] };
   const queue = [...dataset.places];
   const stats = { enriched: 0, hoursSet: 0, hoursKeptOfficial: 0, ratingsSet: 0, closedFlags: [], misses: [] };
   async function worker() {
     while (queue.length) {
+      signal?.throwIfAborted();
       const p = queue.shift();
       let r = null;
-      try { r = await placesLookup(p, { key }); }
-      catch (e) { stats.misses.push(`${p.id}: ${String(e.message).slice(0, 80)}`); continue; }
+      try { r = await placesLookup(p, { key, signal }); }
+      catch { signal?.throwIfAborted(); stats.misses.push(`${p.id}: lookup-failed`); continue; }
       if (!r) { stats.misses.push(`${p.id}: no confident match`); continue; }
       stats.enriched++;
       if (r.businessStatus && r.businessStatus !== 'OPERATIONAL') {
@@ -127,6 +139,7 @@ export async function enrichWithPlaces(dataset, { key, concurrency = 4, onProgre
       const placesOwned = /google\.com\/maps|maps\.app\.goo/i.test(String(p.hoursUrl || ''));
       if (r.hours && !showLike && (!p.hours || placesOwned)) {
         p.hours = r.hours;
+        p.hoursCheckedAt = new Date().toISOString();
         p.entry = p.entry || 'dropin';
         if (r.mapsUri) p.hoursUrl = r.mapsUri;
         stats.hoursSet++;
@@ -137,6 +150,7 @@ export async function enrichWithPlaces(dataset, { key, concurrency = 4, onProgre
       // is not a rating of the show. Venues fill/refresh Google ratings.
       if (r.rating != null && p.entry !== 'show' && (!p.rating || isGoogleSource(p.rating.source))) {
         p.rating = { value: r.rating, scale: 5, source: 'Google', url: r.mapsUri || (p.rating && p.rating.url) || '' };
+        p.ratingCheckedAt = new Date().toISOString();
         if (r.ratingCount >= 50) p.rating.ratingCount = r.ratingCount;
         stats.ratingsSet++;
       }

@@ -147,15 +147,14 @@ export async function researchAll({ month, concurrency = 3, onProgress, signal }
   const queue = [...CATEGORIES];
   async function worker() {
     while (queue.length) {
+      signal?.throwIfAborted();
       const cat = queue.shift();
       let r = null, lastErr = null;
-      // one retry: a single parse/API flake shouldn't cost the whole monthly run
-      for (let attempt = 0; attempt < 2 && !r; attempt++) {
-        try {
-          const got = await researchCategory(cat, { month, signal });
-          if (got.places.length) r = got; else lastErr = new Error('0 places');
-        } catch (err) { lastErr = err; }
-      }
+      // The transport owns one bounded retry budget; never multiply it here.
+      try {
+        const got = await researchCategory(cat, { month, signal });
+        if (got.places.length) r = got; else lastErr = new Error('0 places');
+      } catch (err) { signal?.throwIfAborted(); lastErr = err; }
       if (r) {
         results.push(r);
         onProgress?.({ category: cat.id, ok: true, count: r.places.length });

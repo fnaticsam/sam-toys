@@ -3,6 +3,7 @@
 
 import { groundedGenerate, extractJson } from './gemini.mjs';
 import { CATEGORIES, CATEGORY_BY_ID, inLondon, TOP_N } from './categories.mjs';
+import { isoDate, londonDate, hasDateWindow, isTimeLimited, isRecent } from '../../../ldn/validity.mjs';
 
 const VOICE = [
   'Voice: dry, precise, lightly witty. Brevity is the brand.',
@@ -39,11 +40,14 @@ Respond with ONLY a JSON array of exactly ${TOP_N} objects, no prose, in this ex
     "priceBand": "one of: Free, £, ££, £££, ££££",
     "url": "string — official website URL",
     "tier": "evergreen" | "this-month",
+    "validFrom": "YYYY-MM-DD — first date of the run, or null if not confirmed",
+    "validTo": "YYYY-MM-DD — last date of the run, or null if not confirmed",
     "thisMonth": { "headline": "string", "dates": "string e.g. 'until 30 Aug 2026'", "detail": "string, optional" },
     "rating": { "value": number, "scale": 5, "source": "string e.g. Time Out / Google / The Guardian", "sourceUrl": "string — page where the rating appears" }
   }
 ]
 Rules: coordinates must be the venue's real location in Greater London. "thisMonth" is required when tier is "this-month" and omitted otherwise.
+"validFrom" and "validTo": for time-limited entries, ground both calendar dates in the official event listing. Do not infer dates from the current month or parse a vague phrase into a date. Use null when uncertain; omit both for evergreen venues.
 "rating": include ONLY a rating you can attribute to a real named source you grounded (critic stars out of 5 for shows/exhibitions; Time Out or Google out of 5 for venues). Set "rating" to null if you cannot ground a real one — NEVER invent a rating or a source. Output valid JSON only.`;
 }
 
@@ -77,6 +81,12 @@ export function normalizePlace(cat, raw, rank) {
     url: cleanUrl(raw.url),
     tier
   };
+  if (tier === 'this-month') {
+    // Preserve uncertainty explicitly; prose dates are never guessed into a run.
+    place.validFrom = isoDate(raw.validFrom);
+    place.validTo = isoDate(raw.validTo);
+    if (!hasDateWindow(place)) place.validFrom = place.validTo = null;
+  }
   if (tier === 'this-month' && raw.thisMonth) {
     place.thisMonth = {
       headline: String(raw.thisMonth.headline || '').trim(),
@@ -169,27 +179,52 @@ export async function researchAll({ month, concurrency = 3, onProgress, signal }
   return results;
 }
 
-/**
- * Carry human/agent-verified enrichment (hours, showTimes, ratings) forward
- * from the previous dataset onto a freshly-researched one, matched by
- * normalised name + category. New places stay un-enriched (and are excluded
- * from the date planner) until a verification pass fills them in.
- */
+/** Carry only recent enrichment for the same venue and, for events, same run. */
 export function carryOverEnrichment(prev, next) {
   if (!prev?.places?.length || !next?.places?.length) return { carried: 0 };
-  const key = p => `${p.category}|${String(p.name || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim()}`;
-  const prevBy = new Map(prev.places.map(p => [key(p), p]));
+  const norm = value => String(value || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+  const key = p => `${p.category}|${norm(p.name)}`;
+  const prevBy = new Map();
+  for (const p of prev.places) {
+    // An ambiguous previous match is not evidence that these are the same place.
+    prevBy.set(key(p), prevBy.has(key(p)) ? null : p);
+  }
+  const sameVenue = (a, b) => {
+    if (!norm(a.venue) || norm(a.venue) !== norm(b.venue)) return false;
+    const aa = norm(a.address), ba = norm(b.address);
+    if (aa && ba && aa !== ba) return false;
+    const coords = [a.lat, a.lng, b.lat, b.lng];
+    if (coords.every(n => typeof n === 'number' && Number.isFinite(n))) {
+      // A conservative ~100m radius allows rounding, not a move across town.
+      const metres = Math.hypot((a.lat - b.lat) * 111000, (a.lng - b.lng) * 69000);
+      return metres <= 100;
+    }
+    return !!aa && aa === ba;
+  };
+  const now = next.generatedAt || new Date().toISOString();
+  const refreshDate = Number.isFinite(Date.parse(now)) ? londonDate(new Date(now)) : null;
+  const checkedAt = (p, field) => p[field] || (prev.verified === true ? prev.generatedAt : null);
   let carried = 0;
   for (const p of next.places) {
     const old = prevBy.get(key(p));
-    if (!old) continue;
+    if (!old || !sameVenue(old, p)) continue;
+    const timed = isTimeLimited(old) || isTimeLimited(p);
+    const sameRun = !timed || (hasDateWindow(old) && hasDateWindow(p) &&
+      old.validFrom === p.validFrom && old.validTo === p.validTo && refreshDate && p.validTo >= refreshDate);
     let touched = false;
-    if (!p.hours && old.hours) { p.hours = old.hours; touched = true; }
-    if (!p.entry && old.entry) { p.entry = old.entry; touched = true; }
-    if (!p.showTimes && old.showTimes) { p.showTimes = old.showTimes; touched = true; }
-    if (p.runtimeMins == null && old.runtimeMins != null) { p.runtimeMins = old.runtimeMins; touched = true; }
-    if (!p.hoursUrl && old.hoursUrl) { p.hoursUrl = old.hoursUrl; touched = true; }
-    if (!p.rating && old.rating) { p.rating = old.rating; touched = true; }
+    const carry = (field, stamp, extra = []) => {
+      const checked = checkedAt(old, stamp);
+      if (p[field] || !old[field] || !isRecent(checked, now)) return;
+      p[field] = structuredClone(old[field]);
+      p[stamp] = checked; // Preserve age through subsequent monthly refreshes.
+      for (const k of extra) if (p[k] == null && old[k] != null) p[k] = structuredClone(old[k]);
+      touched = true;
+    };
+    if (sameRun) {
+      carry('hours', 'hoursCheckedAt', ['entry', 'hoursUrl']);
+      carry('showTimes', 'showTimesCheckedAt', ['entry', 'runtimeMins', 'hoursUrl']);
+      carry('rating', 'ratingCheckedAt');
+    }
     if (touched) carried++;
   }
   return { carried };

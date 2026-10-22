@@ -1,3 +1,4 @@
+const controls = require("./_lib/abuse-controls");
 const fs = require("fs");
 const path = require("path");
 const { injectStats, loadStats } = require("./_lib/dev-stats");
@@ -88,7 +89,7 @@ function handlePost(req, res, secret) {
     }
     chunks.push(data);
   });
-  req.on("end", () => {
+  req.on("end", async () => {
     if (finished) return;
     finished = true;
     const type = req.headers["content-type"] || "";
@@ -96,6 +97,11 @@ function handlePost(req, res, secret) {
     const password = form
       ? new URLSearchParams(Buffer.concat(chunks).toString("utf8")).get("password")
       : null;
+    try { await controls.checkLogin(req, "dev"); }
+    catch (error) {
+      return sendText(req, res, error.status === 429 ? 429 : 503,
+        error.status === 429 ? "Too many sign-in attempts. Try again later." : "Sign-in is temporarily unavailable.");
+    }
     if (!matches(password === null ? null : password.trim(), secret)) return sendLogin(req, res, true);
     return redirect(res, `${COOKIE}=${issueToken(secret)}; Max-Age=${SESSION_TTL_MS / 1000}; ${COOKIE_ATTRS}`);
   });

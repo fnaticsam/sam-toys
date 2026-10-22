@@ -1,3 +1,4 @@
+require('../security/install-test-controls').install(require('node:path').resolve(__dirname, '../..'));
 const assert = require('node:assert/strict');
 const { EventEmitter } = require('node:events');
 const { Writable } = require('node:stream');

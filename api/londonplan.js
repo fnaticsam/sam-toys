@@ -1,4 +1,6 @@
-const crypto = require("crypto");
+const controls = require("./_lib/abuse-controls");
+const session = require("./_lib/londonplan-session");
+const { matches } = session;
 const fs = require("fs");
 const path = require("path");
 
@@ -26,18 +28,6 @@ const LOGIN = (failed) => `<!doctype html>
 ${failed ? '<p class="error">Wrong password — try again.</p>' : ""}
 </main></body>
 </html>`;
-function matches(candidate, expected) {
-  if (typeof candidate !== "string") return false;
-  const supplied = Buffer.from(candidate, "utf8");
-  const wanted = Buffer.from(expected, "utf8");
-  return supplied.length === wanted.length && crypto.timingSafeEqual(supplied, wanted);
-}
-function cookieValue(header, name) {
-  if (typeof header !== "string") return null;
-  const prefix = `${name}=`;
-  const cookie = header.split(";").map((part) => part.trim()).find((part) => part.startsWith(prefix));
-  return cookie ? cookie.slice(prefix.length) : null;
-}
 function sendLogin(req, res, failed) {
   res.statusCode = 401;
   res.setHeader("Content-Type", "text/html; charset=utf-8");
@@ -53,7 +43,7 @@ function redirect(res, cookie) {
   return res.end();
 }
 
-function handlePost(req, res, secret, token) {
+function handlePost(req, res, secret) {
   const chunks = [];
   let size = 0;
   let finished = false;
@@ -69,7 +59,7 @@ function handlePost(req, res, secret, token) {
     }
     chunks.push(data);
   });
-  req.on("end", () => {
+  req.on("end", async () => {
     if (finished) return;
     finished = true;
     const type = req.headers["content-type"] || "";
@@ -77,8 +67,14 @@ function handlePost(req, res, secret, token) {
     const password = form
       ? new URLSearchParams(Buffer.concat(chunks).toString("utf8")).get("password")
       : null;
+    try { await controls.checkLogin(req, "londonplan"); }
+    catch (error) {
+      res.statusCode = error.status === 429 ? 429 : 503;
+      res.setHeader("Content-Type", "text/plain; charset=utf-8");
+      return res.end(error.status === 429 ? "Too many sign-in attempts. Try again later." : "Sign-in is temporarily unavailable.");
+    }
     if (!matches(password === null ? null : password.trim(), secret)) return sendLogin(req, res, true);
-    return redirect(res, `lp_session=${token}; Path=/; Max-Age=2592000; HttpOnly; Secure; SameSite=Lax`);
+    return redirect(res, [`${session.COOKIE}=${session.issueToken(secret)}; Max-Age=${session.SESSION_TTL_MS / 1000}; ${session.COOKIE_ATTRS}`, session.LEGACY_CLEAR]);
   });
   req.on("error", () => {
     if (finished) return;
@@ -90,6 +86,7 @@ function handlePost(req, res, secret, token) {
 }
 
 module.exports = (req, res) => {
+  session.privateHeaders(res);
   const SECRET = process.env.LONDONPLAN_PASSWORD;
   if (!SECRET) {
     res.statusCode = 503;
@@ -104,13 +101,14 @@ module.exports = (req, res) => {
     return res.end("Method not allowed.");
   }
 
-  const token = crypto.createHmac("sha256", SECRET).update("londonplan-session-v1").digest("hex");
-  if (req.method === "GET" && (req.url || "").includes("logout=1")) {
-    return redirect(res, "lp_session=; Path=/; Max-Age=0; HttpOnly; Secure; SameSite=Lax");
+  let logout = false;
+  try { logout = new URL(req.url || "/", "http://localhost").searchParams.get("logout") === "1"; } catch { /* no logout */ }
+  if (req.method === "GET" && logout) {
+    return redirect(res, [`${session.COOKIE}=; Max-Age=0; ${session.COOKIE_ATTRS}`, session.LEGACY_CLEAR]);
   }
-  if (req.method === "POST") return handlePost(req, res, SECRET, token);
+  if (req.method === "POST") return handlePost(req, res, SECRET);
 
-  if (!matches(cookieValue(req.headers.cookie, "lp_session"), token)) return sendLogin(req, res, false);
+  if (!session.tokenIsValid(SECRET, session.cookieValue(req.headers.cookie))) return sendLogin(req, res, false);
   res.statusCode = 200;
   res.setHeader("Content-Type", "text/html; charset=utf-8");
   res.setHeader("Cache-Control", "private, no-store, max-age=0");

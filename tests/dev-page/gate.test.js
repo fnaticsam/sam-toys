@@ -5,6 +5,7 @@ const crypto = require("crypto");
 const { EventEmitter } = require("events");
 const path = require("path");
 
+require("../security/install-test-controls").install(process.env.REPO_DIR || path.resolve(__dirname, "..", ".."));
 const handler = require(path.join(process.env.REPO_DIR || path.resolve(__dirname, "..", ".."), "api", "dev.js"));
 
 function makeReq({ method = "GET", url = "/dev", headers = {}, body = null }) {

@@ -79,3 +79,15 @@ conflicting writes, daily/IP exhaustion, concurrency, rollover, abandoned leases
 failed/ambiguous storage, malformed JSON getters and private log hygiene. Existing
 handler acceptance suites install an explicit test-only control stub; production
 code has no test bypass environment switch. No live store or model is contacted.
+
+## Londonplan session migration
+
+Londonplan now issues `lp_session_v2`, scoped to `/londonplan`, with a signed issue
+time and a server-checked 30-day expiry. Expired, future, malformed, foreign-surface
+and legacy constant tokens are rejected. Login/logout also clears the legacy
+root-scoped cookie. This deliberately requires one fresh login for existing
+Londonplan devices after rollout; it does not change the configured password.
+The password still invalidates all sessions when changed. As with the other
+stateless gates, logout clears that browser's cookie rather than revoking a copied
+token; individual device revocation requires a separate identity/session feature.
+The business-plan payload remains unchanged pending its confidentiality decision.

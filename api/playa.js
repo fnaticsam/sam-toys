@@ -1,3 +1,4 @@
+const controls = require('./_lib/abuse-controls');
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
@@ -125,6 +126,10 @@ async function handleLogin(req, secret, send, redirect, cookie) {
   const raw = await body(req, 4096);
   const form = /^application\/x-www-form-urlencoded(?:\s*;|$)/i.test(req.headers['content-type'] || '');
   const password = form ? new URLSearchParams(raw).get('password') : null;
+  try { await controls.checkLogin(req, 'playa'); }
+  catch (error) {
+    return send(error.status === 429 ? 429 : 503, { error: error.status === 429 ? 'too-many-sign-in-attempts' : 'sign-in-unavailable' });
+  }
   if (!session.matches(password === null ? null : password.trim(), secret)) {
     // Constant delay; process-local throttles are defence in depth only.
     await new Promise((resolve) => setTimeout(resolve, 400));

@@ -1,4 +1,6 @@
-# Sam Toys (sam-toys, sam.toys, toys, playa): checked 2026-10-02, main 6935a37
+# Sam Toys (sam-toys, sam.toys, toys, playa)
+
+Source inventory reviewed 2026-10-22 at main `03e22483fac6a82a3edd60ac1ccb0f0e10b64838`. Production configuration and current deployment were not inspected by the audit.
 
 Product URL: https://sam.toys (listed in [index.html](../index.html); current production response was not checked).
 
@@ -11,6 +13,7 @@ Product URL: https://sam.toys (listed in [index.html](../index.html); current pr
 - **IMPLEMENTED** — [api/playa.js](../api/playa.js) is a private gallery route; its page documentation says it gates the shell, catalogue, media and shortlist.
 - **IMPLEMENTED** — The gallery is designed to fail closed when required server-side configuration is absent; no secret values are stored in this summary.
 - **IMPLEMENTED** — [vercel.json](../vercel.json) lists function settings for the repository’s API routes.
+- **IMPLEMENTED** — [Testing and private release preflight](TESTING.md) documents reproducible synthetic checks, pinned tooling, and a local source/private-asset manifest. Private guide content remains outside public CI.
 - **DEPLOYED** — GitHub records a Preview deployment for commit `ef5c402` on 2026-09-20; that is not confirmation of the current production revision.
 - **MERGED** — PRs #15 and #16 redirect `/awakening` and `/awakening/` to knomi.club; their merge commits are `2c621f8` and `5f14468`.
 

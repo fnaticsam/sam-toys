@@ -1,5 +1,25 @@
 {
+  "name": "sam-toys",
   "private": true,
+  "engines": {
+    "node": "24.x"
+  },
+  "packageManager": "npm@11.9.0",
+  "scripts": {
+    "test": "node scripts/test.mjs",
+    "test:browser": "node scripts/test.mjs --browser",
+    "check": "node scripts/check.mjs",
+    "release:preflight": "node scripts/release-preflight.mjs"
+  },
+  "devDependencies": {
+    "@vercel/routing-utils": "6.6.0",
+    "playwright-core": "1.64.1"
+  },
+  "overrides": {
+    "@vercel/routing-utils": {
+      "path-to-regexp": "6.3.0"
+    }
+  },
   "dependencies": {
     "@vercel/blob": "^2.4.0"
   }

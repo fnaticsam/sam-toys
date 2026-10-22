@@ -12,3 +12,4 @@ api/_lib/dev-stats.json
 .env.*
 
 __pycache__/
+release-manifest.local.json

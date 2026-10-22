@@ -166,7 +166,8 @@ async function serveShortlist(req, send, store) {
   if (req.method !== 'PUT') return send(200, await store.shortlist());
   if (!sameOrigin(req)) return send(403, { error: 'cross-site' });
   if (!/^application\/json(?:\s*;|$)/i.test(req.headers['content-type'] || '')) return send(415, { error: 'content-type' });
-  const raw = await body(req, 256 * 1024);
+  // 5,000 compact 64-character IDs require 335,009 bytes, before whitespace.
+  const raw = await body(req, 384 * 1024);
   let value;
   try {
     value = JSON.parse(raw);

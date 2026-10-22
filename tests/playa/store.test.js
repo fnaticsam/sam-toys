@@ -155,12 +155,12 @@ for (const [name, ids, extra, body, status] of [
   ['non-string id', [4], {}, undefined, 400],
   ['trailing newline id', [id(1) + '\n'], {}, undefined, 400],
   ['uppercase', [id(1).toUpperCase()], {}, undefined, 400],
-  ['more than 5,000 valid ids has zero writes', Array(5001).fill(id(1)), {}, undefined, 413],
+  ['more than 5,000 valid ids has zero writes', Array.from({ length: 5001 }, (_, i) => id(i)), {}, undefined, 400],
   ['count cap without size overflow', Array(5001).fill(''), {}, undefined, 400],
   ['malformed JSON has zero writes', [], {}, '{', 400],
   ['wrong content type has zero writes', [], { 'content-type': 'text/plain' }, undefined, 415],
-  ['oversized raw body', [], {}, ' '.repeat(256 * 1024 + 1), 413],
-  ['oversized content length', [], { 'content-length': String(256 * 1024 + 1) }, undefined, 413],
+  ['oversized raw body', [], {}, ' '.repeat(384 * 1024 + 1), 413],
+  ['oversized content length', [], { 'content-length': String(384 * 1024 + 1) }, undefined, 413],
 ])
   test('shortlist validation: ' + name, async () => {
     blob.calls.length = 0;
@@ -202,7 +202,7 @@ test('shortlist validation: oversized stream rejected before end with zero write
           req.on('end', () => {
             ended = true;
           });
-          req.emit('data', Buffer.alloc(256 * 1024, ' '));
+          req.emit('data', Buffer.alloc(384 * 1024, ' '));
           req.emit('data', Buffer.from(' '));
           // Deliberately leave the request open: the handler must already reject it.
         },
@@ -222,6 +222,32 @@ test('shortlist validation: oversized stream rejected before end with zero write
   } finally {
     clearTimeout(timer);
   }
+});
+for (const count of [3912, 3913, 5000]) {
+  test(`shortlist: ${count} unique IDs save and round-trip without loss`, async () => {
+    const fixture = setup();
+    const ids = Array.from({ length: count }, (_, i) => id(i));
+    const body = JSON.stringify({ ids });
+    const response = await fixture.call({
+      url, method: 'PUT', body,
+      headers: { ...cookie(), host: 'gallery.invalid', origin, 'content-type': 'application/json', 'if-match': '"empty"' },
+    });
+    assert.equal(response.statusCode, 200);
+    assert.deepEqual(JSON.parse(response.body).ids, ids);
+    const read = await fixture.call({ url, headers: cookie() });
+    assert.deepEqual(JSON.parse(read.body).ids, ids);
+    assert.equal(fixture.blob.calls.filter((entry) => entry.fn === 'put').length, 1);
+    if (count === 5000) assert.equal(Buffer.byteLength(body), 335009);
+  });
+}
+test('shortlist: valid JSON at the exact byte cap remains accepted', async () => {
+  const fixture = setup();
+  const response = await fixture.call({
+    url, method: 'PUT', body: JSON.stringify({ ids: [id(1)] }).padEnd(384 * 1024),
+    headers: { ...cookie(), host: 'gallery.invalid', origin, 'content-type': 'application/json', 'if-match': '"empty"' },
+  });
+  assert.equal(response.statusCode, 200);
+  assert.deepEqual(JSON.parse(response.body).ids, [id(1)]);
 });
 let saved;
 test('shortlist: missing If-Match returns 412 without write', async () => {

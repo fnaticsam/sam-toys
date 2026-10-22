@@ -696,6 +696,14 @@
       function validId(id) {
         return typeof id === 'string' && id.length === 64 && ID.test(id);
       }
+      // Match the download API's year labels without excluding undated photos.
+      function yearLabel(year) {
+        return (typeof year === 'number' || typeof year === 'string') && String(year).length === 4 && /^\d{4}$/.test(String(year))
+          ? String(year) : 'unknown';
+      }
+      function yearTitle(year) {
+        return year === 'unknown' ? 'Unknown year' : year;
+      }
       // Excludes sensitive photos from AI-pick membership.
       function aiPick(photo) {
         return !!photo.pick && photo.sens !== true;
@@ -766,7 +774,8 @@
       }
       // Builds year cards and collection counts exclusively from the runtime catalog.
       function renderHome() {
-        $('totals').textContent = `${state.years.length} years · ${state.photos.length.toLocaleString()} photos`;
+        const knownYears = state.years.filter((year) => year !== 'unknown').length;
+        $('totals').textContent = `${knownYears} years${state.years.includes('unknown') ? ' + unknown year' : ''} · ${state.photos.length.toLocaleString()} photos`;
         $('collections').replaceChildren(
           ...['art', 'scenery', 'people', 'selects', 'picks'].map((filter) =>
             button(
@@ -784,7 +793,7 @@
             if (cover) card.append(photoImage(cover));
             const copy = element('div', undefined, 'cardtext');
             copy.append(
-              element('strong', year),
+              element('strong', yearTitle(year)),
               element('span', `${photos.length.toLocaleString()} photos`),
               element('span', `${photos.filter(aiPick).length} AI picks · ${photos.filter((p) => p.sel).length} selects`),
             );
@@ -807,7 +816,7 @@
           $('main').scrollTop = 0;
           const source = route.kind === 'year' ? state.photos.filter((p) => String(p.y) === route.value) : state.photos;
           state.list = source.filter((p) => matches(p, route.filter));
-          $('browseTitle').textContent = route.kind === 'year' ? route.value : labels[route.filter];
+          $('browseTitle').textContent = route.kind === 'year' ? yearTitle(route.value) : labels[route.filter];
           $('browseCount').textContent = `${state.list.length.toLocaleString()} photos`;
           $('filters').replaceChildren(
             ...Object.entries(labels).map(([filter, label]) => {
@@ -873,7 +882,7 @@
           cellNode.setAttribute('aria-setsize', state.list.length);
           const open = button('', () => openPhoto(photo, open), 'tile');
           open.dataset.photo = photo.id;
-          open.setAttribute('aria-label', `Open photo ${index + 1}, ${photo.y}`);
+          open.setAttribute('aria-label', `Open photo ${index + 1}, ${yearTitle(photo.y)}`);
           open.append(photoImage(photo));
           const badges = element('div', undefined, 'badges');
           if (aiPick(photo)) badges.append(element('span', 'AI PICK', 'badge'));
@@ -896,8 +905,8 @@
         preview.src = `/playa/m/preview/${photo.id}.webp`;
         preview.width = photo.w;
         preview.height = photo.h;
-        preview.alt = `Photo ${index + 1} · ${photo.y}`;
-        $('photoTitle').textContent = String(photo.y);
+        preview.alt = `Photo ${index + 1} · ${yearTitle(photo.y)}`;
+        $('photoTitle').textContent = yearTitle(photo.y);
         $('position').textContent = `${index + 1} / ${state.list.length}`;
         $('selectSource').replaceChildren();
         if (photo.sel)
@@ -978,7 +987,7 @@
           row.setAttribute('role', 'listitem');
           const open = button('', () => photo && openPhoto(photo, open), 'open');
           if (photo) {
-            open.append(photoImage(photo), element('span', String(photo.y)));
+            open.append(photoImage(photo), element('span', yearTitle(photo.y)));
             open.dataset.photo = id;
           } else {
             open.textContent = 'Photo unavailable';
@@ -1080,7 +1089,7 @@
         return kind === 'photo' ? (state.current ? [state.current.id] : []) : [...state.short];
       }
       function pendingDownload(job) {
-        return job && ['submitting', 'queued', 'building'].includes(job.state);
+        return job && (job.statusIssue || ['submitting', 'queued', 'building'].includes(job.state));
       }
       function renderDownloads() {
         for (const kind of ['photo', 'zip']) {
@@ -1093,15 +1102,27 @@
             instant.download = photo ? `playa-${photo.y}-${photo.id.slice(0, 10)}.jpg` : '';
             instant.hidden = !ids.length;
           }
-          for (const control of wrap.querySelectorAll('button'))
+          for (const control of wrap.querySelectorAll('.download-options button'))
             control.disabled = busy || !ids.length || (kind === 'zip' && (ids.length > 2000 || !state.shortReady));
           const status = wrap.querySelector('.download-status');
-          const key = JSON.stringify(job ? [job.ids, job.state, job.done, job.total, job.size, job.url, job.bytes, job.message] : [ids.length > 2000]);
+          const key = JSON.stringify(job ? [job.ids, job.state, job.done, job.total, job.size, job.url, job.bytes, job.message, job.statusIssue, job.polling] : [ids.length > 2000]);
           if (status.dataset.content === key) continue;
           status.dataset.content = key;
           status.replaceChildren();
           if (job) {
-            if (busy) {
+            if (job.statusIssue) {
+              status.append(document.createTextNode(job.statusIssue === 'paused'
+                ? 'Status unavailable. Your download may still be preparing. '
+                : 'Connection interrupted. Retrying download status…'));
+              if (job.statusIssue === 'paused') {
+                const resume = button('Resume status', () => {
+                  job.pollFailures = 0;
+                  pollDownload(job);
+                }, 'chip');
+                resume.disabled = !!job.polling;
+                status.append(resume);
+              }
+            } else if (busy) {
               const done = Number.isInteger(job.done) ? job.done : 0;
               status.textContent = kind === 'photo' ? 'Preparing…' : `Preparing… ${done}/${job.total}`;
             } else if (job.state === 'ready') {
@@ -1113,8 +1134,8 @@
               link.addEventListener('click', async (event) => {
                 if (Date.now() - job.signedAt < 4 * 60 * 1000) return;
                 event.preventDefault();
-                await pollDownload(job);
-                if (job.state === 'ready') location.assign(job.url);
+                const refreshed = await pollDownload(job);
+                if (refreshed && job.state === 'ready') location.assign(job.url);
               });
               const bytes = Number.isFinite(job.bytes) ? `${Number((job.bytes / 1000000).toFixed(1))} MB` : '';
               status.append(link, document.createTextNode(bytes ? ` · ${bytes}` : ''));
@@ -1132,28 +1153,52 @@
         internal: 'Could not prepare this download.',
       };
       async function pollDownload(job) {
+        // A failed status read must never submit another expensive export.
+        if (job.polling) return false;
+        clearTimeout(job.pollTimer);
+        job.polling = true;
+        renderDownloads();
         try {
           const response = await api(`/playa/api/export/${job.rid}`);
-          if (!response.ok) throw new Error('status');
+          if (!response.ok) {
+            const error = new Error('status');
+            error.terminal = response.status < 500 && ![408, 429].includes(response.status);
+            throw error;
+          }
           const data = await response.json();
           if (!['queued', 'building', 'ready', 'failed', 'expired'].includes(data.state)) throw new Error('status');
-          job.state = data.state;
-          if (Number.isInteger(data.done) && data.done >= 0) job.done = Math.min(data.done, job.total);
           if (data.state === 'ready') {
             const url = new URL(data.url);
             if (url.protocol !== 'https:' || typeof data.name !== 'string') throw new Error('status');
             Object.assign(job, { url: url.href, bytes: data.bytes, name: data.name, signedAt: Date.now() });
           }
+          job.state = data.state;
+          job.statusIssue = null;
+          job.pollFailures = 0;
+          if (Number.isInteger(data.done) && data.done >= 0) job.done = Math.min(data.done, job.total);
           if (data.state === 'failed') job.message = exportErrors[data.error] || exportErrors.internal;
-          renderDownloads();
           if (job.state === 'ready' && !job.downloadStarted) {
             job.downloadStarted = true;
             location.assign(job.url);
           }
-          if (pendingDownload(job)) setTimeout(() => pollDownload(job), 2000);
-        } catch {
-          job.state = 'failed';
-          job.message = 'Download unavailable. Try again.';
+          if (pendingDownload(job)) job.pollTimer = setTimeout(() => pollDownload(job), 2000);
+          return true;
+        } catch (error) {
+          if (error.message === 'session' || error.terminal) {
+            job.state = 'failed';
+            job.statusIssue = null;
+            job.message = error.message === 'session' ? 'Sign in to check this download.' : 'Download status is no longer available.';
+          } else {
+            job.pollFailures = (job.pollFailures || 0) + 1;
+            job.statusIssue = job.pollFailures <= 5 ? 'retrying' : 'paused';
+            if (job.statusIssue === 'retrying') {
+              const delay = Math.min(2000 * 2 ** (job.pollFailures - 1), 30000);
+              job.pollTimer = setTimeout(() => pollDownload(job), delay);
+            }
+          }
+          return false;
+        } finally {
+          job.polling = false;
           renderDownloads();
         }
       }
@@ -1308,16 +1353,14 @@
                 Number.isFinite(p.w) &&
                 p.w > 0 &&
                 Number.isFinite(p.h) &&
-                p.h > 0 &&
-                /^\d{4}$/.test(String(p.y)),
+                p.h > 0,
             )
-            .map((p) => ({ ...p, tags: Array.isArray(p.tags) ? p.tags : [] }));
+            .map((p) => ({ ...p, y: yearLabel(p.y), tags: Array.isArray(p.tags) ? p.tags : [] }));
           state.byId = new Map(state.photos.map((p) => [p.id, p]));
           state.years = [
             ...new Set(
-              [...data.years.map((y) => String(typeof y === 'object' ? y.y : y)), ...state.photos.map((p) => String(p.y))].filter(
-                (y) => /^\d{4}$/.test(y),
-              ),
+              [...data.years.map((y) => yearLabel(y && typeof y === 'object' ? y.y : y)).filter((y) => y !== 'unknown'),
+                ...state.photos.map((p) => p.y)],
             ),
           ].sort();
           state.ready = true;

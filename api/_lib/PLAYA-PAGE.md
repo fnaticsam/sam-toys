@@ -30,12 +30,15 @@ leaves this variable unset for now. Only the platform's connection-derived `x-re
   to clients. A missing object reads as an empty shortlist; first creation uses
   `allowOverwrite: false`. Updates use `allowOverwrite: true` with Blob `ifMatch`.
   Reads bypass the CDN cache so a conflict retry sees the latest state.
+  PUT accepts up to 5,000 IDs within a 384 KiB JSON body (5,000 compact IDs
+  require 335,009 bytes). Both item and byte limits remain enforced.
 - `dl/2048/<aa>/<id>/playa-<year>-<first 10 hex of id>.jpg`: prebuilt private
   JPEG, written by the box. The gate gets `<year>` from the current published
   catalog and signs only that exact object for a published ID. Year labels are
   four digits when available, otherwise `unknown`; a missing or invalid year
   never excludes a published ID from downloads or exports. Ready photo filenames
-  use the same year-label rule.
+  use the same year-label rule. The gallery keeps otherwise valid undated photos
+  in an “Unknown year” group at `#year/unknown`, including shortlist labels.
 - `exports/req/<rid>.json`: gate-written `{v:1,rid,kind,size,ids,created_at}`.
   `rid` is 32 lowercase hex from a CSPRNG. `kind:photo` accepts exactly one ID
   and `4096` or `original`; `kind:zip` accepts 1–2,000 unique IDs and `2048`,
@@ -82,7 +85,7 @@ Malformed IDs/RIDs or raw paths return 404 without Blob calls. Invalid export
 payloads return 400 `invalid-request`, malformed JSON returns 400 `invalid-json`,
 unpublished IDs return 400 `not-published`, and non-JSON writes return 415
 `content-type`. POST uses the shortlist's same-origin evidence rule; rejected
-origins return 403 `cross-site`. Bodies are capped at 256 KiB (413
+origins return 403 `cross-site`. Export bodies are capped at 256 KiB (413
 `invalid-request`). Eight unfinished requests per function instance cause 429
 `export-busy`. At least 100 retained objects under `exports/req/` also cause 429
 `export-busy`, before any status is read.
@@ -130,6 +133,14 @@ The inline UI offers one Download disclosure per photo and shortlist with
 `Preparing…` for a photo or `Preparing… done/total` for a shortlist. A ready job
 starts its download automatically once and retains a visible Save file fallback
 link. Escape closes an open size menu before closing the viewer.
+Recoverable status failures retain the RID and selection. Network errors, 408,
+429 and server errors retry after 2, 4, 8, 16 and 30 seconds, then pause with a
+“Resume status” action for the same RID. New export submission stays disabled
+until the job reaches a terminal status; resuming never repeats its POST.
+Authentication and other client errors stop automatic polling. A stale ready
+link is used only after a successful status refresh. Jobs remain in memory:
+page reload and an uncertain initial POST response still need a future recovery
+contract, not an automatic retry of an expensive build.
 No browser fetch buffers the built file. No cancellation or extra backend path
 is introduced; the box owns expiry. The existing CSP and script nonce remain.
 

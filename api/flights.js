@@ -5,6 +5,7 @@ const { InputError, parseInput, toolInput, validDate } = require('./_lib/flights
 const { DEFAULT_ORIGINS, CARRIERS, SOURCES } = require('./_lib/flights/carriers');
 const { FX, RULES_DATE, ELIGIBLE_SPEND_FRACTION, collectionYear, goldThreshold, BONUS_SOURCE, GOLD_SOURCE } = require('./_lib/flights/earn');
 const { normalizeFlight, safeLink } = require('./_lib/flights/normalize');
+const airports = require('./_lib/flights/airports.json');
 const { rank } = require('./_lib/flights/rank');
 
 // Open API. Origin is browser defence in depth, not authentication. Vercel
@@ -79,7 +80,7 @@ function discovery(data, query, origin) {
     if (!Array.isArray(data?.results) || data.results.length > 1000) throw new UpstreamError('invalid-upstream-response');
     return data.results.filter((r) => /^[A-Z]{3}$/.test(r.destination?.airport) &&
       Number.isFinite(r.price?.amount) && r.price.amount > 0 && r.price.currency === 'USD' && safeLink(r.deepLink))
-      .map((r) => ({ origin, destination: r.destination.airport, price: r.price,
+      .map((r) => ({ origin, destination: r.destination.airport, city: airports[r.destination.airport]?.[3] || (typeof r.destination.city === 'string' ? r.destination.city.slice(0, 100) : undefined), price: r.price,
         priceGbp: Math.round(r.price.amount * FX.usdToGbp * 100) / 100, deepLink: safeLink(r.deepLink),
         eligibility: 'unverified', estimate: null, requiresSearch: true }));
   }
@@ -156,6 +157,8 @@ function createHandler({ callTool = createClient(), now = Date.now,
         query.action === 'flex' && query.sort === 'date' ? (a[dateKey] || a.departureDate).localeCompare(b[dateKey] || b.departureDate) || a.priceGbp - b.priceGbp : a.priceGbp - b.priceGbp);
       const body = { action: query.action, results: sorted, partial: failures.length > 0,
         failures, excluded, pages, meta: {
+          airports: Object.fromEntries([...new Set(results.flatMap(r => [r.origin, r.destination, r.ticketedTo,
+            ...(r.legs || []).flatMap(l => l.units.flatMap(u => [u.from, u.to]))]))].filter(c => airports[c]?.[3]).map(c => [c, airports[c][3]])),
           defaultOrigins: DEFAULT_ORIGINS, carriers: Object.values(CARRIERS), rulesAsOf: RULES_DATE,
           fx: FX, eligibleSpendFraction: ELIGIBLE_SPEND_FRACTION, memberTier: 'Gold',
           collectionYear: collectionYear(query.departureDate), goldThreshold: goldThreshold(query.departureDate),

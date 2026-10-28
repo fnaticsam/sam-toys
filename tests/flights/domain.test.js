@@ -110,6 +110,7 @@ test('hidden city refuses opaque routes and credits only explicitly flown sector
   assert.equal(r.estimate.breakdown[0].to,'DOH');
   assert.deepEqual(r.arrival,{airport:'DOH',dateTime:null});
   assert.equal(r.bookedArrival.airport,'BKK');
+  assert.deepEqual(r.legs[0].units.map(u=>({numbers:u.flightNumbers,flown:u.flown})), [{numbers:['QR110'],flown:true},{numbers:['QR832'],flown:false}]);
   assert.equal(r.hiddenCity,true);assert.equal(r.ticketedTo,'BKK');assert.equal(r.leaveAt,'DOH');
   assert.equal(normalizeFlight(f,{...q,includeHiddenCity:false}).excluded,'hidden-city-not-requested');
   // Airport facts also identify hidden-city fares when a provider omits its label.

@@ -61,6 +61,7 @@ function normalizeFlight(flight, query) {
         units.push({ from: a, to: b, date: segmentDate, flightNumbers: [checked.flightNumber],
           bookingClass: /^[A-Z]$/.test(segment.bookingClass || '') ? segment.bookingClass : undefined,
           cabin: ['basic-economy','economy','premium','business','first'].includes(segment.cabin) ? segment.cabin : undefined,
+          departure: endpoint(segment.departure), arrival: endpoint(segment.arrival),
           flown: true, opaque: false });
       }
     }
@@ -74,7 +75,7 @@ function normalizeFlight(flight, query) {
       if (hiddenCity) flownArrival = endpoint(s.segments[destinationIndex].arrival) || { airport: to, dateTime: null };
     } else {
       units.push({ from, to, date, flightNumbers: numbers.map((n) => parseFlightNumber(n).flightNumber),
-        flown: true, opaque: numbers.length > 1 });
+        departure, arrival, flown: true, opaque: numbers.length > 1 });
     }
     legs.push({ from, to, date, units });
   }
@@ -88,7 +89,7 @@ function normalizeFlight(flight, query) {
     ticketedTo: flight.arrival.airport, leaveAt: query.destination,
     returnFlight: flight.returnFlight ? { departure: endpoint(flight.returnFlight.departure), arrival: endpoint(flight.returnFlight.arrival) } : null,
     flightNumbers: groups.flat(), price: { amount: flight.price.amount, currency: 'USD' }, priceGbp, deepLink,
-    hiddenCity, eligibility: operatorVerified && bookingClassKnown ? 'eligible-subject-to-ticket' : 'conditional',
+    hiddenCity, legs, eligibility: operatorVerified && bookingClassKnown ? 'eligible-subject-to-ticket' : 'conditional',
     warnings: [...(!operatorVerified ? ['operating-carrier-unavailable-verify-before-booking'] : []),
       ...(!bookingClassKnown ? ['booking-class-unavailable-some-fares-earn-zero'] : []),
       ...(hiddenCity ? ['skipping-a-sector-can-invalidate-ticket-and-credit'] : [])],

@@ -235,9 +235,15 @@ warns that skipped sectors can invalidate the ticket and credit.
 Airport coordinates/country codes in airports.json are a compact 28 October
 2026 snapshot of [OurAirports public-domain data](https://ourairports.com/data/),
 from `https://davidmegginson.github.io/ourairports-data/airports.csv`. Entries are
-`IATA:[latitude,longitude,country]`; duplicate codes prefer large, medium, small,
+`IATA:[latitude,longitude,country,city?]`; duplicate codes prefer large, medium, small,
 seaplane, heliport, then other records. 9,053 IATA entries; unknown three-letter
 codes are accepted as search input but cannot fabricate a mileage award.
+Optional display cities cover the search picker and recorded discovery routes,
+with familiar city labels (for example Bordeaux for BOD and Milan for MXP).
+Search responses include the relevant labels in `meta.airports`; discovery
+uses the provider city when a catalogue label is absent. Normalized search fares
+also expose `legs[].units` with flown flags, flight numbers and available
+endpoints, so skipped hidden-city sectors remain separate in the UI.
 
 ## Operations and UI packet configuration
 

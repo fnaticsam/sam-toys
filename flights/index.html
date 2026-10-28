@@ -52,7 +52,7 @@ button,input,select{font:inherit;color:inherit;letter-spacing:inherit}
 .from{display:inline-flex;align-items:center;gap:6px;color:var(--dim);font-size:14px;border:0;background:none;cursor:pointer;padding:6px 2px;margin-bottom:10px}
 .from b{color:var(--text);font-weight:600}
 .from:hover b{text-decoration:underline;text-underline-offset:3px}
-.card{border-radius:26px;padding:6px}
+.card{position:relative;z-index:30;border-radius:26px;padding:6px}
 .bar{display:flex;align-items:center;gap:14px;padding:16px 18px;border-radius:20px;cursor:text;position:relative}
 .card>.bar,.card>.cal{border-radius:0}
 .bar+.bar,.bar+.cal{background:linear-gradient(var(--g-line),var(--g-line)) top center/calc(100% - 32px) 1px no-repeat}
@@ -84,7 +84,7 @@ button,input,select{font:inherit;color:inherit;letter-spacing:inherit}
 .popsep{height:1px;background:var(--g-line);margin:4px 8px}
 .popin{width:100%;background:rgba(255,255,255,.06);border:1px solid var(--g-line);border-radius:12px;padding:10px 12px;outline:none;color:var(--g-text);margin:4px 0}
 .popin::placeholder{color:var(--g-faint)}
-.fromwrap{position:relative;display:inline-block;width:100%}
+.fromwrap{position:relative;z-index:40;display:inline-block;width:100%}
 .fromwrap .pop{right:auto;width:min(320px,100%);top:calc(100% - 4px)}
 
 /* range calendar (inside the glass card) */
@@ -133,7 +133,7 @@ h1 .soft{color:var(--faint);font-weight:550}
 .row .tm sup{font-size:11px;color:var(--dim);font-weight:500;margin-left:1px}
 .row .v{font-size:19px;font-weight:650;text-align:right;letter-spacing:-.015em}
 .row .v small{font-size:12px;color:var(--dim);font-weight:500;margin-left:2px}
-.row:first-child .v{color:var(--accent)}
+.list:not(.discovery) .row:first-child .v{color:var(--accent)}
 .row .m{font-size:13.5px;color:var(--dim);min-width:0}
 .row .m .fn{font-family:var(--mono);font-size:12.5px;color:var(--text)}
 .row .p{font-size:14px;text-align:right;color:var(--dim)}
@@ -204,7 +204,7 @@ h1 .soft{color:var(--faint);font-weight:550}
 .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
 /* Live data qualifiers and keyboard access use the approved tokens. */
 .calnote{padding:7px 6px 0;font-size:11.5px;color:var(--g-dim)}
-.row .m{overflow-wrap:anywhere}.hc{white-space:normal;margin-top:2px}
+.row .m{overflow-wrap:anywhere}.avios{white-space:nowrap}.hc{white-space:normal;margin:3px 0 0;display:table}
 button:disabled{cursor:default;opacity:.45}
 .where:focus-visible,.gform input:focus-visible,.popin:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
@@ -236,13 +236,14 @@ let response=null,resultQuery=null,searchController=null,searchSerial=0,searchSt
 let flexController=null,flexSerial=0,flexState='',flexRows=[],flexKey='';
 const verified=new Map(), $=s=>document.querySelector(s);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const fmt=n=>Math.round(n).toLocaleString('en-GB'), money=n=>'£'+Number(n).toLocaleString('en-GB',{maximumFractionDigits:2});
+const fmt=n=>Math.round(n).toLocaleString('en-GB'), money=(n,pence=false)=>'£'+Number(n).toLocaleString('en-GB',{minimumFractionDigits:pence?2:0,maximumFractionDigits:pence?2:0});
 const ppt=f=>'£'+(f.priceGbp/f.estimate.tierPoints).toFixed(2);
 const D=k=>new Date(k+'T12:00:00Z');
 const key=d=>d.toISOString().slice(0,10);
 const dShort=k=>D(k).toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short',timeZone:'UTC'});
 const nights=(a,b)=>Math.round((D(b)-D(a))/864e5);
-const placeName=c=>c==='ANY'?'Anywhere':CITY[c]||c;
+const cityName=c=>response?.meta?.airports?.[c]||CITY[c]||c;
+const placeName=c=>c==='ANY'?'Anywhere':CITY[c]||response?.meta?.airports?.[c]||c;
 const realDate=v=>/^\d{4}-\d{2}-\d{2}$/.test(v||'')&&Number.isFinite(D(v).getTime())&&key(D(v))===v;
 function defaultGold(){const y=+TODAY.slice(0,4)+(TODAY.slice(5)>='04-01'?1:0);return{tp:0,target:20000,ends:y+'-03-31'}}
 // This is the only balance data boundary: replace it with the signed-in BA adapter later.
@@ -263,7 +264,7 @@ function whenText(q=S){
   return a.toLocaleDateString('en-GB',{weekday:'short',day:'numeric',...(sameM?{}:{month:'short'}),timeZone:'UTC'})+' – '+dShort(q.back);
 }
 function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('on');clearTimeout(toast.h);toast.h=setTimeout(()=>t.classList.remove('on'),2200)}
-function ring(size,stroke,pct){const r=(size-stroke)/2,c=2*Math.PI*r;return `<svg viewBox="0 0 ${size} ${size}" aria-hidden="true"><circle cx="${size/2}" cy="${size/2}" r="${r}" fill="none" stroke="var(--line)" stroke-width="${stroke}"/><circle cx="${size/2}" cy="${size/2}" r="${r}" fill="none" stroke="var(--text)" stroke-width="${stroke}" stroke-linecap="round" stroke-dasharray="${c*pct} ${c}"/></svg>`}
+function ring(size,stroke,pct){const r=(size-stroke)/2,c=2*Math.PI*r;return `<svg viewBox="0 0 ${size} ${size}" aria-hidden="true"><circle cx="${size/2}" cy="${size/2}" r="${r}" fill="none" stroke="var(--line)" stroke-width="${stroke}"/>${pct>0?`<circle cx="${size/2}" cy="${size/2}" r="${r}" fill="none" stroke="var(--text)" stroke-width="${stroke}" stroke-linecap="round" stroke-dasharray="${c*pct} ${c}"/>`: ""}</svg>`}
 function renderRing(){const pct=Math.min(1,gold.tp/gold.target),el=$('#ring');el.innerHTML=`<span>Gold</span><span class="mini"><i style="width:${pct*100}%"></i></span>`;el.setAttribute('aria-label',`Gold: ${fmt(gold.tp)} of ${fmt(gold.target)} tier points`);el.title=`${fmt(Math.max(0,gold.target-gold.tp))} tier points to Gold`}
 function origins(q){return q.from==='LON'?LONDON.filter(c=>c!==q.to).join(','):q.from}
 function params(action,q){const p=new URLSearchParams({action,origin:origins(q),departureDate:q.out});if(q.back)p.set('returnDate',q.back);if(action!=='anywhere')p.set('destination',q.to);if(action!=='flex')p.set('fareClass',CABINS[q.cabin]);else{p.set('mode','depart');p.set('sort','date')}return p}
@@ -274,6 +275,11 @@ async function request(action,q,signal){
 }
 function cacheKey(q){return JSON.stringify([q.from,q.to,q.out,q.back,q.cabin])}
 function calendarQuote(k){const q={...S,out:k,back:S.back?key(new Date(D(k).getTime()+nights(S.out,S.back)*864e5)):''},v=verified.get(cacheKey(q));if(v)return{value:(v.priceGbp/v.estimate.tierPoints).toFixed(2),verified:true};const p=flexRows.filter(r=>r.departureDate===k).sort((a,b)=>a.priceGbp-b.priceGbp)[0];return p?{value:money(p.priceGbp),verified:false}:null}
+function calendarMonth(today=TODAY,selected=S.out){
+  if(selected)return selected.slice(0,7);
+  const d=D(today),end=new Date(Date.UTC(d.getUTCFullYear(),d.getUTCMonth()+1,0));
+  return end.getUTCDate()-d.getUTCDate()+1<7?key(new Date(Date.UTC(d.getUTCFullYear(),d.getUTCMonth()+1,1))).slice(0,7):today.slice(0,7);
+}
 function calHTML(){
   const [y,m]=S.view.split('-').map(Number),first=new Date(Date.UTC(y,m-1,1)),n=new Date(Date.UTC(y,m,0)).getUTCDate(),lead=(first.getUTCDay()+6)%7;
   const hasRoute=S.to&&S.to!=='ANY',showP=S.prices&&hasRoute;let cells='';
@@ -296,39 +302,42 @@ function sugPop(q){q=(q||'').trim().toLowerCase();const list=q?matches(q):AIRPOR
 function fromPop(){const o=(c,l,s)=>`<button type="button" class="opt ${S.from===c?'on':''}" data-from="${c}"><span>${esc(l)}${s?` <span class="s">${esc(s)}</span>`:''}</span>${S.from===c?'<span class="tick">✓</span>':''}</button>`;return `<div class="pop glass" id="fromPop">${o('LON','London','all airports')}${o('IBZ','Ibiza','')}${!['LON','IBZ'].includes(S.from)?o(S.from,placeName(S.from),S.from):''}<input class="popin" id="fromQ" placeholder="Other airport" aria-label="Other airport"><div id="fromRes"></div></div>`}
 function backPill(){const q=resultQuery||S;return `<a class="back glass press" href="#/search"><span class="ar">←</span><span class="t">${esc(placeName(q.from))} → ${esc(placeName(q.to))}${q.out?' · '+whenText(q):''}</span></a>`}
 function earning(f){return Number.isFinite(f.estimate?.tierPoints)&&f.estimate.tierPoints>0&&Number.isFinite(f.priceGbp)&&f.priceGbp>0}
-function fares(){return(response?.results||[]).filter(earning).sort((a,b)=>a.priceGbp/a.estimate.tierPoints-b.priceGbp/b.estimate.tierPoints||a.priceGbp-b.priceGbp)}
+function allFares(){return(response?.results||[]).filter(earning).sort((a,b)=>a.priceGbp/a.estimate.tierPoints-b.priceGbp/b.estimate.tierPoints||a.priceGbp-b.priceGbp)}
+function fares(){const seen=new Set();return allFares().filter(f=>{const k=JSON.stringify([flightGroups(f),f.departure?.dateTime,f.arrival?.dateTime,f.returnFlight?.departure?.dateTime,f.returnFlight?.arrival?.dateTime,f.hiddenCity,f.ticketedTo]);if(seen.has(k))return false;seen.add(k);return true})}
 function time(p){return typeof p?.dateTime==='string'&&/T\d{2}:\d{2}/.test(p.dateTime)?p.dateTime.slice(11,16):'Time unavailable'}
 function duration(f){const m=Math.round((new Date(f.arrival?.dateTime)-new Date(f.departure?.dateTime))/60000);return Number.isFinite(m)&&m>=0?Math.floor(m/60)+'h'+(m%60?String(m%60).padStart(2,'0'):''):''}
 function plusDays(f){return f.arrival?.dateTime&&f.departure?.dateTime?Math.max(0,nights(f.departure.dateTime.slice(0,10),f.arrival.dateTime.slice(0,10))):0}
-function flightGroups(f){try{return new URLSearchParams(new URL(f.deepLink).hash.slice(1)).get('trip').split(',').map(g=>g.split('-'))}catch{return[f.flightNumbers||[]]}}
-function resultNote(){return 'Tier points and Avios are estimates; verify fare class, operator and earning before booking.'+(response?.partial?' Some origins unavailable.':'')}
+function flightGroups(f){if(f.legs?.length)return f.legs.map(l=>l.units.filter(u=>u.flown).flatMap(u=>u.flightNumbers));try{return new URLSearchParams(new URL(f.deepLink).hash.slice(1)).get('trip').split(',').map(g=>g.split('-'))}catch{return[f.flightNumbers||[]]}}
+function resultNote(){return 'Tier points and Avios are estimates; verify fare class, operator and earning before booking.'}
+function partialNote(){if(!response?.partial)return '';const codes=[...new Set((response.failures||[]).map(f=>f.origin))];return `<p class="left" role="status">${codes.length?esc(codes.length>1?codes.slice(0,-1).join(', ')+' and '+codes.at(-1):codes[0]):'Some airports'} didn't answer</p>`}
 function coverage(){const excluded=Object.values(response?.excluded||{}).reduce((a,b)=>a+b,0);return [excluded?`${fmt(excluded)} fares without verified earning routes are left out.`:'',response?.pages?.some(p=>p.hasMoreResults)?'More fares may be available on Skiplagged.':''].filter(Boolean).join(' ')}
 function vResults(){
   if(!response)return vSearch();if(response.action==='anywhere')return vAnywhere();const list=fares();if(!list.length)return vEmpty();const b=list[0];document.title=`${placeName(resultQuery.from)} → ${placeName(resultQuery.to)} · Flights`;
-  return `${backPill()}<h1>${esc(b.flightNumbers[0])} <span class="soft">at</span> ${ppt(b)} <span class="soft">per tier point</span></h1><p class="est">${resultNote()}</p><div class="list">${list.map(f=>`<a class="row" href="#/fare/${encodeURIComponent(f.id)}"><span class="tm">${time(f.departure)} → ${time(f.arrival)}${plusDays(f)?`<sup>+${plusDays(f)}</sup>`:''}</span><span class="v">${ppt(f)}<small>/TP</small></span><span class="m"><span class="fn">${esc(f.flightNumbers.join(' · '))}</span> · ${flightGroups(f)[0].length>1?'connecting':'direct'}${duration(f)?' · '+duration(f):''} · ~${fmt(f.estimate.avios)} Avios${f.hiddenCity?`<span class="hc">hidden city · ticketed to ${esc(f.ticketedTo)}, leave at ${esc(f.leaveAt)}</span>`:''}${f.returnFlight?' · return':''}</span><span class="p">${money(f.priceGbp)}</span></a>`).join('')}</div>${coverage()?`<p class="left">${coverage()}</p>`:''}`;
+  return `${backPill()}<h1>${esc(flightGroups(b)[0][0])} <span class="soft">at</span> ${ppt(b)} <span class="soft">per tier point</span></h1><p class="est">${resultNote()}</p>${partialNote()}<div class="list">${list.map(f=>`<a class="row" href="#/fare/${encodeURIComponent(f.id)}"><span class="tm">${time(f.departure)} → ${time(f.arrival)}${plusDays(f)?`<sup>+${plusDays(f)}</sup>`:''}</span><span class="v">${ppt(f)}<small>/TP</small></span><span class="m">${esc(f.departure.airport)} · <span class="fn">${esc(flightGroups(f).flat().join(' · '))}</span> · ${flightGroups(f)[0].length>1?'connecting':'direct'}${duration(f)?' · '+duration(f):''} · <span class="avios">~${fmt(f.estimate.avios)} Avios</span>${f.hiddenCity?`<span class="hc">ticketed to ${esc(f.ticketedTo)}, leave at ${esc(f.leaveAt)}</span>`:''}${f.returnFlight?' · return':''}</span><span class="p">${money(f.priceGbp)}</span></a>`).join('')}</div>${coverage()?`<p class="left">${coverage()}</p>`:''}`;
 }
+function discoveries(){const seen=new Set();return response.results.slice().sort((a,b)=>a.priceGbp-b.priceGbp).filter(r=>{const city=response.meta?.airports?.[r.destination]||r.city||cityName(r.destination);if(seen.has(city))return false;seen.add(city);return true})}
 function vAnywhere(){
-  const list=response.results.slice().sort((a,b)=>a.priceGbp-b.priceGbp);document.title='Anywhere · Flights';
-  if(!list.length)return `${backPill()}<div class="state"><h1>No destinations found</h1><p>Try another date or origin.</p><div class="acts"><a class="go glass press" href="#/search/when">Other dates <span class="arr">→</span></a></div></div>`;
-  return `${backPill()}<h1>Where to?</h1><p class="est">Discovery prices; choose a destination to check earning fares and £/TP.</p><div class="list">${list.map((r,i)=>`<a class="row" href="#/results" data-discover="${i}"><span class="tm">${esc(placeName(r.destination))}</span><span class="v">${money(r.priceGbp)}</span><span class="m">${esc(r.origin)} → ${esc(r.destination)}${resultQuery.back?' · return':''}</span><span class="p">Check £/TP →</span></a>`).join('')}</div>${response.partial?'<p class="left">Some origins unavailable.</p>':''}`;
+  const list=discoveries();document.title='Anywhere · Flights';
+  if(!list.length)return `${backPill()}<div class="state"><h1>No destinations found</h1><p>Try another date or origin.</p>${partialNote()}<div class="acts"><a class="go glass press" href="#/search/when">Other dates <span class="arr">→</span></a></div></div>`;
+  return `${backPill()}<h1>Where to?</h1><p class="est">Discovery prices; choose a destination to check earning fares and £/TP.</p>${partialNote()}<div class="list discovery">${list.map((r,i)=>`<a class="row" href="#/results" data-discover="${i}"><span class="tm">${esc(response.meta?.airports?.[r.destination]||r.city||cityName(r.destination))}</span><span class="v">${money(r.priceGbp)}</span><span class="m">from ${esc(r.origin)}${resultQuery.back?' · return':''}</span><span class="p" aria-hidden="true">›</span></a>`).join('')}</div>`;
 }
 function goldForFare(f){const y=+gold.ends.slice(0,4)-(gold.ends.slice(5)<'04-01'?1:0),start=y+'-04-01';return(f.estimate.breakdown||[]).filter(s=>s.date>=start&&s.date<=gold.ends&&Number.isFinite(s.tierPoints)).reduce((a,s)=>a+s.tierPoints,0)}
 function vFare(id){
-  const f=fares().find(f=>f.id===id);if(!f)return vSearch();document.title=f.flightNumbers.join(' · ')+' · Flights';const groups=flightGroups(f);
-  const leg=(dep,arr,numbers,label)=>`<div><div class="legh">${label} · ${dShort(dep.dateTime.slice(0,10))}</div><div class="tl"><div class="st"><div class="t1">${time(dep)} <span class="ap">${esc(placeName(dep.airport))} · ${esc(dep.airport)}</span></div></div><div class="lg"><span class="fn">${esc(numbers.join(' · '))}</span>${numbers.length>1?' · connecting':''}${duration({departure:dep,arrival:arr})?' · '+duration({departure:dep,arrival:arr}):''}</div><div class="st"><div class="t1">${time(arr)} <span class="ap">${esc(placeName(arr.airport))} · ${esc(arr.airport)}</span></div></div>${f.hiddenCity&&label==='One way'?`<div class="leave">You leave at ${esc(placeName(f.leaveAt))}. Skipping a sector can invalidate the ticket and credit.</div><div class="st ghost"><div class="t1">${time(f.bookedArrival)} <span class="ap">Ticketed to ${esc(f.ticketedTo)}</span></div></div>`:''}</div></div>`;
+  const f=allFares().find(f=>f.id===id);if(!f)return vSearch();document.title=flightGroups(f).flat().join(' · ')+' · Flights';const groups=flightGroups(f);
+  const leg=(dep,arr,numbers,label)=>`<div><div class="legh">${label} · ${dShort(dep.dateTime.slice(0,10))}</div><div class="tl"><div class="st"><div class="t1">${time(dep)} <span class="ap">${esc(cityName(dep.airport))} · ${esc(dep.airport)}</span></div></div><div class="lg"><span class="fn">${esc(numbers.join(' · '))}</span>${numbers.length>1?' · connecting':''}${duration({departure:dep,arrival:arr})?' · '+duration({departure:dep,arrival:arr}):''}</div><div class="st"><div class="t1">${time(arr)} <span class="ap">${esc(cityName(arr.airport))} · ${esc(arr.airport)}</span></div></div>${f.hiddenCity&&label==='One way'?`<div class="leave">You leave at ${esc(cityName(f.leaveAt))}. Skipping a sector can invalidate the ticket and credit.</div>${(f.legs?.[0].units||[]).filter(u=>!u.flown).map(u=>`<div class="lg ghost"><span class="fn">${esc(u.flightNumbers.join(' · '))}</span>${duration(u)?' · '+duration(u):''}</div><div class="st ghost"><div class="t1">${time(u.arrival)} <span class="ap">${esc(cityName(u.to))} · ${esc(u.to)}</span></div></div>`).join('')}`:''}</div></div>`;
   const credit=goldForFare(f),after=gold.tp+credit,pct=Math.min(1,gold.tp/gold.target),add=Math.min(1-pct,credit/gold.target);
   const booking=safeBooking(f.deepLink),carrier=response.meta?.carriers?.find(c=>c.code===f.flightNumbers[0]?.slice(0,2));
-  return `<a class="back glass press" href="#/results"><span class="ar">←</span><span class="t">${esc(placeName(resultQuery.from))} → ${esc(placeName(resultQuery.to))}</span></a><div class="hero"><div class="big">${money(f.priceGbp)}</div><div class="line"><b class="acc">${ppt(f)}</b> per tier point · ~${fmt(f.estimate.tierPoints)} TP · ~${fmt(f.estimate.avios)} Avios</div></div><div class="who">${esc(carrier?.name||f.flightNumbers[0]?.slice(0,2))} · ${esc(resultQuery.cabin)}${f.hiddenCity?' · hidden city':''}</div><div class="legs">${leg(f.departure,f.arrival,groups[0],f.returnFlight?'Out':'One way')}${f.returnFlight?leg(f.returnFlight.departure,f.returnFlight.arrival,groups[1]||[],'Back'):''}</div><p class="est">${resultNote()}</p><div class="gold1"><span>Gold</span><span class="gbar"><i style="width:${pct*100}%"></i><u style="left:${pct*100}%;width:${add*100}%"></u></span><span><b>${fmt(Math.min(after,gold.target))}</b> / ${fmt(gold.target)}</span></div>${f.estimate.tierPoints!==credit?'<p class="left">Gold progress includes only tier points in your collection year.</p>':''}${booking?`<div class="dock"><a class="book glass press" href="${esc(booking)}" id="book" target="_blank" rel="noopener noreferrer">Book on Skiplagged <span class="arr">↗</span></a></div>`:''}<p class="left" style="text-align:center">US$${esc(f.price.amount)}${response.meta?.fx?' at '+esc(response.meta.fx.usdToGbp)+' GBP/USD':''}</p>`;
+  return `<a class="back glass press" href="#/results"><span class="ar">←</span><span class="t">${esc(placeName(resultQuery.from))} → ${esc(placeName(resultQuery.to))}</span></a><div class="hero"><div class="big">${money(f.priceGbp,true)}</div><div class="line"><b class="acc">${ppt(f)}</b> per tier point · ~${fmt(f.estimate.tierPoints)} TP · <span class="avios">~${fmt(f.estimate.avios)} Avios</span></div></div><div class="who">${esc(carrier?.name||f.flightNumbers[0]?.slice(0,2))} · ${esc(resultQuery.cabin)}${f.hiddenCity?' · cabin bag only':''}</div><div class="legs">${leg(f.departure,f.arrival,groups[0],f.returnFlight?'Out':'One way')}${f.returnFlight?leg(f.returnFlight.departure,f.returnFlight.arrival,groups[1]||[],'Back'):''}</div><div class="gold1"><span>Gold</span><span class="gbar"><i style="width:${pct*100}%"></i><u style="left:${pct*100}%;width:${add*100}%"></u></span><span><b>${fmt(Math.min(after,gold.target))}</b> / ${fmt(gold.target)}</span></div>${f.estimate.tierPoints!==credit?'<p class="left">Gold progress includes only tier points in your collection year.</p>':''}${booking?`<div class="dock"><a class="book glass press" href="${esc(booking)}" id="book" target="_blank" rel="noopener noreferrer">Book on Skiplagged <span class="arr">↗</span></a></div>`:''}<p class="left" style="text-align:center">US$${esc(f.price.amount)}${response.meta?.fx?' at '+esc(response.meta.fx.usdToGbp)+' GBP/USD':''}</p>`;
 }
 function safeBooking(link){try{const u=new URL(link);return u.protocol==='https:'&&u.hostname==='skiplagged.com'&&!u.username&&!u.password&&!u.port?u.href:null}catch{return null}}
 function vGold(){document.title='Gold · Flights';const pct=Math.min(1,gold.tp/gold.target),left=Math.max(0,gold.target-gold.tp);return `<a class="back glass press" href="#/search"><span class="ar">←</span><span class="t">Search</span></a><div class="gwrap"><div class="gring">${ring(180,8,pct)}<div class="n">${left?fmt(left):'Kept'}<small>${left?'tier points to Gold':'Gold for next year'}</small></div></div><p style="color:var(--dim)">${fmt(gold.tp)} of ${fmt(gold.target)} · by ${D(gold.ends).toLocaleDateString('en-GB',{day:'numeric',month:'long',timeZone:'UTC'})}</p><form class="gform glass" id="gf" novalidate><label>Tier points so far<input id="gtp" inputmode="numeric" value="${gold.tp}" aria-describedby="gErr"></label><label>Target<input id="gtarget" inputmode="numeric" value="${gold.target}" aria-describedby="gErr"></label><label>Year ends<input id="gend" type="date" value="${gold.ends}" aria-describedby="gErr"></label></form><div class="hintline" id="gErr" role="status"></div><button class="go glass press save" form="gf" type="submit">Save</button><p class="left">Kept on this device.</p></div>`}
 function vLoading(){document.title='Searching · Flights';return `${backPill()}<p class="est" style="margin-top:28px" role="status"><span class="spin"></span>Searching Skiplagged</p><div class="list" aria-busy="true">${[0,1,2,3,4].map(i=>`<div class="sk"><div style="flex:1;display:grid;gap:9px"><i style="width:${42-i*3}%"></i><i style="width:${60-i*5}%"></i></div><i style="width:56px"></i></div>`).join('')}</div>`}
-function vEmpty(){document.title='No earning fares · Flights';return `${backPill()}<div class="state"><h1>No earning fares</h1><p>${response?.partial?'Some origins were unavailable. No earning fares in the returned results.':'No fares with a positive tier-point estimate for these dates.'}</p><div class="acts"><a class="go glass press" href="#/search/when">Other dates <span class="arr">→</span></a><button class="txtb dark" id="anywhere">Anywhere from ${esc(placeName(S.from))}</button></div></div>`}
+function vEmpty(){document.title='No earning fares · Flights';return `${backPill()}<div class="state"><h1>No earning fares</h1><p>No fares with a positive tier-point estimate for these dates.</p>${partialNote()}<div class="acts"><a class="go glass press" href="#/search/when">Other dates <span class="arr">→</span></a><button class="txtb dark" id="anywhere">Anywhere from ${esc(placeName(S.from))}</button></div></div>`}
 function vError(){const throttled=searchState==='throttled',remaining=Math.max(0,Math.ceil((retryAt-Date.now())/1000));document.title=(throttled?'Too many requests':'Search failed')+' · Flights';return `${backPill()}<div class="state" role="status"><h1>${throttled?'A moment, please':"Skiplagged didn't answer"}</h1><p>${throttled?'Too many requests. '+(remaining?'Try again in '+remaining+' seconds.':'Ready to try again.'):'The search could not finish. Try again.'}</p><div class="acts"><button class="go glass press" id="retry" ${throttled&&remaining?'disabled':''}>Try again <span class="arr">→</span></button></div></div>`}
 function route(){return(location.hash||'#/search').slice(1).split('/').filter(Boolean)}
 function go(hash){history.replaceState(null,'',hash);render()}
 function render(){
-  const p=route();if(p[0]!=='loading'&&searchState==='loading'){searchController?.abort();searchSerial++;searchState='idle'}
+  const p=route();if(p[0]==='search'&&p[1]==='when'&&!calOpen)S.view=calendarMonth();if(p[0]!=='loading'&&searchState==='loading'){searchController?.abort();searchSerial++;searchState='idle'}
   if(p[0]!=='search'){flexController?.abort();flexSerial++;if(flexState==='loading'){flexState='';flexKey=''}}
   renderRing();let h;
   switch(p[0]){case 'results':h=vResults();break;case 'fare':try{h=vFare(decodeURIComponent(p.slice(1).join('/')))}catch{h=vSearch()}break;case 'gold':h=vGold();break;case 'loading':h=searchState==='loading'?vLoading():vSearch();break;case 'error':h=vError();break;default:calOpen=p[1]==='when';fromOpen=p[1]==='from';h=vSearch()}
@@ -344,7 +353,7 @@ async function loadFlex(){
   try{const data=await request('flex',q,flexController.signal);if(serial!==flexSerial)return;flexRows=data.results;flexState='ready'}catch(e){if(e.name==='AbortError'||serial!==flexSerial)return;flexState=e.status===429?'throttled':'error'}
   if(route()[0]==='search')redraw();
 }
-function chooseDestination(code){S.to=code;draft='';sugOpen=false;hint='';selection=-1;clearFlex();if(!S.out){calOpen=true;history.replaceState(null,'','#/search/when')}redraw();if(calOpen&&S.prices)loadFlex()}
+function chooseDestination(code){S.to=code;draft='';sugOpen=false;hint='';selection=-1;clearFlex();if(!S.out){S.view=calendarMonth();calOpen=true;history.replaceState(null,'','#/search/when')}redraw();if(calOpen&&S.prices)loadFlex()}
 function redrawSug(){const input=$('#to'),bar=input.parentNode;bar.querySelector('.pop')?.remove();input.setAttribute('aria-expanded',String(sugOpen));input.removeAttribute('aria-activedescendant');if(!calOpen)$('#cal')?.remove();if(sugOpen){bar.insertAdjacentHTML('beforeend',sugPop(draft));bindSug()}}
 function bindSug(){document.querySelectorAll('.pop [data-to]').forEach(b=>{b.onmousedown=e=>e.preventDefault();b.onclick=()=>chooseDestination(b.dataset.to)})}
 function bindCal(){const cal=$('#cal');if(!cal)return;cal.querySelectorAll('.d[data-k]:not(.past)').forEach(b=>{b.onclick=()=>{tapDay(b.dataset.k);clearFlex();redraw();if(S.prices)loadFlex()};b.onmouseenter=()=>{if(S.out&&!S.back&&b.dataset.k>S.out){S.hover=b.dataset.k;paintHover()}}});cal.querySelector('.grid').onmouseleave=()=>{S.hover='';paintHover()};const sh=v=>{const[y,m]=S.view.split('-').map(Number);S.view=key(new Date(Date.UTC(y,m-1+v,1))).slice(0,7);clearFlex();redraw();if(S.prices)loadFlex()};$('#pm').onclick=()=>sh(-1);$('#nm').onclick=()=>sh(1);if($('#pt'))$('#pt').onclick=()=>{S.prices=!S.prices;redraw();if(S.prices)loadFlex()};if($('#clr'))$('#clr').onclick=()=>{S.out='';S.back='';clearFlex();redraw()}}
@@ -354,14 +363,15 @@ function bind(){
     const to=$('#to');to.onfocus=()=>{if(!sugOpen){sugOpen=true;calOpen=false;fromOpen=false;draft=S.to?placeName(S.to):draft;redrawSug()}};
     to.oninput=()=>{draft=to.value;S.to='';sugOpen=true;selection=-1;clearFlex();redrawSug()};
     to.onkeydown=e=>{const options=[...document.querySelectorAll('[data-to]')];if(e.key==='Escape'){sugOpen=false;redrawSug()}if(['ArrowDown','ArrowUp'].includes(e.key)){e.preventDefault();selection=(selection+(e.key==='ArrowDown'?1:-1)+options.length)%options.length;options.forEach((b,i)=>{b.classList.toggle('on',i===selection);b.setAttribute('aria-selected',String(i===selection))});if(options[selection])to.setAttribute('aria-activedescendant',options[selection].id)}if(e.key==='Enter'&&sugOpen){e.preventDefault();if(options.length)chooseDestination(options[Math.max(0,selection)].dataset.to)}};
-    bindSug();$('#whenBtn').onclick=()=>{calOpen=!calOpen;sugOpen=false;fromOpen=false;go(calOpen?'#/search/when':'#/search');if(calOpen&&S.prices)loadFlex()};bindCal();
+    bindSug();$('#whenBtn').onclick=()=>{if(!calOpen)S.view=calendarMonth();calOpen=!calOpen;sugOpen=false;fromOpen=false;go(calOpen?'#/search/when':'#/search');if(calOpen&&S.prices)loadFlex()};bindCal();
     $('#cabin').onchange=e=>{S.cabin=e.target.value;clearFlex();if(S.prices)loadFlex()};
-    $('#fromBtn').onclick=()=>{fromOpen=!fromOpen;sugOpen=false;go(fromOpen?'#/search/from':'#/search');if(fromOpen)$('#fromQ').focus()};
+    $('#fromBtn').onclick=()=>{fromOpen=!fromOpen;sugOpen=false;go(fromOpen?'#/search/from':'#/search')};
     const setFrom=code=>{S.from=code;fromOpen=false;clearFlex();go('#/search')};document.querySelectorAll('[data-from]').forEach(b=>b.onclick=()=>setFrom(b.dataset.from));
     const fq=$('#fromQ');if(fq){fq.oninput=()=>{const list=fq.value.trim()?matches(fq.value,true):[];$('#fromRes').innerHTML=list.map(a=>`<button type="button" class="opt" data-from2="${a[0]}"><span>${a[1]}</span><span class="c">${a[0]}</span></button>`).join('');document.querySelectorAll('[data-from2]').forEach(b=>b.onclick=()=>setFrom(b.dataset.from2))};fq.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();const b=$('[data-from2]');if(b)setFrom(b.dataset.from2)}}}
-    sf.onsubmit=e=>{e.preventDefault();if(!S.to){hint='Choose where to, or Anywhere.';redraw();$('#to').focus();return}if(!S.out){hint='Pick a date.';calOpen=true;go('#/search/when');$('#whenBar').classList.add('shake');return}if(origins(S).split(',').includes(S.to)){hint='Choose a different destination.';redraw();return}search()};
+    if(fromOpen)$('#fromPop .opt.on')?.focus();
+    sf.onsubmit=e=>{e.preventDefault();if(!S.to){hint='Choose where to, or Anywhere.';redraw();$('#to').focus();return}if(!S.out){hint='Pick a date.';S.view=calendarMonth();calOpen=true;go('#/search/when');$('#whenBar').classList.add('shake');return}if(origins(S).split(',').includes(S.to)){hint='Choose a different destination.';redraw();return}search()};
   }
-  document.querySelectorAll('[data-discover]').forEach(a=>a.onclick=e=>{e.preventDefault();const r=response.results.slice().sort((a,b)=>a.priceGbp-b.priceGbp)[+a.dataset.discover];S.to=r.destination;S.from=r.origin;clearFlex();search()});
+  document.querySelectorAll('[data-discover]').forEach(a=>a.onclick=e=>{e.preventDefault();const r=discoveries()[+a.dataset.discover];S.to=r.destination;S.from=r.origin;clearFlex();search()});
   if($('#anywhere'))$('#anywhere').onclick=()=>{S.to='ANY';search()};if($('#retry'))$('#retry').onclick=search;
   const gf=$('#gf');if(gf)gf.onsubmit=e=>{e.preventDefault();const tp=$('#gtp').value.replace(/[,\s]/g,''),target=$('#gtarget').value.replace(/[,\s]/g,''),ends=$('#gend').value;const err=$('#gErr');if(!/^\d+$/.test(tp)||!Number.isSafeInteger(+tp)||!/^\d+$/.test(target)||!Number.isSafeInteger(+target)||+target<=0){err.textContent='Enter whole tier points and a target above zero.';return}if(!realDate(ends)){err.textContent='Enter a valid year-end date.';return}const saved=goldData({tp:+tp,target:+target,ends});if(!saved){err.textContent='Could not save on this device.';return}gold=saved;render();toast('Saved')};
 }

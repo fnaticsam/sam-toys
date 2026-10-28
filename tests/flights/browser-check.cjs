@@ -46,6 +46,7 @@ async function main() {
       const dates = async (returning = false) => {
         if (!await page.locator('#cal').isVisible()) await page.locator('#whenBtn').click();
         if (!await page.locator('[data-k="2026-11-18"]').count()) await page.locator('#nm').click();
+        if (await page.locator('#clr').count()) await page.locator('#clr').click();
         await page.locator('[data-k="2026-11-18"]').click();
         if (returning) await page.locator('[data-k="2026-11-21"]').click();
       };
@@ -53,7 +54,7 @@ async function main() {
         fixture.setMode('normal'); await showSearch();
         assert.match(await page.locator('meta[name="robots"]').getAttribute('content'), /noindex/);
         assert.equal(await page.locator('#to').getAttribute('placeholder'), 'Where to?');
-        assert.match(await page.locator('#fromBtn').innerText(), /From London/);
+        assert.match(await page.locator('#fromBtn').innerText(), /From\s+London/);
         await snap('search');
         // Same viewport reference screenshots support direct visual comparison.
         const ref = await context.newPage(); await ref.goto(fixture.url + '/approved#/search');
@@ -62,6 +63,8 @@ async function main() {
       });
       await check(`${name}: origin controls and custom airport`, async () => {
         await page.locator('#fromBtn').click();
+        assert.equal(await page.locator('#fromPop .opt.on').evaluate(el => el === document.activeElement), true);
+        await snap('origin-menu');
         assert.match(await page.locator('#fromPop').innerText(), /London.*all airports/s);
         await page.locator('[data-from="IBZ"]').click();
         assert.match(await page.locator('#fromBtn').innerText(), /Ibiza/);
@@ -73,6 +76,9 @@ async function main() {
       await check(`${name}: Anywhere first and keyboard destination selection`, async () => {
         await page.locator('#to').focus();
         assert.equal(await page.locator('.pop [data-to]').first().getAttribute('data-to'), 'ANY');
+        const option = page.locator('[data-to="MAD"]');
+        assert(await option.evaluate(el => { const r=el.getBoundingClientRect(); return el.contains(document.elementFromPoint(r.x+r.width/2,r.y+r.height/2)); }));
+        await snap('destination-menu');
         await page.locator('#to').fill('MAD'); await page.locator('#to').press('ArrowDown'); await page.locator('#to').press('Enter');
         await page.locator('#cal').waitFor(); assert.match(await page.locator('#to').inputValue(), /Madrid/);
       });
@@ -90,12 +96,15 @@ async function main() {
         const flexResponse = page.waitForResponse(r => r.url().includes('/api/flights?') && new URL(r.url()).searchParams.get('action') === 'flex');
         await page.locator('#pt').click(); await flexResponse;
         await page.locator('.calnote').filter({ hasText: /discovery prices/ }).waitFor();
-        assert.match(await page.locator('[data-k="2026-11-18"]').innerText(), /£61\.6\b/);
+        assert.match(await page.locator('[data-k="2026-11-18"]').innerText(), /£62\b/);
         await snap('calendar-prices'); await page.locator('#pt').click();
       });
       await check(`${name}: live handler one-way prices, tier points and real booking link`, async () => {
         await page.locator('#cabin').selectOption({ label: 'Economy' });
         await search(); await snap('results');
+        assert.equal(await page.locator('.row').count(), 4);
+        assert.match(await page.locator('.row .m').first().innerText(), /^[A-Z]{3} ·/);
+        assert.match(await page.locator('.row .p').first().innerText(), /^£[\d,]+$/);
         const last = fixture.requests.filter(r => new URL(r.url, fixture.url).searchParams.get('action') === 'search').at(-1);
         const params = new URL(last.url, fixture.url).searchParams;
         assert.equal(params.get('origin'), 'LHR,LGW,LCY,STN,LTN,SEN');
@@ -112,7 +121,12 @@ async function main() {
         const hidden = data.results.find(f => f.hiddenCity);
         await page.locator(`a.row[href="#/fare/${encodeURIComponent(hidden.id)}"]`).click();
         await page.locator('#book').waitFor(); await snap('hidden-city');
-        assert.match(await page.locator('#app').innerText(), /leave at|ticket continues|ticketed to/i);
+        assert.match(await page.locator('.who').innerText(), /Iberia · Economy · cabin bag only/);
+        assert.match(await page.locator('.lg').first().innerText(), /^IB714 · 2h30$/);
+        assert.match(await page.locator('.lg.ghost').innerText(), /^IB411 · 1h$/);
+        assert.match(await page.locator('.st.ghost').innerText(), /Barcelona · BCN/);
+        assert.equal(await page.locator('.est').count(), 0);
+        assert.match(await page.locator('#app').innerText(), /Skipping a sector can invalidate the ticket and credit\./);
       });
       await check(`${name}: return amounts and tier points are backend totals`, async () => {
         await showSearch(); await destination(); await dates(true); await search();
@@ -131,6 +145,8 @@ async function main() {
       await check(`${name}: Gold editable defaults and persistence`, async () => {
         await page.locator('#ring').click(); await page.locator('#gtp').waitFor();
         assert.equal(await page.locator('#gtp').inputValue(), '0');
+        assert.equal(await page.locator('.gring circle').count(), 1);
+        await snap('gold-zero');
         assert.equal(await page.locator('#gtarget').inputValue(), '20000');
         assert.equal(await page.locator('#gend').inputValue(), '2027-03-31');
         await page.locator('#gtp').fill('12500'); await page.locator('#gtarget').fill('21000');
@@ -145,7 +161,7 @@ async function main() {
           fixture.setMode(mode); await showSearch(); await destination(); await dates();
           await page.locator('#go').click();
           if (mode === 'loading') await page.locator('.spin').waitFor();
-          else if (mode === 'partial') { await page.locator('.row').first().waitFor(); assert.match(await page.locator('#app').innerText(), /couldn.t|partial|unavailable|not respond|incomplete/i); }
+          else if (mode === 'partial') { await page.locator('.row').first().waitFor(); assert.match(await page.locator('#app').innerText(), /didn.t answer/i); }
           else await page.locator('.state').waitFor();
           const text = await page.locator('#app').innerText();
           if (mode === 'empty') assert.match(text, /No earning fares/);
@@ -159,6 +175,10 @@ async function main() {
         await page.locator('[data-to="ANY"]').click(); await dates(); await search();
         const last = fixture.requests.at(-1); assert.equal(new URL(last.url, fixture.url).searchParams.get('action'), 'anywhere');
         assert.match(await page.locator('#app').innerText(), /unfiltered|discovery|unverified/i);
+        assert.equal(await page.locator('.row .tm').count(), 41);
+        assert.equal(await page.locator('.row .tm').allTextContents().then(cities => new Set(cities).size), 41);
+        assert.equal(await page.locator('.row .tm').filter({hasText:/^BOD$/}).count(), 0);
+        assert.equal(await page.locator('.row .v').first().evaluate(el => getComputedStyle(el).color), 'rgb(13, 13, 15)');
         await snap('anywhere');
         await page.locator('.row').filter({ hasText: 'Madrid' }).first().click(); await page.locator('.row').first().waitFor();
         assert.equal(new URL(fixture.requests.at(-1).url, fixture.url).searchParams.get('action'), 'search');

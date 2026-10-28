@@ -128,7 +128,15 @@ test('hidden-city detail preserves flown and ticketed endpoints and the actual s
   assert(fare); assert.equal(fare.leaveAt, 'MAD'); assert.equal(fare.ticketedTo, 'BCN');
   const p = page(); query(p, { from: 'LHR' }); p.put('data', data); p.put('fareId', fare.id); p.run('response=data');
   const detail = p.run('vFare(fareId)');
-  assert.match(detail, /You leave at Madrid/); assert.match(detail, /Ticketed to BCN/);
+  assert.match(detail, /You leave at Madrid/); assert.match(detail, /Barcelona · BCN/);
+  assert.match(detail, /Iberia · Economy · cabin bag only/);
+  assert.match(detail, /class="lg"><span class="fn">IB714<\/span> · 2h30/);
+  assert.match(detail, /class="lg ghost"><span class="fn">IB411<\/span> · 1h/);
+  assert.match(detail, /Skipping a sector can invalidate the ticket and credit\./);
+  assert.doesNotMatch(detail, /Tier points and Avios are estimates|connecting/);
+  const rows = p.run('vResults()');
+  assert.match(rows, /ticketed to BCN, leave at MAD/);
+  assert.doesNotMatch(rows, /IB411|hidden city ·/);
   assert(detail.includes(`href="${fare.deepLink.replaceAll('&','&amp;')}"`));
   assert.match(detail, /Book on Skiplagged/);
   for (const unsafe of ['javascript:alert(1)', 'https://skiplagged.com.evil.test/', 'http://skiplagged.com/', 'https://user@skiplagged.com/', 'https://skiplagged.com:444/']) {
@@ -143,6 +151,7 @@ test('hostile fare IDs remain encoded in result links and display text is escape
   data.results = [data.results[0]];
   const id = 'bad"><img src=x onerror=alert(1)>';
   data.results[0].id = id; data.results[0].flightNumbers = ['<svg onload=alert(1)>'];
+  data.results[0].legs[0].units[0].flightNumbers = ['<svg onload=alert(1)>'];
   const p = page(); query(p); p.put('data', data); p.run('response=data');
   const html = p.run('vResults()');
   assert(html.includes('#/fare/' + encodeURIComponent(id)));
@@ -154,7 +163,7 @@ test('Anywhere and flex discovery never fabricate tier-point ratios', () => {
   const p = page(); query(p, { to: 'ANY' });
   p.run("response={action:'anywhere',results:[{origin:'IBZ',destination:'MAD',priceGbp:40,estimate:null}]}");
   const html = p.run('vResults()');
-  assert.match(html, /£40/); assert.match(html, /Check £\/TP/);
+  assert.match(html, /£40/); assert.match(html, /aria-hidden="true">›/); assert.doesNotMatch(html, /Check £\/TP/);
   assert.doesNotMatch(html, /per tier point|£\d+\.\d{2}<small>\/TP/);
   query(p); p.run("flexRows=[{departureDate:'2026-11-18',priceGbp:40}]");
   assert.deepEqual(p.json("calendarQuote('2026-11-18')"), { value: '£40', verified: false });
@@ -227,4 +236,62 @@ test('changing destination refreshes an enabled calendar with current route disc
   assert.equal(new URL(calls[0], 'https://sam.toys').searchParams.get('destination'), 'JFK');
   assert.equal(new URL(calls[0], 'https://sam.toys').searchParams.get('action'), 'flex');
   p.run("go('#/gold')"); // cleanly cancel the pending discovery render
+});
+
+
+test('London results collapse identical flight times to the best fare and keep its airport', async () => {
+  const data = await backend('/api/flights?origin=LHR,LGW&destination=MAD&departureDate=2026-11-18', searchFixture({origin:'LHR',destination:'MAD',departureDate:'2026-11-18'}));
+  const base = data.results.find(f => !f.hiddenCity);
+  const best = structuredClone(base);
+  best.id = 'best-LGW'; best.origin = 'LGW'; best.departure.airport = 'LGW'; best.priceGbp = base.priceGbp - 1;
+  data.results = [base, best, {...structuredClone(base), id:'later', departure:{...base.departure,dateTime:'2026-11-18T20:45:00+00:00'}}];
+  const p = page(); query(p); p.put('data',data); p.run('response=data');
+  assert.deepEqual(p.json('fares().map(f=>f.id)'), ['best-LGW','later']);
+  assert.match(p.run('vResults()'), /class="m">LGW ·/);
+});
+
+test('list money rounds pounds while fare money always retains two decimal places', () => {
+  const p = page();
+  assert.equal(p.run('money(100.1)'), '£100');
+  assert.equal(p.run('money(100.6)'), '£101');
+  assert.equal(p.run('money(100.1,true)'), '£100.10');
+  assert.equal(p.run('money(100,true)'), '£100.00');
+});
+
+test('Anywhere groups airports by catalogue city and selects its cheapest origin and airport', () => {
+  const p = page(); query(p, {to:'ANY'});
+  p.put('data', {action:'anywhere',meta:{airports:{BCN:'Barcelona',GRO:'Barcelona',BOD:'Bordeaux'}},results:[
+    {origin:'LHR',destination:'BCN',priceGbp:80}, {origin:'LGW',destination:'GRO',priceGbp:40},
+    {origin:'LTN',destination:'BCN',priceGbp:60}, {origin:'LGW',destination:'BOD',priceGbp:50},
+  ]});
+  p.run('response=data');
+  assert.deepEqual(p.json('discoveries().map(r=>[r.origin,r.destination])'), [['LGW','GRO'],['LGW','BOD']]);
+  const html = p.run('vAnywhere()');
+  assert.equal((html.match(/class="row"/g)||[]).length, 2);
+  assert.match(html, /Barcelona/); assert.match(html, /Bordeaux/);
+  assert.match(html, /from LGW/); assert.match(html, /list discovery/);
+  assert.doesNotMatch(html, /Check £\/TP/);
+});
+
+test('partial results name failed airports separately from the estimates caveat', () => {
+  const p = page();
+  p.run("response={partial:true,failures:[{origin:'LCY'},{origin:'SEN'},{origin:'LCY'}]}");
+  assert.match(p.run('partialNote()'), /LCY and SEN didn't answer/);
+  assert.doesNotMatch(p.run('resultNote()'), /LCY|SEN|origins|answer/);
+});
+
+test('calendar opens on selected month or rolls forward with fewer than seven selectable days', () => {
+  const p = page();
+  assert.equal(p.run("calendarMonth('2026-10-28','')"), '2026-11');
+  assert.equal(p.run("calendarMonth('2026-10-25','')"), '2026-10');
+  assert.equal(p.run("calendarMonth('2026-10-26','')"), '2026-11');
+  assert.equal(p.run("calendarMonth('2026-12-28','')"), '2027-01');
+  assert.equal(p.run("calendarMonth('2026-10-28','2027-02-18')"), '2027-02');
+});
+
+test('Gold at zero draws only its track and retains the editable Target row', () => {
+  const p = page();
+  assert.equal((p.run('ring(180,8,0)').match(/<circle/g)||[]).length, 1);
+  assert.equal((p.run('ring(180,8,0.5)').match(/<circle/g)||[]).length, 2);
+  assert.match(p.run('vGold()'), /<label>Target<input id="gtarget"/);
 });

@@ -1,0 +1,619 @@
+<!doctype html><html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><script>try{var p=window.parent!==window&&window.parent.claude;if(p)window.__kitClaude=p}catch(e){}</script><meta name="kit:version" content="1">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>Flights</title>
+<style>
+:root{
+  --bg:#0c0d10; --surface:#14161b; --surface-hi:#1b1e24; --line:#24272e; --line-soft:#1c1f25;
+  --text:#eeece6; --dim:#8f939b; --faint:#5f636b;
+  --accent:#ffb454; --accent-ink:#1a1206; --good:#7fd1a8; --warn:#f0a868; --bad:#ef7b6f;
+  --radius:14px; --mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+  --ba:#5b8fd9; --ib:#e2574c; --qr:#b4577d; --aa:#a7b3c2; --vy:#e3be3c; --ei:#4fb08a; --ay:#7aa7ff; --rj:#c9a36a; --jl:#e88a8a;
+}
+@media (prefers-color-scheme:light){
+  :root{--bg:#f6f5f1; --surface:#ffffff; --surface-hi:#f1efe9; --line:#e2dfd7; --line-soft:#ecE9e2;
+    --text:#17181b; --dim:#666a72; --faint:#9a9da4; --accent:#d9861c; --accent-ink:#fff;
+    --good:#2f8f62; --warn:#b86a1e; --bad:#c2473a; --aa:#6d7a8a; --vy:#b8930d;}
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-text-size-adjust:100%}
+body{background:radial-gradient(800px 420px at 85% -8%,rgba(255,180,84,.07),transparent 60%),var(--bg);
+  color:var(--text);min-height:100dvh;font:15px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  -webkit-font-smoothing:antialiased;font-variant-numeric:tabular-nums}
+a{color:inherit}
+button,input,select{font:inherit;color:inherit}
+.wrap{max-width:920px;margin:0 auto;padding:28px 20px 120px}
+@media (max-width:640px){.wrap{padding:18px 14px 110px}}
+
+/* top bar */
+.top{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:28px}
+.mark{font-weight:750;letter-spacing:-.02em;font-size:18px;text-decoration:none;display:flex;align-items:baseline;gap:2px}
+.mark .host{color:var(--dim);font-weight:500}
+.mark .dot{color:var(--accent)}
+.gold{display:flex;align-items:center;gap:10px;text-decoration:none;color:var(--dim);font-size:12.5px;min-width:0}
+.gold .bar{position:relative;width:140px;height:5px;border-radius:3px;background:var(--line);overflow:hidden;flex:none}
+.gold .bar i{position:absolute;inset:0 auto 0 0;background:var(--accent);border-radius:3px}
+.gold .bar b{position:absolute;top:0;bottom:0;background:var(--accent);opacity:.4;transition:left .2s,width .2s}
+.gold:hover{color:var(--text)}
+.gold .gtx b{color:var(--text);font-weight:600}
+@media (max-width:520px){.gold .bar{width:70px}.gold .gtx .long{display:none}}
+
+/* headings */
+h1{font-size:26px;letter-spacing:-.02em;line-height:1.2;font-weight:700}
+h1 .soft{color:var(--dim);font-weight:500}
+.sub{color:var(--dim);margin-top:6px;font-size:14px}
+.sub b{color:var(--text);font-weight:600}
+@media (max-width:640px){h1{font-size:21px}}
+.crumb{display:inline-flex;gap:6px;align-items:center;color:var(--dim);text-decoration:none;font-size:13.5px;margin-bottom:14px}
+.crumb:hover{color:var(--text)}
+
+/* search form */
+.seg{display:inline-flex;background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:3px;gap:2px}
+.seg button{border:0;background:none;padding:7px 14px;border-radius:999px;cursor:pointer;color:var(--dim);font-size:14px}
+.seg button[aria-pressed=true]{background:var(--surface-hi);color:var(--text);box-shadow:0 1px 0 rgba(0,0,0,.25)}
+.seg button:hover{color:var(--text)}
+.form{margin-top:18px;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:18px;
+  display:grid;gap:14px;grid-template-columns:1fr 1fr;box-shadow:0 20px 40px -24px rgba(0,0,0,.5)}
+.form .full{grid-column:1/-1}
+@media (max-width:640px){.form{grid-template-columns:1fr;padding:14px}}
+.field{position:relative;display:flex;flex-direction:column;gap:6px}
+.field label{font-size:12.5px;color:var(--dim)}
+.input{width:100%;background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:11px 12px;font-size:16px;outline:none;transition:border-color .15s}
+.input:focus{border-color:var(--accent)}
+.input.err{border-color:var(--bad)}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chip{border:1px solid var(--line);background:none;border-radius:999px;padding:4px 10px;font-size:13px;color:var(--dim);cursor:pointer}
+.chip:hover{color:var(--text);border-color:var(--faint)}
+.chip[aria-pressed=true]{color:var(--text);border-color:var(--accent);background:rgba(255,180,84,.08)}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.opts{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.sugg{position:absolute;top:100%;left:0;right:0;margin-top:4px;background:var(--surface-hi);border:1px solid var(--line);border-radius:10px;
+  z-index:5;overflow:hidden;box-shadow:0 16px 30px -12px rgba(0,0,0,.6)}
+.sugg button{display:flex;width:100%;justify-content:space-between;gap:10px;padding:9px 12px;border:0;background:none;cursor:pointer;text-align:left}
+.sugg button:hover,.sugg button:focus{background:var(--line)}
+.sugg .code{font-family:var(--mono);color:var(--dim);font-size:13px}
+.ferr{color:var(--bad);font-size:12.5px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:0;border-radius:10px;padding:12px 20px;font-weight:650;cursor:pointer;text-decoration:none;
+  background:var(--accent);color:var(--accent-ink);transition:transform .12s,filter .12s}
+.btn:hover{filter:brightness(1.06)}.btn:active{transform:scale(.98)}
+.btn.ghost{background:none;color:var(--text);border:1px solid var(--line);font-weight:550}
+.btn.ghost:hover{border-color:var(--faint)}
+.recent{margin-top:28px}
+.recent h2,.sec{font-size:12.5px;color:var(--dim);font-weight:600;margin-bottom:8px}
+.recent a{display:flex;justify-content:space-between;gap:12px;padding:11px 2px;border-bottom:1px solid var(--line-soft);text-decoration:none}
+.recent a:hover .r1{color:var(--accent)}
+.recent .r2{color:var(--dim);font-size:13.5px;white-space:nowrap}
+
+/* results */
+.rhead{display:flex;justify-content:space-between;align-items:flex-end;gap:14px;flex-wrap:wrap;margin-bottom:18px}
+.qline{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.qline a{font-size:13px;color:var(--dim);border:1px solid var(--line);border-radius:999px;padding:3px 10px;text-decoration:none}
+.qline a:hover{color:var(--text)}
+.sort{font-size:13px;color:var(--dim)}
+.sort select{background:none;border:0;color:var(--text);font-weight:600;cursor:pointer}
+.list{border-top:1px solid var(--line)}
+.fare{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px 18px;align-items:center;padding:14px 4px;border-bottom:1px solid var(--line);
+  text-decoration:none;transition:background .15s;border-radius:0}
+.fare:hover,.fare.hl{background:var(--surface)}
+.fare .who{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--dim);min-width:0}
+.dotc{width:8px;height:8px;border-radius:50%;flex:none;background:var(--c,var(--dim))}
+.fno{font-family:var(--mono);color:var(--text);font-size:13px}
+.times{font-size:17px;font-weight:600;letter-spacing:-.01em;margin-top:2px}
+.times .ap{color:var(--dim);font-weight:500;font-size:14px}
+.times .plus{font-size:11px;color:var(--warn);vertical-align:super}
+.meta{color:var(--dim);font-size:13px;margin-top:2px}
+.tag{display:inline-block;font-size:11.5px;border:1px solid var(--line);border-radius:6px;padding:0 6px;margin-left:6px;color:var(--dim);white-space:nowrap}
+.tag.hc{border-color:rgba(240,168,104,.45);color:var(--warn)}
+.nums{display:grid;grid-template-columns:auto auto auto;gap:0 18px;align-items:baseline;text-align:right}
+.nums .k{font-size:22px;font-weight:700;letter-spacing:-.02em}
+.nums .k small{font-size:12px;font-weight:500;color:var(--dim);margin-left:2px}
+.nums .p{font-size:16px;font-weight:600}
+.nums .t{font-size:13px;color:var(--dim)}
+.fare:first-child .nums .k{color:var(--accent)}
+@media (max-width:640px){
+  .fare{grid-template-columns:1fr;padding:13px 2px}
+  .nums{grid-template-columns:auto auto 1fr;text-align:left;gap:0 14px}
+  .nums .t{text-align:right}
+  .nums .k{font-size:19px}
+}
+.foot{color:var(--faint);font-size:12.5px;margin-top:14px;display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.foot button{background:none;border:0;color:var(--dim);text-decoration:underline;text-underline-offset:3px;cursor:pointer;font-size:12.5px}
+
+/* chart (B) */
+.chart{display:none;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:12px 12px 6px;margin-bottom:16px}
+body.vb .chart{display:block}
+.chart svg{display:block;width:100%;height:auto;overflow:visible}
+.chart .ax{stroke:var(--line)}
+.chart .gl{stroke:var(--line);stroke-dasharray:3 4}
+.chart .gt{fill:var(--faint);font-size:10.5px}
+.chart .al{fill:var(--dim);font-size:11px}
+.chart circle{cursor:pointer;transition:r .15s}
+.chart .lab{fill:var(--text);font-size:11px;pointer-events:none}
+body.vb .fare{padding:10px 4px}
+body.vb .fare .times{font-size:15px}
+body.vb .nums .k{font-size:18px}
+body.vb .vbar{display:none}
+
+/* anywhere */
+.dest .times{font-size:18px}
+.vbar{height:4px;border-radius:2px;background:var(--line);margin-top:8px;max-width:260px;overflow:hidden}
+.vbar i{display:block;height:100%;background:var(--accent);opacity:.75;border-radius:2px}
+
+/* calendar */
+.cal{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-top:6px}
+.cal .dow{font-size:12px;color:var(--faint);text-align:center;padding-bottom:4px}
+.day{aspect-ratio:1/0.72;border-radius:10px;border:1px solid var(--line);background:var(--surface);display:flex;flex-direction:column;justify-content:space-between;
+  padding:7px 8px;text-decoration:none;position:relative;transition:transform .12s,border-color .12s;min-width:0}
+.day:hover{transform:translateY(-2px);border-color:var(--faint)}
+.day .d{font-size:12px;color:var(--dim)}
+.day .pr{font-weight:650;font-size:15px}
+.day .v{font-size:11.5px;color:var(--dim)}
+.day.best{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
+.day.past{opacity:.3;pointer-events:none}
+.day.none .pr{color:var(--faint);font-weight:500;font-size:13px}
+.day::after{content:"";position:absolute;left:8px;right:8px;bottom:5px;height:3px;border-radius:2px;background:var(--accent);opacity:var(--o,0)}
+@media (max-width:640px){.cal{gap:3px}.day{padding:5px;border-radius:8px}.day .pr{font-size:12.5px}.day .v{display:none}}
+.calnav{display:flex;align-items:center;gap:10px}
+.calnav button{border:1px solid var(--line);background:none;border-radius:8px;width:32px;height:32px;cursor:pointer;color:var(--dim)}
+.calnav button:hover{color:var(--text)}
+.key{display:flex;gap:14px;align-items:center;color:var(--faint);font-size:12px;margin-top:12px}
+.key i{display:inline-block;width:18px;height:3px;border-radius:2px;background:var(--accent);vertical-align:middle;margin-right:6px}
+
+/* fare detail */
+.hero{display:flex;gap:28px;flex-wrap:wrap;align-items:flex-end;margin:18px 0 26px}
+.hero .big{font-size:44px;font-weight:750;letter-spacing:-.03em;line-height:1}
+.hero .big small{font-size:16px;color:var(--dim);font-weight:500;margin-left:4px}
+.hero .cell .l{font-size:12.5px;color:var(--dim);margin-top:6px}
+.hero .cell .m{font-size:22px;font-weight:650;line-height:1}
+@media (max-width:640px){.hero{gap:18px}.hero .big{font-size:36px}}
+.cols{display:grid;grid-template-columns:1.4fr 1fr;gap:28px}
+@media (max-width:760px){.cols{grid-template-columns:1fr}}
+.tl{position:relative;padding-left:22px}
+.tl::before{content:"";position:absolute;left:5px;top:10px;bottom:10px;width:2px;background:var(--line)}
+.stop{position:relative;padding:4px 0 18px}
+.stop::before{content:"";position:absolute;left:-21px;top:9px;width:10px;height:10px;border-radius:50%;background:var(--bg);border:2px solid var(--dim)}
+.stop.end::before{border-color:var(--accent);background:var(--accent)}
+.stop .t1{font-weight:650;font-size:16px}
+.stop .t1 .ap{color:var(--dim);font-weight:500}
+.leg{color:var(--dim);font-size:13.5px;padding:0 0 18px}
+.lay{color:var(--warn);font-size:13px;padding:0 0 18px}
+.stop.ghost,.leg.ghost{opacity:.4}
+.stop.ghost::before{border-style:dashed}
+.facts{display:grid;grid-template-columns:auto 1fr;gap:9px 16px;font-size:14px;align-content:start}
+.facts dt{color:var(--dim)}
+.facts dd{text-align:right}
+.note{color:var(--dim);font-size:13px;margin-top:14px}
+.gp{margin-top:24px;padding-top:18px;border-top:1px solid var(--line)}
+.gp .gbar{position:relative;height:8px;border-radius:4px;background:var(--line);overflow:hidden;margin:10px 0 6px}
+.gp .gbar i{position:absolute;inset:0 auto 0 0;background:var(--accent);border-radius:4px}
+.gp .gbar b{position:absolute;top:0;bottom:0;background:var(--accent);opacity:.45;animation:grow .5s ease-out both}
+@keyframes grow{from{transform:scaleX(0);transform-origin:left}to{transform:scaleX(1)}}
+.gp .gl{display:flex;justify-content:space-between;color:var(--dim);font-size:12.5px}
+.actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:22px}
+
+/* states */
+.state{padding:56px 4px;max-width:46ch}
+.state h1{font-size:21px}
+.state .actions{margin-top:18px}
+.skel{height:64px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:16px}
+.skel i{display:block;height:12px;border-radius:6px;background:linear-gradient(90deg,var(--surface) 0%,var(--surface-hi) 50%,var(--surface) 100%);background-size:200% 100%;animation:sh 1.2s linear infinite}
+@keyframes sh{from{background-position:200% 0}to{background-position:-200% 0}}
+.loadline{color:var(--dim);font-size:13.5px;margin:4px 0 14px;display:flex;align-items:center;gap:8px}
+.spin{width:12px;height:12px;border:2px solid var(--line);border-top-color:var(--accent);border-radius:50%;animation:rot .8s linear infinite}
+@keyframes rot{to{transform:rotate(360deg)}}
+
+/* gold page */
+.gform{max-width:420px;display:grid;gap:14px;margin-top:20px}
+
+/* toast + chrome */
+.toast{position:fixed;left:50%;bottom:24px;transform:translate(-50%,20px);opacity:0;background:var(--surface-hi);border:1px solid var(--line);
+  padding:10px 16px;border-radius:10px;font-size:14px;transition:.2s;pointer-events:none;z-index:50}
+.toast.on{opacity:1;transform:translate(-50%,0)}
+.ab{position:fixed;left:14px;bottom:14px;z-index:40;display:flex;align-items:center;gap:6px;background:var(--surface);border:1px solid var(--line);
+  border-radius:999px;padding:3px 3px 3px 10px;font-size:12px;color:var(--dim);box-shadow:0 8px 20px -10px rgba(0,0,0,.6)}
+.ab button{border:0;background:none;border-radius:999px;padding:4px 10px;cursor:pointer;color:var(--dim);font-size:12px}
+.ab button[aria-pressed=true]{background:var(--surface-hi);color:var(--text)}
+.idx{position:fixed;right:14px;bottom:14px;z-index:40;font-size:13px}
+.idx>button{background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:6px 12px;cursor:pointer;color:var(--dim);box-shadow:0 8px 20px -10px rgba(0,0,0,.6)}
+.idx nav{display:none;position:absolute;right:0;bottom:40px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:6px;min-width:220px;
+  box-shadow:0 16px 36px -14px rgba(0,0,0,.7)}
+.idx.open nav{display:block}
+.idx nav a{display:block;padding:7px 10px;border-radius:8px;text-decoration:none;color:var(--dim)}
+.idx nav a:hover,.idx nav a.cur{background:var(--surface-hi);color:var(--text)}
+.idx nav .h{font-size:11px;color:var(--faint);padding:6px 10px 2px}
+.fade{animation:fd .22s ease-out}
+@keyframes fd{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <a class="mark" href="#/search"><span class="host">sam.toys/</span>flights<span class="dot">.</span></a>
+    <a class="gold" id="goldStrip" href="#/gold" aria-label="Gold progress"></a>
+  </header>
+  <main id="app"></main>
+</div>
+<div class="ab" role="group" aria-label="Layout option">Layout
+  <button data-v="a" aria-pressed="true">A · List</button><button data-v="b" aria-pressed="false">B · Chart</button>
+</div>
+<div class="idx" id="idx"><button aria-expanded="false">Screens</button><nav></nav></div>
+<div class="toast" id="toast" role="status"></div>
+
+<script>
+/* ---------- data ---------- */
+const AIRLINES={BA:{n:'British Airways',c:'var(--ba)'},IB:{n:'Iberia',c:'var(--ib)'},QR:{n:'Qatar Airways',c:'var(--qr)'},AA:{n:'American',c:'var(--aa)'},
+  VY:{n:'Vueling',c:'var(--vy)'},EI:{n:'Aer Lingus',c:'var(--ei)'},AY:{n:'Finnair',c:'var(--ay)'},RJ:{n:'Royal Jordanian',c:'var(--rj)'},JL:{n:'Japan Airlines',c:'var(--jl)'}};
+const AIRPORTS=[['LON','London (all airports)'],['LHR','London Heathrow'],['LGW','London Gatwick'],['LCY','London City'],['STN','London Stansted'],['IBZ','Ibiza'],
+  ['MAD','Madrid'],['BCN','Barcelona'],['JFK','New York JFK'],['DOH','Doha'],['DUB','Dublin'],['HEL','Helsinki'],['AMM','Amman'],['HND','Tokyo Haneda'],
+  ['VLC','Valencia'],['SYD','Sydney'],['LIS','Lisbon'],['MXP','Milan Malpensa']];
+const NAME=Object.fromEntries(AIRPORTS);
+const USD=0.79;
+// segment: [flight, from, dep, to, arr, mins, plusDays]
+const ROUTES={
+  MAD:{from:'LON',to:'MAD',date:'Thu 13 Nov',trip:'One way',excluded:13,fares:[
+    {id:'ba460',al:'BA',segs:[['BA 460','LHR','11:30','MAD','14:45',135]],gbp:92,tp:78,av:700},
+    {id:'ba458',al:'BA',segs:[['BA 458','LHR','06:40','MAD','09:55',135]],gbp:68,tp:52,av:470},
+    {id:'ib3167',al:'IB',segs:[['IB 3167','LHR','07:15','MAD','10:35',140]],gbp:54,tp:40,av:360},
+    {id:'ba2700',al:'BA',segs:[['BA 2700','LCY','08:10','MAD','11:30',140]],gbp:81,tp:60,av:540},
+    {id:'ib3173',al:'IB',segs:[['IB 3173','LHR','15:55','MAD','19:15',140],['IB 8962','MAD','20:40','VLC','21:35',55]],gbp:49,tp:35,av:315,hidden:'VLC'},
+    {id:'vy7101',al:'VY',sold:'IB 5401',segs:[['VY 7101','LGW','06:05','MAD','09:20',135]],gbp:39,tp:20,av:180}]},
+  JFK:{from:'LON',to:'JFK',date:'Tue 18 Nov',trip:'One way',excluded:9,fares:[
+    {id:'ba173',al:'BA',segs:[['BA 173','LHR','14:15','JFK','17:20',485]],gbp:402,tp:300,av:2700},
+    {id:'ba117',al:'BA',segs:[['BA 117','LHR','08:15','JFK','11:15',480]],gbp:356,tp:260,av:2340},
+    {id:'aa101',al:'AA',segs:[['AA 101','LHR','08:25','JFK','11:20',475]],gbp:318,tp:210,av:1890},
+    {id:'aa105',al:'AA',segs:[['AA 105','LHR','10:05','JFK','13:05',480],['AA 1832','JFK','15:10','CLT','17:25',135]],gbp:289,tp:190,av:1710,hidden:'CLT'},
+    {id:'ei155',al:'EI',segs:[['EI 155','LHR','06:30','DUB','07:50',80],['EI 105','DUB','10:50','JFK','13:15',445]],gbp:274,tp:160,av:1440}]},
+  DOH:{from:'LON',to:'DOH',date:'Sat 22 Nov',trip:'One way',excluded:6,fares:[
+    {id:'ba125',al:'BA',segs:[['BA 125','LHR','15:20','DOH','00:55',395,1]],gbp:455,tp:330,av:2970},
+    {id:'qr4',al:'QR',segs:[['QR 4','LHR','08:00','DOH','17:40',400]],gbp:412,tp:280,av:2520},
+    {id:'qr16',al:'QR',segs:[['QR 16','LHR','20:15','DOH','06:10',415,1]],gbp:389,tp:250,av:2250},
+    {id:'rj112',al:'RJ',segs:[['RJ 112','LHR','12:45','AMM','19:35',350],['RJ 610','AMM','22:10','DOH','00:55',165,1]],gbp:301,tp:170,av:1530}]},
+  LHR_FROM_IBZ:{from:'IBZ',to:'LON',date:'Sun 16 Nov',trip:'One way',excluded:4,fares:[
+    {id:'ib1702',al:'IB',segs:[['IB 1702','IBZ','08:05','MAD','09:20',75],['BA 459','MAD','11:05','LHR','12:30',145]],gbp:131,tp:95,av:850},
+    {id:'ib1704',al:'IB',segs:[['IB 1704','IBZ','07:30','MAD','08:45',75],['IB 3166','MAD','11:20','LHR','12:45',145]],gbp:118,tp:80,av:720},
+    {id:'ib1710',al:'IB',segs:[['IB 1710','IBZ','12:10','MAD','13:25',75],['IB 3170','MAD','15:00','LHR','16:25',145],['EI 163','LHR','18:10','DUB','19:30',80]],gbp:97,tp:60,av:540,hidden:'DUB'},
+    {id:'vy3809',al:'VY',sold:'IB 5809',segs:[['VY 3809','IBZ','09:40','BCN','10:35',55],['VY 7820','BCN','12:15','LGW','13:40',145]],gbp:86,tp:45,av:400}]},
+};
+const ANYWHERE=[
+  {code:'MAD',city:'Madrid',al:'BA',gbp:131,tp:104,note:'Direct'},
+  {code:'HEL',city:'Helsinki',al:'AY',gbp:168,tp:120,note:'Direct'},
+  {code:'DOH',city:'Doha',al:'QR',gbp:598,tp:420,note:'Direct'},
+  {code:'JFK',city:'New York',al:'BA',gbp:512,tp:350,note:'Direct'},
+  {code:'DUB',city:'Dublin',al:'EI',gbp:72,tp:46,note:'Direct'},
+  {code:'AMM',city:'Amman',al:'RJ',gbp:244,tp:150,note:'Direct'},
+  {code:'IBZ',city:'Ibiza',al:'IB',gbp:196,tp:112,note:'1 stop · MAD'},
+  {code:'HND',city:'Tokyo',al:'JL',gbp:812,tp:440,note:'Direct'}];
+const ALLFARES={};for(const r of Object.values(ROUTES))for(const f of r.fares){f.route=r;ALLFARES[f.id]=f}
+
+/* ---------- state ---------- */
+const S={mode:'route',from:'LON',to:'MAD',out:'2026-11-13',back:'',trip:'one',cabin:'Economy',sort:'value',month:10};
+let gold=JSON.parse(localStorage.getItem('flights.gold')||'null')||{tp:2140,ends:'2027-03-14'};
+const TARGET=3500;
+let variant='a',hl=null,showExcluded=false;
+
+/* ---------- helpers ---------- */
+const $=s=>document.querySelector(s);
+const per=f=>f.gbp/f.tp;
+const money=n=>'£'+Math.round(n).toLocaleString('en-GB');
+const ppt=f=>'£'+per(f).toFixed(2);
+const fmt=n=>n.toLocaleString('en-GB');
+const dur=m=>Math.floor(m/60)+'h'+(m%60?String(m%60).padStart(2,'0'):'');
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function fareInfo(f){
+  const flown=f.hidden?f.segs.slice(0,-1):f.segs;
+  const first=flown[0],last=flown[flown.length-1];
+  let total=0;flown.forEach((s,i)=>{total+=s[5];if(i)total+=gap(flown[i-1],s)});
+  const plus=flown.reduce((a,s)=>a+(s[6]||0),0);
+  return {first,last,flown,total,plus,stops:flown.length-1};
+}
+function gap(a,b){const t=x=>+x.slice(0,2)*60+ +x.slice(3);let g=t(b[2])-t(a[4]);if(g<0)g+=1440;return g}
+function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('on');clearTimeout(toast.h);toast.h=setTimeout(()=>t.classList.remove('on'),2200)}
+function href(path){return '#'+path+(variant==='b'?'/b':'')}
+
+function renderGold(add){
+  const pct=Math.min(1,gold.tp/TARGET),addp=add?Math.min(1-pct,add/TARGET):0;
+  const left=Math.max(0,TARGET-gold.tp);
+  const ends=new Date(gold.ends).toLocaleDateString('en-GB',{day:'numeric',month:'short'});
+  $('#goldStrip').innerHTML=`<span class="gtx">${left?`<b>${fmt(left)}</b> TP to Gold<span class="long"> · by ${ends}</span>`:'<b>Gold kept</b>'}</span>
+    <span class="bar"><i style="width:${pct*100}%"></i><b style="left:${pct*100}%;width:${addp*100}%"></b></span>`;
+}
+
+/* ---------- screens ---------- */
+function vSearch(){
+  const isAny=S.mode==='anywhere',isCal=S.mode==='calendar';
+  const chip=(c,l)=>`<button class="chip" type="button" data-from="${c}" aria-pressed="${S.from===c}">${l}</button>`;
+  return `<h1>Where to?</h1>
+  <p class="sub">Fares on airlines that earn Avios and tier points, cheapest per tier point first.</p>
+  <div style="margin-top:20px" class="seg" role="group" aria-label="Search type">
+    ${[['route','Route'],['anywhere','Anywhere'],['calendar','Flexible dates']].map(([k,l])=>`<button type="button" data-mode="${k}" aria-pressed="${S.mode===k}">${l}</button>`).join('')}
+  </div>
+  <form class="form" id="sf" novalidate>
+    <div class="field ${isAny?'full':''}"><label for="from">From</label>
+      <input class="input" id="from" autocomplete="off" value="${esc(apLabel(S.from))}" data-code="${S.from}">
+      <div class="chips">${chip('LON','London (all)')}${chip('IBZ','Ibiza')}</div></div>
+    ${isAny?'':`<div class="field"><label for="to">To</label>
+      <input class="input" id="to" autocomplete="off" placeholder="City or airport" value="${esc(S.to?apLabel(S.to):'')}" data-code="${S.to}">
+      <span class="ferr" id="toErr" hidden>Choose a destination, or search Anywhere.</span></div>`}
+    ${isCal?`<div class="field full"><label for="month">Month</label>
+      <select class="input" id="month"><option value="10" selected>November 2026</option><option value="11">December 2026</option><option value="0">January 2027</option></select></div>`
+    :`<div class="field full"><div class="row2">
+      <div class="field"><label for="out">Out</label><input class="input" id="out" type="date" value="${S.out}"></div>
+      <div class="field"><label for="back">Back</label><input class="input" id="back" type="date" value="${S.back}" ${S.trip==='one'?'disabled placeholder="One way"':''}></div>
+    </div></div>`}
+    <div class="full opts">
+      <div class="seg" role="group" aria-label="Trip">
+        <button type="button" data-trip="one" aria-pressed="${S.trip==='one'}">One way</button><button type="button" data-trip="return" aria-pressed="${S.trip==='return'}">Return</button></div>
+      <div class="seg" role="group" aria-label="Cabin">${['Economy','Premium','Business','First'].map(c=>`<button type="button" data-cabin="${c}" aria-pressed="${S.cabin===c}">${c}</button>`).join('')}</div>
+      <span style="flex:1"></span>
+      <button class="btn" type="submit">Search</button>
+    </div>
+  </form>
+  <section class="recent"><h2>Recent</h2>
+    <a href="${href('/route/MAD')}"><span class="r1">London → Madrid · 13 Nov</span><span class="r2">from £1.18/TP</span></a>
+    <a href="${href('/route/IBZ-LON')}"><span class="r1">Ibiza → London · 16 Nov</span><span class="r2">from £1.38/TP</span></a>
+    <a href="${href('/anywhere')}"><span class="r1">London → Anywhere · 13–16 Nov</span><span class="r2">from £1.26/TP</span></a>
+    <a href="${href('/calendar')}"><span class="r1">London → New York · November</span><span class="r2">from £1.29/TP</span></a>
+  </section>`;
+}
+function apLabel(c){return NAME[c]?`${NAME[c]} · ${c}`:c}
+
+function fareRow(f,i){
+  const x=fareInfo(f),al=AIRLINES[f.al];
+  const fn=x.flown.map(s=>s[0]).join(' + ');
+  const stops=x.stops?`${x.stops} stop · ${x.flown.slice(0,-1).map(s=>s[3]).join(', ')}`:'Direct';
+  return `<a class="fare" href="${href('/fare/'+f.id)}" data-id="${f.id}">
+    <div><div class="who"><span class="dotc" style="--c:${al.c}"></span><span class="fno">${fn}</span><span>${al.n}${f.sold?` · sold as ${f.sold}`:''}</span></div>
+      <div class="times">${x.first[2]} <span class="ap">${x.first[1]}</span> → ${x.last[4]}${x.plus?'<span class="plus">+'+x.plus+'</span>':''} <span class="ap">${x.last[3]}</span></div>
+      <div class="meta">${stops} · ${dur(x.total)}${f.hidden?`<span class="tag hc">Ticketed to ${f.hidden} · leave at ${x.last[3]}</span>`:''}</div></div>
+    <div class="nums"><span class="k">${ppt(f)}<small>/TP</small></span><span class="p">${money(f.gbp)}</span><span class="t">~${f.tp} TP · ~${fmt(f.av)} Avios</span></div>
+  </a>`;
+}
+function scatter(items,{label,id,link}){
+  const W=Math.max(320,Math.min(860,innerWidth-54)),H=W<600?220:240,P={l:44,r:16,t:14,b:30};
+  const mx=Math.max(...items.map(f=>f.gbp))*1.12,my=Math.max(...items.map(f=>f.tp))*1.15;
+  const X=v=>P.l+(v/mx)*(W-P.l-P.r),Y=v=>H-P.b-(v/my)*(H-P.t-P.b);
+  const best=Math.min(...items.map(per));
+  let g='';
+  for(const k of [1,1.5,2]){const x2=Math.min(mx,my*k),y2=x2/k;g+=`<line class="gl" x1="${X(0)}" y1="${Y(0)}" x2="${X(x2)}" y2="${Y(y2)}"/><text class="gt" x="${X(x2)-4}" y="${Y(y2)-6}" text-anchor="end">£${k.toFixed(2)}/TP</text>`}
+  const ticks=n=>{const st=[10,20,25,50,100,200,250,500];const s=st[st.findIndex(v=>n/v<=5)]||500;const a=[];for(let v=s;v<n;v+=s)a.push(v);return a};
+  for(const v of ticks(mx))g+=`<text class="gt" x="${X(v)}" y="${H-P.b+16}" text-anchor="middle">£${v}</text>`;
+  for(const v of ticks(my))g+=`<text class="gt" x="${P.l-6}" y="${Y(v)+3}" text-anchor="end">${v}</text>`;
+  const dots=items.map(f=>{const b=per(f)===best;return `<g data-id="${id(f)}" data-link="${link(f)}"><circle cx="${X(f.gbp)}" cy="${Y(f.tp)}" r="${b?8:6}" fill="${AIRLINES[f.al].c}" stroke="${b?'var(--accent)':'var(--surface)'}" stroke-width="${b?3:2}"/>
+    <text class="lab" x="${X(f.gbp)+11}" y="${Y(f.tp)+4}">${label(f)}</text></g>`}).join('');
+  return `<div class="chart"><svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Price against tier points">
+    <line class="ax" x1="${P.l}" y1="${H-P.b}" x2="${W-P.r}" y2="${H-P.b}"/><line class="ax" x1="${P.l}" y1="${P.t}" x2="${P.l}" y2="${H-P.b}"/>
+    ${g}<text class="al" x="${W-P.r}" y="${H-4}" text-anchor="end">Price →</text><text class="al" x="${P.l+6}" y="${P.t+4}">↑ Tier points</text>${dots}</svg></div>`;
+}
+function vRoute(key){
+  const r=ROUTES[key==='IBZ-LON'?'LHR_FROM_IBZ':key]||synth(key);
+  if(!r)return vEmpty(key);
+  const fares=[...r.fares].sort(S.sort==='value'?(a,b)=>per(a)-per(b):S.sort==='price'?(a,b)=>a.gbp-b.gbp:(a,b)=>fareInfo(a).total-fareInfo(b).total);
+  const best=[...r.fares].sort((a,b)=>per(a)-per(b))[0];
+  const bx=fareInfo(best);
+  document.title=`${r.from} → ${r.to} · Flights`;
+  return `<a class="crumb" href="${href('/search')}">← Search</a>
+  <div class="rhead"><div>
+    <h1>${bx.flown[0][0]} <span class="soft">is the best value at</span> ${ppt(best)} <span class="soft">a tier point</span></h1>
+    <div class="qline"><a href="${href('/search')}">${apLabel(r.from)} → ${apLabel(r.to)}</a><a href="${href('/calendar')}">${r.date}</a><a href="${href('/search')}">${r.trip} · ${S.cabin}</a></div>
+  </div>
+  <label class="sort">Sort <select id="sort"><option value="value" ${S.sort==='value'?'selected':''}>£ per TP</option><option value="price" ${S.sort==='price'?'selected':''}>Price</option><option value="time" ${S.sort==='time'?'selected':''}>Duration</option></select></label></div>
+  ${scatter(r.fares,{label:f=>fareInfo(f).flown[0][0],id:f=>f.id,link:f=>href('/fare/'+f.id)})}
+  <div class="list">${fares.map(fareRow).join('')}</div>
+  <div class="foot"><span>Tier points and Avios are estimates; the fare class is only known at booking.</span>
+    <button id="exBtn">${showExcluded?'Hide':'Show'} ${r.excluded} non-earning fares</button></div>
+  ${showExcluded?`<div class="list" style="margin-top:10px;opacity:.55">${['FR 5994 · Ryanair · £29','U2 8701 · easyJet · £33','VY 7103 · Vueling own flight number · £35'].slice(0,3).map(t=>`<div class="fare"><div class="meta">${t}</div><div class="nums"><span class="t">earns nothing</span></div></div>`).join('')}<div class="foot"><span>…and ${r.excluded-3} more</span></div></div>`:''}`;
+}
+function synth(code){
+  const d=ANYWHERE.find(a=>a.code===code);if(!d)return null;
+  const id='s'+code.toLowerCase();
+  const fares=[{id:id+'1',al:d.al,segs:[[d.al+' '+(100+code.charCodeAt(0)),'LHR','09:10',code,'13:40',d.gbp>500?600:180]],gbp:Math.round(d.gbp/2),tp:Math.round(d.tp/2),av:Math.round(d.tp*4.5)},
+    {id:id+'2',al:d.al,segs:[[d.al+' '+(200+code.charCodeAt(1)),'LHR','17:25',code,'21:55',d.gbp>500?600:180]],gbp:Math.round(d.gbp/2*1.2),tp:Math.round(d.tp/2*1.1),av:Math.round(d.tp*5)}];
+  const r={from:'LON',to:code,date:'Thu 13 Nov',trip:'One way',excluded:5,fares};fares.forEach(f=>{f.route=r;ALLFARES[f.id]=f});return r;
+}
+function vAnywhere(){
+  document.title='London → Anywhere · Flights';
+  const list=[...ANYWHERE].sort((a,b)=>per(a)-per(b));const best=list[0],worst=per(list[list.length-1]);
+  return `<a class="crumb" href="${href('/search')}">← Search</a>
+  <div class="rhead"><div><h1>${best.city} <span class="soft">is the best value from London at</span> ${ppt(best)} <span class="soft">a tier point</span></h1>
+    <div class="qline"><a href="${href('/search')}">London (all) → Anywhere</a><a href="${href('/search')}">13–16 Nov · Return</a><a href="${href('/search')}">Economy</a></div></div></div>
+  ${scatter(list,{label:d=>d.city,id:d=>d.code,link:d=>href('/route/'+d.code)})}
+  <div class="list">${list.map(d=>`<a class="fare dest" href="${href('/route/'+d.code)}" data-id="${d.code}">
+    <div><div class="who"><span class="dotc" style="--c:${AIRLINES[d.al].c}"></span><span>${AIRLINES[d.al].n} · ${d.note}</span></div>
+    <div class="times">${d.city} <span class="ap">${d.code}</span></div>
+    <div class="vbar"><i style="width:${Math.round(100*(1-(per(d)-1)/(worst-0.8)))}%"></i></div></div>
+    <div class="nums"><span class="k">${ppt(d)}<small>/TP</small></span><span class="p">${money(d.gbp)}</span><span class="t">~${d.tp} TP return</span></div></a>`).join('')}</div>
+  <div class="foot"><span>Tier points are estimates; the fare class is only known at booking.</span><span>31 destinations without earning fares left out</span></div>`;
+}
+function calData(m){
+  const days=[];const n=m===10?30:31;
+  for(let d=1;d<=n;d++){const s=(d*37+m*11)%23;const gbp=290+s*9+(d%7===5||d%7===6?60:0);const tp=200+((d*13)%5)*25;days.push(d===26?null:{d,gbp,tp})}
+  return days;
+}
+function vCalendar(){
+  document.title='London → New York, November · Flights';
+  const m=S.month,days=calData(m),y=m===0?2027:2026;
+  const first=(new Date(y,m,1).getDay()+6)%7;
+  const vals=days.filter(Boolean).map(per),lo=Math.min(...vals),hi=Math.max(...vals);
+  const top=[...days.filter(Boolean)].sort((a,b)=>per(a)-per(b)).slice(0,3).map(x=>x.d);
+  const mname=new Date(y,m,1).toLocaleDateString('en-GB',{month:'long',year:'numeric'});
+  const bestDay=days.find(x=>x&&x.d===top[0]);
+  const dl=d=>new Date(y,m,d).toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'});
+  let cells='';for(let i=0;i<first;i++)cells+='<span></span>';
+  days.forEach((x,i)=>{const d=i+1,past=(m===10&&d<1);
+    if(!x){cells+=`<span class="day none" title="No earning fares"><span class="d">${d}</span><span class="pr">none</span></span>`;return}
+    const rk=vals.filter(v=>v<per(x)).length/(vals.length-1);const o=(1-rk)*.85+.08;
+    cells+=`<a class="day ${top.includes(d)?'best':''} ${past?'past':''}" style="--o:${o.toFixed(2)}" href="${href('/route/JFK')}" title="${dl(d)}: ${money(x.gbp)}, ~${x.tp} TP">
+      <span class="d">${d}</span><span><span class="pr">${money(x.gbp)}</span><br><span class="v">${ppt(x)}/TP</span></span></a>`});
+  return `<a class="crumb" href="${href('/search')}">← Search</a>
+  <div class="rhead"><div><h1>${dl(bestDay.d)} <span class="soft">is the best value at</span> ${ppt(bestDay)} <span class="soft">a tier point</span></h1>
+    <div class="qline"><a href="${href('/search')}">London (all) → New York JFK</a><a href="${href('/search')}">One way · Economy</a></div></div>
+    <div class="calnav"><button id="pm" aria-label="Previous month">‹</button><b>${mname}</b><button id="nm" aria-label="Next month">›</button></div></div>
+  <div class="cal">${['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].map(d=>`<span class="dow">${d}</span>`).join('')}${cells}</div>
+  <div class="key"><span><i></i>stronger = less per tier point</span><span>Outlined: best three days</span></div>
+  <div class="foot"><span>Cheapest earning fare per day. Tier points are estimates.</span></div>`;
+}
+function vFare(id){
+  const f=ALLFARES[id];if(!f)return vError();
+  const x=fareInfo(f),al=AIRLINES[f.al],r=f.route;
+  document.title=`${x.flown.map(s=>s[0]).join(' + ')} · Flights`;
+  let tl='';f.segs.forEach((s,i)=>{const ghost=f.hidden&&i===f.segs.length-1;
+    if(i){const g=gap(f.segs[i-1],s);tl+=f.hidden&&ghost?`<div class="lay">You leave at ${s[1]}. The ticket continues to ${s[3]}.</div>`:`<div class="lay">${dur(g)} connection in ${NAME[s[1]]||s[1]}</div>`}
+    if(i===0)tl+=`<div class="stop"><div class="t1">${s[2]} <span class="ap">${NAME[s[1]]||s[1]} · ${s[1]}</span></div></div>`;
+    tl+=`<div class="leg ${ghost?'ghost':''}"><span class="fno">${s[0]}</span> · ${dur(s[5])}</div>
+      <div class="stop ${ghost?'ghost':''} ${(!f.hidden&&i===f.segs.length-1)||(f.hidden&&i===f.segs.length-2)?'end':''}"><div class="t1">${s[4]}${s[6]?'<span class="plus" style="color:var(--warn);font-size:11px;vertical-align:super">+1</span>':''} <span class="ap">${NAME[s[3]]||s[3]} · ${s[3]}</span></div></div>`});
+  const after=gold.tp+f.tp,left=Math.max(0,TARGET-after);
+  renderGold(f.tp);
+  return `<a class="crumb" href="${href('/route/'+(r.from==='IBZ'?'IBZ-LON':r.to))}">← ${r.from} → ${r.to}</a>
+  <div class="who" style="font-size:14px"><span class="dotc" style="--c:${al.c}"></span><span>${al.n}${f.sold?` · sold as ${f.sold}`:''} · ${r.date} · ${S.cabin}</span></div>
+  <div class="hero">
+    <div class="cell"><div class="big">${money(f.gbp)}</div><div class="l">US$${Math.round(f.gbp/USD)} at ${USD}</div></div>
+    <div class="cell"><div class="m">${ppt(f)}</div><div class="l">per tier point</div></div>
+    <div class="cell"><div class="m">~${f.tp}</div><div class="l">tier points</div></div>
+    <div class="cell"><div class="m">~${fmt(f.av)}</div><div class="l">Avios</div></div>
+  </div>
+  <div class="cols">
+    <div class="tl">${tl}</div>
+    <div>
+      <dl class="facts">
+        <dt>Duration</dt><dd>${dur(x.total)}</dd>
+        <dt>Stops</dt><dd>${x.stops?x.stops+' · '+x.flown.slice(0,-1).map(s=>s[3]).join(', '):'Direct'}</dd>
+        ${f.hidden?`<dt>Ticket</dt><dd>To ${NAME[f.hidden]||f.hidden} · ${f.hidden}</dd><dt>Bags</dt><dd>Cabin bag only</dd>`:''}
+        <dt>Earning</dt><dd>${f.sold?`On ${f.sold}`:'oneworld'}</dd>
+        <dt>Fare class</dt><dd>Known at booking</dd>
+      </dl>
+      <div class="gp"><div class="sec">Gold</div>
+        <div class="gbar"><i style="width:${Math.min(100,gold.tp/TARGET*100)}%"></i><b style="left:${Math.min(100,gold.tp/TARGET*100)}%;width:${Math.min(100-gold.tp/TARGET*100,f.tp/TARGET*100)}%"></b></div>
+        <div class="gl"><span>${fmt(gold.tp)} → <b style="color:var(--text)">${fmt(Math.min(after,TARGET))}</b></span><span>${left?fmt(left)+' to go':'Gold kept'}</span></div>
+      </div>
+    </div>
+  </div>
+  <div class="actions"><a class="btn" href="#" id="book">Book on Skiplagged ↗</a><a class="btn ghost" href="${href('/calendar')}">Other dates</a></div>`;
+}
+function vLoading(){
+  document.title='Searching · Flights';
+  return `<a class="crumb" href="${href('/search')}">← Search</a>
+  <h1><span class="soft">London → Madrid · Thu 13 Nov</span></h1>
+  <div class="loadline" style="margin-top:14px"><span class="spin"></span>Searching Skiplagged</div>
+  <div class="list">${Array.from({length:5},(_,i)=>`<div class="skel"><div style="flex:1;display:grid;gap:8px"><i style="width:${30+i*7}%"></i><i style="width:${50-i*4}%"></i></div><i style="width:90px"></i></div>`).join('')}</div>`;
+}
+function vEmpty(key){
+  document.title='No earning fares · Flights';
+  return `<a class="crumb" href="${href('/search')}">← Search</a>
+  <div class="state"><h1>No earning fares from Ibiza to Sydney on 13 Nov</h1>
+  <p class="sub">23 fares found, none on oneworld or a BA earning partner.</p>
+  <div class="actions"><a class="btn ghost" href="${href('/calendar')}">Try other dates</a><a class="btn ghost" href="${href('/anywhere')}">Anywhere from Ibiza</a></div></div>`;
+}
+function vError(){
+  document.title="Search failed · Flights";
+  return `<a class="crumb" href="${href('/search')}">← Search</a>
+  <div class="state"><h1>Skiplagged didn't answer</h1>
+  <p class="sub">No reply after 20 seconds. Nothing is wrong with the search itself.</p>
+  <div class="actions"><button class="btn" id="retry">Try again</button><a class="btn ghost" href="${href('/search')}">Edit search</a></div></div>`;
+}
+function vGold(){
+  document.title='Gold · Flights';
+  const ends=new Date(gold.ends).toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'});
+  const left=Math.max(0,TARGET-gold.tp);
+  return `<a class="crumb" href="${href('/search')}">← Search</a>
+  <h1>${left?`${fmt(left)} <span class="soft">tier points to keep Gold by</span> ${ends}`:'Gold kept for next year'}</h1>
+  <div class="gp" style="border:0;padding-top:4px;max-width:520px"><div class="gbar"><i style="width:${Math.min(100,gold.tp/TARGET*100)}%"></i></div>
+    <div class="gl"><span>${fmt(gold.tp)} earned</span><span>${fmt(TARGET)}</span></div></div>
+  <form class="gform" id="gf">
+    <div class="field"><label for="gtp">Tier points so far</label><input class="input" id="gtp" inputmode="numeric" value="${gold.tp}"><span class="ferr" id="gErr" hidden>Enter a whole number.</span></div>
+    <div class="field"><label for="gend">Membership year ends</label><input class="input" id="gend" type="date" value="${gold.ends}"></div>
+    <div><button class="btn" type="submit">Save</button></div>
+  </form>
+  <p class="note">Kept on this device only.</p>`;
+}
+
+/* ---------- router ---------- */
+const SCREENS=[['Search','/search'],['Route results','/route/MAD'],['Route · New York','/route/JFK'],['Route · Doha','/route/DOH'],['Route · from Ibiza','/route/IBZ-LON'],
+  ['Fare · BA 460','/fare/ba460'],['Fare · hidden city','/fare/ib3173'],['Fare · 1 stop','/fare/ei155'],['Anywhere','/anywhere'],['Flexible dates','/calendar'],
+  ['Gold','/gold'],['Loading','/loading'],['No earning fares','/empty'],['Error','/error']];
+function parse(){let p=(location.hash||'#/search').slice(1).split('/').filter(Boolean);
+  if(p[p.length-1]==='b'){p.pop();variant='b'}else variant='a';return p}
+function render(){
+  const p=parse(),app=$('#app');let html;
+  document.body.classList.toggle('vb',variant==='b');
+  document.querySelectorAll('.ab button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.v===variant));
+  renderGold(0);
+  switch(p[0]){
+    case 'route':html=vRoute(p[1]);break;case 'fare':html=vFare(p[1]);break;case 'anywhere':html=vAnywhere();break;
+    case 'calendar':html=vCalendar();break;case 'gold':html=vGold();break;case 'loading':html=vLoading();break;
+    case 'empty':html=vEmpty();break;case 'error':html=vError();break;default:document.title='Search · Flights';html=vSearch();
+  }
+  app.innerHTML=`<div class="fade">${html}</div>`;
+  const cur='/'+p.join('/');
+  $('#idx nav').innerHTML='<div class="h">Screens</div>'+SCREENS.map(([l,h])=>`<a href="${href(h)}" class="${h===cur?'cur':''}">${l}</a>`).join('');
+  bind(p);window.scrollTo(0,0);
+}
+function go(path){location.hash=href(path)}
+function bind(p){
+  const sf=$('#sf');
+  if(sf){
+    document.querySelectorAll('[data-mode]').forEach(b=>b.onclick=()=>{S.mode=b.dataset.mode;render()});
+    document.querySelectorAll('[data-trip]').forEach(b=>b.onclick=()=>{S.trip=b.dataset.trip;if(S.trip==='return'&&!S.back)S.back='2026-11-16';render()});
+    document.querySelectorAll('[data-cabin]').forEach(b=>b.onclick=()=>{S.cabin=b.dataset.cabin;document.querySelectorAll('[data-cabin]').forEach(x=>x.setAttribute('aria-pressed',x===b))});
+    document.querySelectorAll('[data-from]').forEach(b=>b.onclick=()=>{S.from=b.dataset.from;render()});
+    ['from','to'].forEach(k=>{const el=$('#'+k);if(!el)return;
+      el.addEventListener('focus',()=>el.select());
+      el.addEventListener('input',()=>suggest(el,k));
+      el.addEventListener('blur',()=>setTimeout(()=>{const s=el.parentNode.querySelector('.sugg');s&&s.remove()},150));});
+    const o=$('#out');o&&o.addEventListener('change',()=>S.out=o.value);
+    const bk=$('#back');bk&&bk.addEventListener('change',()=>S.back=bk.value);
+    sf.onsubmit=e=>{e.preventDefault();
+      if(S.mode==='anywhere'){loadThen('/anywhere');return}
+      const to=$('#to');if(!S.to||!to.value.trim()){to.classList.add('err');$('#toErr').hidden=false;to.focus();return}
+      if(S.mode==='calendar'){loadThen('/calendar');return}
+      const key=S.from==='IBZ'&&['LON','LHR','LGW'].includes(S.to)?'IBZ-LON':S.to;
+      loadThen(ROUTES[key]||ROUTES[key==='IBZ-LON'?'LHR_FROM_IBZ':'']||ANYWHERE.some(a=>a.code===key)?'/route/'+key:'/empty');
+    };
+  }
+  const so=$('#sort');so&&(so.onchange=()=>{S.sort=so.value;render()});
+  const ex=$('#exBtn');ex&&(ex.onclick=()=>{showExcluded=!showExcluded;const y=scrollY;render();scrollTo(0,y)});
+  document.querySelectorAll('.chart g[data-id]').forEach(g=>{
+    const row=document.querySelector(`.fare[data-id="${g.dataset.id}"]`);
+    g.onmouseenter=()=>row&&row.classList.add('hl');g.onmouseleave=()=>row&&row.classList.remove('hl');
+    g.onclick=()=>location.hash=g.dataset.link;});
+  document.querySelectorAll('.fare[data-id]').forEach(r=>{const id=r.dataset.id;
+    r.onmouseenter=()=>{const c=document.querySelector(`.chart g[data-id="${id}"] circle`);c&&c.setAttribute('r',10);
+      const f=ALLFARES[id];if(f)renderGold(f.tp)};
+    r.onmouseleave=()=>{const c=document.querySelector(`.chart g[data-id="${id}"] circle`);c&&c.setAttribute('r',6);renderGold(0)};});
+  const pm=$('#pm'),nm=$('#nm');
+  pm&&(pm.onclick=()=>{S.month=S.month===0?11:S.month===11?10:10;render();if(S.month===10)toast('Earlier months have passed')});
+  nm&&(nm.onclick=()=>{S.month=S.month===10?11:S.month===11?0:0;render()});
+  const bk=$('#book');bk&&(bk.onclick=e=>{e.preventDefault();toast('Opens the fare on Skiplagged in a new tab')});
+  const rt=$('#retry');rt&&(rt.onclick=()=>loadThen('/route/MAD'));
+  const gf=$('#gf');gf&&(gf.onsubmit=e=>{e.preventDefault();const v=$('#gtp').value.replace(/[,\s]/g,'');
+    if(!/^\d+$/.test(v)){$('#gtp').classList.add('err');$('#gErr').hidden=false;return}
+    gold={tp:+v,ends:$('#gend').value||gold.ends};localStorage.setItem('flights.gold',JSON.stringify(gold));render();toast('Saved')});
+}
+function suggest(el,k){
+  const q=el.value.trim().toLowerCase();let box=el.parentNode.querySelector('.sugg');
+  if(!q){box&&box.remove();return}
+  const m=AIRPORTS.filter(([c,n])=>c.toLowerCase().startsWith(q)||n.toLowerCase().includes(q)).slice(0,6);
+  if(!box){box=document.createElement('div');box.className='sugg';el.after(box)}
+  box.innerHTML=m.length?m.map(([c,n])=>`<button type="button" data-c="${c}"><span>${n}</span><span class="code">${c}</span></button>`).join(''):'<div style="padding:9px 12px;color:var(--dim)">No airport matches</div>';
+  box.querySelectorAll('button').forEach(b=>b.onmousedown=e=>{e.preventDefault();S[k]=b.dataset.c;el.value=apLabel(b.dataset.c);el.classList.remove('err');
+    const er=$('#toErr');er&&(er.hidden=true);box.remove();if(k==='from')render()});
+}
+function loadThen(path){
+  const key=path.split('/')[2];
+  $('#app').innerHTML=`<div class="fade">${vLoading()}</div>`;
+  const h=$('#app h1 .soft');
+  if(h)h.textContent=path==='/anywhere'?'London → Anywhere · 13–16 Nov':path==='/calendar'?'London → New York · November':`${apLabel(S.from)} → ${key?apLabel(key==='IBZ-LON'?'LON':key):'…'}`;
+  setTimeout(()=>go(path),900);
+}
+document.querySelectorAll('.ab button').forEach(b=>b.onclick=()=>{const p=parse();variant=b.dataset.v;location.hash='#/'+(p.length?p.join('/'):'search')+(variant==='b'?'/b':'')});
+const idx=$('#idx'),ib=idx.querySelector('button');
+ib.onclick=()=>{const o=idx.classList.toggle('open');ib.setAttribute('aria-expanded',o)};
+idx.addEventListener('click',e=>{if(e.target.tagName==='A'){idx.classList.remove('open');ib.setAttribute('aria-expanded',false)}});
+document.addEventListener('keydown',e=>{if(e.key==='Escape')idx.classList.remove('open')});
+window.addEventListener('hashchange',render);
+render();
+</script>
+</body>
+</html>

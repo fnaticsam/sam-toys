@@ -1,0 +1,18 @@
+{
+  "title": "Flights",
+  "adapter": "generic",
+  "versions": [
+    {
+      "n": 1,
+      "file": "proto-v1.html",
+      "date": "2026-10-28",
+      "title": "First round",
+      "notes": [
+        "Search (route, anywhere, flexible dates), results ranked by £ per tier point, fare detail, Gold progress.",
+        "Layout A is a ranked list; layout B adds a price-against-tier-points chart above it.",
+        "Loading, no-earning-fares and error states are in the screen index."
+      ],
+      "fixed": []
+    }
+  ]
+}

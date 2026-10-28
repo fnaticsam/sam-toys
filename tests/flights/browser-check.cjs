@@ -63,6 +63,7 @@ async function main() {
       });
       await check(`${name}: origin controls and custom airport`, async () => {
         await page.locator('#fromBtn').click();
+        assert.equal(await page.locator('.acts').evaluate(el => getComputedStyle(el).visibility), 'hidden');
         assert.equal(await page.locator('#fromPop .opt.on').evaluate(el => el === document.activeElement), true);
         await snap('origin-menu');
         assert.match(await page.locator('#fromPop').innerText(), /London.*all airports/s);
@@ -75,6 +76,7 @@ async function main() {
       });
       await check(`${name}: Anywhere first and keyboard destination selection`, async () => {
         await page.locator('#to').focus();
+        assert.equal(await page.locator('.acts').evaluate(el => getComputedStyle(el).visibility), 'hidden');
         assert.equal(await page.locator('.pop [data-to]').first().getAttribute('data-to'), 'ANY');
         const option = page.locator('[data-to="MAD"]');
         assert(await option.evaluate(el => { const r=el.getBoundingClientRect(); return el.contains(document.elementFromPoint(r.x+r.width/2,r.y+r.height/2)); }));
@@ -159,6 +161,7 @@ async function main() {
       await check(`${name}: loading, empty, error, 429 and partial states`, async () => {
         for (const mode of ['loading', 'empty', 'error', 'throttled', 'partial']) {
           fixture.setMode(mode); await showSearch(); await destination(); await dates();
+          const cancelled = mode === 'loading' ? page.waitForEvent('requestfailed', { predicate: r => r.url().includes('/api/flights?') }) : null;
           await page.locator('#go').click();
           if (mode === 'loading') await page.locator('.spin').waitFor();
           else if (mode === 'partial') { await page.locator('.row').first().waitFor(); assert.match(await page.locator('#app').innerText(), /didn.t answer/i); }
@@ -168,6 +171,8 @@ async function main() {
           if (mode === 'error') assert.match(text, /unavailable|didn.t answer|failed/i);
           if (mode === 'throttled') assert.match(text, /Too many|busy|Slow|wait|requests/i);
           await snap(mode);
+          await page.locator('a.back').click(); await page.locator('#to').waitFor();
+          if (cancelled) await cancelled;
         }
       });
       await check(`${name}: Anywhere discovery and route search`, async () => {
@@ -181,7 +186,9 @@ async function main() {
         assert.equal(await page.locator('.row .v').first().evaluate(el => getComputedStyle(el).color), 'rgb(13, 13, 15)');
         await snap('anywhere');
         await page.locator('.row').filter({ hasText: 'Madrid' }).first().click(); await page.locator('.row').first().waitFor();
-        assert.equal(new URL(fixture.requests.at(-1).url, fixture.url).searchParams.get('action'), 'search');
+        const routeParams = new URL(fixture.requests.at(-1).url, fixture.url).searchParams;
+        assert.equal(routeParams.get('action'), 'search');
+        assert.equal(routeParams.get('origin'), 'LHR,LGW,LCY,STN,LTN,SEN');
       });
       await check(`${name}: cabin forwarded and destination removed from explicit London origins`, async () => {
         await showSearch(); await destination('LHR'); await dates();
@@ -191,8 +198,10 @@ async function main() {
       });
       await check(`${name}: stale response aborted on navigation and newer search wins`, async () => {
         fixture.setMode('loading'); await showSearch(); await destination(); await dates();
+        const cancelled = page.waitForEvent('requestfailed', { predicate: r => r.url().includes('/api/flights?') });
         await page.locator('#go').click(); await page.locator('.spin').waitFor();
         await page.locator('a.back').click(); await page.locator('#to').waitFor();
+        await cancelled;
         fixture.setMode('normal'); await destination('JFK');
         // Existing selected date survives the return to the form.
         await search(); assert.match(await page.locator('a.back').innerText(), /New York|JFK/);

@@ -113,12 +113,14 @@ test('recorded return fares render backend GBP and tier points once, without dou
   const data = await backend('/api/flights?origin=LHR&destination=MAD&departureDate=2026-11-18&returnDate=2026-11-21');
   const fare = data.results.find(f => f.flightNumbers[0] === 'IB714');
   assert.equal(fare.priceGbp, 93.17); assert.equal(fare.estimate.tierPoints, 66);
+  data.meta.airports = { ...data.meta.airports, LHR: 'London' };
   const p = page(); query(p, { from: 'LHR', back: '2026-11-21' });
   p.put('data', data); p.put('fareId', fare.id); p.run('response=data');
   const detail = p.run('vFare(fareId)');
   assert.match(detail, /£93\.17/); assert.match(detail, /~66 TP/);
   assert.doesNotMatch(detail, /£186\.34|~132 TP/);
   assert.match(detail, /Out ·/); assert.match(detail, /Back ·/);
+  assert.match(detail, /London Heathrow · LHR/);
 });
 
 test('hidden-city detail preserves flown and ticketed endpoints and the actual safe booking link', async () => {
@@ -163,7 +165,7 @@ test('Anywhere and flex discovery never fabricate tier-point ratios', () => {
   const p = page(); query(p, { to: 'ANY' });
   p.run("response={action:'anywhere',results:[{origin:'IBZ',destination:'MAD',priceGbp:40,estimate:null}]}");
   const html = p.run('vResults()');
-  assert.match(html, /£40/); assert.match(html, /aria-hidden="true">›/); assert.doesNotMatch(html, /Check £\/TP/);
+  assert.match(html, /£40/); assert.doesNotMatch(html, /›/); assert.doesNotMatch(html, /Check £\/TP/);
   assert.doesNotMatch(html, /per tier point|£\d+\.\d{2}<small>\/TP/);
   query(p); p.run("flexRows=[{departureDate:'2026-11-18',priceGbp:40}]");
   assert.deepEqual(p.json("calendarQuote('2026-11-18')"), { value: '£40', verified: false });
@@ -191,6 +193,16 @@ test('navigation aborts an in-flight search and ignores a provider that resolves
   p.run("go('#/gold')"); assert.equal(pending.calls[0].signal.aborted, true);
   pending.calls[0].resolve(ok([])); await completion;
   assert.equal(p.location.hash, '#/gold'); assert.equal(p.run('response'), null);
+});
+
+test('a late search reply preserves navigation before the hashchange handler renders', async () => {
+  const pending = deferredFetch(), p = page({ fetch: pending.fetch }); query(p);
+  const completion = p.run('search()');
+  // Native link navigation changes the hash before its hashchange event runs.
+  p.location.hash = '#/search';
+  assert.equal(pending.calls[0].signal.aborted, false);
+  pending.calls[0].resolve(ok([])); await completion;
+  assert.equal(p.location.hash, '#/search'); assert.equal(p.run('response'), null);
 });
 
 test('a newer search aborts and supersedes an older result regardless of response order', async () => {
@@ -260,7 +272,7 @@ test('list money rounds pounds while fare money always retains two decimal place
 
 test('Anywhere groups airports by catalogue city and selects its cheapest origin and airport', () => {
   const p = page(); query(p, {to:'ANY'});
-  p.put('data', {action:'anywhere',meta:{airports:{BCN:'Barcelona',GRO:'Barcelona',BOD:'Bordeaux'}},results:[
+  p.put('data', {action:'anywhere',meta:{airports:{BCN:'Barcelona',GRO:'Barcelona',BOD:'Bordeaux, Gironde'}},results:[
     {origin:'LHR',destination:'BCN',priceGbp:80}, {origin:'LGW',destination:'GRO',priceGbp:40},
     {origin:'LTN',destination:'BCN',priceGbp:60}, {origin:'LGW',destination:'BOD',priceGbp:50},
   ]});
@@ -268,7 +280,8 @@ test('Anywhere groups airports by catalogue city and selects its cheapest origin
   assert.deepEqual(p.json('discoveries().map(r=>[r.origin,r.destination])'), [['LGW','GRO'],['LGW','BOD']]);
   const html = p.run('vAnywhere()');
   assert.equal((html.match(/class="row"/g)||[]).length, 2);
-  assert.match(html, /Barcelona/); assert.match(html, /Bordeaux/);
+  assert.match(html, /Barcelona/); assert.match(html, /Bordeaux<\/span>/);
+  assert.doesNotMatch(html, /Gironde|›/);
   assert.match(html, /from LGW/); assert.match(html, /list discovery/);
   assert.doesNotMatch(html, /Check £\/TP/);
 });

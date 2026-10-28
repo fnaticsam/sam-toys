@@ -1,0 +1,264 @@
+{
+  "searchUrl": "https://skiplagged.com/flights/LHR/MAD/2026-11-18?utm_source=mcp&utm_medium=ai&utm_campaign=skiplagged_mcp",
+  "origin": "LHR",
+  "destination": "MAD",
+  "mode": "depart",
+  "sort": "price",
+  "chart": {
+    "type": "FlexChart",
+    "id": "depart-lhr-mad-price",
+    "title": "Departure Flex Prices (LHR \u2192 MAD)",
+    "subtitle": "Trip length fixed \u00b7 Sorted by lowest fare",
+    "origin": "LHR",
+    "destination": "MAD",
+    "mode": "depart",
+    "sort": "price",
+    "searchUrl": "https://skiplagged.com/flights/LHR/MAD/2026-11-18?utm_source=mcp&utm_medium=ai&utm_campaign=skiplagged_mcp",
+    "points": [
+      {
+        "departure": "2026-10-28",
+        "price": 80
+      },
+      {
+        "departure": "2026-10-29",
+        "price": 80
+      },
+      {
+        "departure": "2026-10-30",
+        "price": 148
+      },
+      {
+        "departure": "2026-10-31",
+        "price": 80
+      },
+      {
+        "departure": "2026-11-01",
+        "price": 148
+      },
+      {
+        "departure": "2026-11-02",
+        "price": 148
+      },
+      {
+        "departure": "2026-11-03",
+        "price": 148
+      },
+      {
+        "departure": "2026-11-04",
+        "price": 148
+      },
+      {
+        "departure": "2026-11-05",
+        "price": 148
+      },
+      {
+        "departure": "2026-11-06",
+        "price": 127
+      },
+      {
+        "departure": "2026-11-07",
+        "price": 80
+      },
+      {
+        "departure": "2026-11-08",
+        "price": 127
+      },
+      {
+        "departure": "2026-11-09",
+        "price": 166
+      },
+      {
+        "departure": "2026-11-10",
+        "price": 91
+      },
+      {
+        "departure": "2026-11-11",
+        "price": 148
+      },
+      {
+        "departure": "2026-11-12",
+        "price": 91
+      },
+      {
+        "departure": "2026-11-13",
+        "price": 129
+      },
+      {
+        "departure": "2026-11-14",
+        "price": 80
+      },
+      {
+        "departure": "2026-11-15",
+        "price": 90
+      },
+      {
+        "departure": "2026-11-16",
+        "price": 91
+      },
+      {
+        "departure": "2026-11-17",
+        "price": 80
+      },
+      {
+        "departure": "2026-11-18",
+        "price": 80
+      },
+      {
+        "departure": "2026-11-19",
+        "price": 80
+      },
+      {
+        "departure": "2026-11-20",
+        "price": 80
+      },
+      {
+        "departure": "2026-11-21",
+        "price": 91
+      },
+      {
+        "departure": "2026-11-22",
+        "price": 90
+      },
+      {
+        "departure": "2026-11-23",
+        "price": 91
+      },
+      {
+        "departure": "2026-11-24",
+        "price": 80
+      },
+      {
+        "departure": "2026-11-25",
+        "price": 80
+      },
+      {
+        "departure": "2026-11-26",
+        "price": 80
+      },
+      {
+        "departure": "2026-11-27",
+        "price": 91
+      },
+      {
+        "departure": "2026-11-28",
+        "price": 80
+      },
+      {
+        "departure": "2026-11-29",
+        "price": 127
+      },
+      {
+        "departure": "2026-11-30",
+        "price": 68
+      },
+      {
+        "departure": "2026-12-01",
+        "price": 68
+      },
+      {
+        "departure": "2026-12-02",
+        "price": 68
+      },
+      {
+        "departure": "2026-12-03",
+        "price": 68
+      },
+      {
+        "departure": "2026-12-04",
+        "price": 91
+      },
+      {
+        "departure": "2026-12-05",
+        "price": 80
+      },
+      {
+        "departure": "2026-12-06",
+        "price": 80
+      },
+      {
+        "departure": "2026-12-07",
+        "price": 127
+      },
+      {
+        "departure": "2026-12-08",
+        "price": 158
+      },
+      {
+        "departure": "2026-12-09",
+        "price": 130
+      },
+      {
+        "departure": "2026-12-10",
+        "price": 109
+      },
+      {
+        "departure": "2026-12-11",
+        "price": 119
+      },
+      {
+        "departure": "2026-12-12",
+        "price": 148
+      },
+      {
+        "departure": "2026-12-13",
+        "price": 148
+      },
+      {
+        "departure": "2026-12-14",
+        "price": 127
+      },
+      {
+        "departure": "2026-12-15",
+        "price": 120
+      },
+      {
+        "departure": "2026-12-16",
+        "price": 136
+      },
+      {
+        "departure": "2026-12-17",
+        "price": 163
+      },
+      {
+        "departure": "2026-12-18",
+        "price": 201
+      },
+      {
+        "departure": "2026-12-19",
+        "price": 342
+      },
+      {
+        "departure": "2026-12-20",
+        "price": 160
+      },
+      {
+        "departure": "2026-12-21",
+        "price": 151
+      },
+      {
+        "departure": "2026-12-22",
+        "price": 144
+      },
+      {
+        "departure": "2026-12-23",
+        "price": 187
+      },
+      {
+        "departure": "2026-12-24",
+        "price": 115
+      },
+      {
+        "departure": "2026-12-25",
+        "price": 115
+      },
+      {
+        "departure": "2026-12-26",
+        "price": 145
+      },
+      {
+        "departure": "2026-12-27",
+        "price": 177
+      }
+    ]
+  }
+}

@@ -1,0 +1,392 @@
+<!doctype html><html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<meta name="referrer" content="no-referrer">
+<meta name="theme-color" content="#ffffff">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='9' fill='%230b0b0c'/%3E%3Cpath transform='translate(4 4) rotate(45 12 12)' fill='%23fff' d='M21 16v-2l-8-5V3.5c0-.83-.67-1.5-1.5-1.5S10 2.67 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z'/%3E%3C/svg%3E">
+<title>Flights</title>
+<style>
+:root{
+  --page:#ffffff; --text:#0d0d0f; --dim:#6e6e73; --faint:#a8a8ad; --line:#ededf0;
+  --accent:#f2660f;
+  --g-text:#f5f5f7; --g-dim:rgba(245,245,247,.58); --g-faint:rgba(245,245,247,.3); --g-line:rgba(255,255,255,.09);
+  --mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-text-size-adjust:100%}
+body{background:var(--page);color:var(--text);min-height:100dvh;
+  font:16px/1.45 -apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  -webkit-font-smoothing:antialiased;font-variant-numeric:tabular-nums;letter-spacing:-.005em}
+a{color:inherit;text-decoration:none}
+button,input,select{font:inherit;color:inherit;letter-spacing:inherit}
+.wrap{max-width:600px;margin:0 auto;padding:22px 20px 120px}
+@media (max-width:640px){.wrap{padding:16px 16px 120px}}
+
+/* black liquid glass */
+.glass{position:relative;color:var(--g-text);isolation:isolate;
+  background:linear-gradient(180deg,rgba(44,44,48,.80) 0%,rgba(14,14,16,.86) 55%,rgba(6,6,8,.9) 100%);
+  -webkit-backdrop-filter:blur(22px) saturate(170%);backdrop-filter:blur(22px) saturate(170%);
+  border:1px solid rgba(255,255,255,.06);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.24),inset 0 -1px 0 rgba(0,0,0,.5),inset 0 0 0 1px rgba(255,255,255,.025),
+    0 1px 2px rgba(0,0,0,.14),0 20px 44px -20px rgba(0,0,0,.5)}
+.glass::before{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;z-index:-1;
+  background:radial-gradient(140% 70% at 18% -10%,rgba(255,255,255,.16),transparent 52%),
+             radial-gradient(90% 50% at 100% 110%,rgba(255,255,255,.05),transparent 60%)}
+.press{transition:transform .14s ease,box-shadow .2s ease}
+.press:active{transform:scale(.985)}
+
+/* header */
+.top{display:flex;align-items:center;justify-content:space-between;margin-bottom:40px}
+.logo{display:flex;align-items:center;gap:10px;font-weight:600;font-size:15px;color:var(--text)}
+.logo .mk{width:32px;height:32px;border-radius:10px;display:grid;place-items:center}
+.logo svg{width:18px;height:18px;transform:rotate(45deg)}
+.ring{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--dim)}
+.ring .mini{width:44px;height:3px;border-radius:2px;background:var(--line);overflow:hidden}
+.ring .mini i{display:block;height:100%;background:var(--text);border-radius:2px}
+.ring:hover{color:var(--text)}
+@media (max-width:640px){.top{margin-bottom:28px}}
+
+/* search */
+.from{display:inline-flex;align-items:center;gap:6px;color:var(--dim);font-size:14px;border:0;background:none;cursor:pointer;padding:6px 2px;margin-bottom:10px}
+.from b{color:var(--text);font-weight:600}
+.from:hover b{text-decoration:underline;text-underline-offset:3px}
+.card{position:relative;z-index:30;border-radius:26px;padding:6px}
+.bar{display:flex;align-items:center;gap:14px;padding:16px 18px;border-radius:20px;cursor:text;position:relative}
+.card>.bar,.card>.cal{border-radius:0}
+.bar+.bar,.bar+.cal{background:linear-gradient(var(--g-line),var(--g-line)) top center/calc(100% - 32px) 1px no-repeat}
+.bar .k{font-size:13px;color:var(--g-dim);width:44px;flex:none}
+.where{flex:1;min-width:0;background:none;border:0;outline:none;font-size:26px;font-weight:600;letter-spacing:-.02em;color:var(--g-text)}
+.where::placeholder{color:var(--g-faint)}
+.when{flex:1;text-align:left;background:none;border:0;cursor:pointer;font-size:20px;font-weight:600;letter-spacing:-.01em;padding:0}
+.when.ph{color:var(--g-faint)}
+.when small{font-size:13px;color:var(--g-dim);font-weight:500;margin-left:8px}
+@media (max-width:640px){.where{font-size:22px}.when{font-size:18px}.bar{padding:14px 14px}}
+.under{display:flex;align-items:center;justify-content:space-between;margin-top:14px;gap:12px}
+.cabin{appearance:none;-webkit-appearance:none;border:0;background:none;color:var(--dim);font-size:14px;cursor:pointer;padding:6px 18px 6px 2px;
+  background-image:linear-gradient(45deg,transparent 50%,var(--dim) 50%),linear-gradient(135deg,var(--dim) 50%,transparent 50%);
+  background-position:right 6px top 55%,right 2px top 55%;background-size:4px 4px;background-repeat:no-repeat}
+.cabin:hover{color:var(--text)}
+.go{border:0;border-radius:999px;padding:13px 26px;font-weight:600;font-size:16px;cursor:pointer;display:inline-flex;align-items:center;gap:10px}
+.go .arr{color:var(--accent);font-size:18px;line-height:1}
+.hintline{margin-top:8px;font-size:13.5px;color:var(--dim);min-height:20px}
+.hintline.err{color:var(--text)}
+body:has(#to[aria-expanded="true"]) .acts,body:has(#fromBtn[aria-expanded="true"]) .acts{visibility:hidden}
+
+/* suggestions + popovers (glass over the page) */
+.pop{background-color:#1c1c1e;position:absolute;left:0;right:0;top:calc(100% + 8px);border-radius:18px;padding:6px;z-index:20;animation:pop .16s ease-out}
+@keyframes pop{from{opacity:0;transform:translateY(-4px) scale(.99)}to{opacity:1;transform:none}}
+.opt{display:flex;width:100%;align-items:center;justify-content:space-between;gap:12px;padding:11px 12px;border:0;background:none;border-radius:12px;cursor:pointer;text-align:left;color:var(--g-text)}
+.opt:hover,.opt:focus-visible,.opt.on{background:rgba(255,255,255,.08);outline:none}
+.opt .c{font-family:var(--mono);font-size:12.5px;color:var(--g-dim)}
+.opt .s{font-size:13px;color:var(--g-dim)}
+.opt .tick{color:var(--g-text)}
+.popsep{height:1px;background:var(--g-line);margin:4px 8px}
+.popin{width:100%;background:rgba(255,255,255,.06);border:1px solid var(--g-line);border-radius:12px;padding:10px 12px;outline:none;color:var(--g-text);margin:4px 0}
+.popin::placeholder{color:var(--g-faint)}
+.fromwrap{position:relative;z-index:40;display:inline-block;width:100%}
+.fromwrap .pop{right:auto;width:min(320px,100%);top:calc(100% - 4px)}
+
+/* range calendar (inside the glass card) */
+.cal{padding:14px 12px 10px;border-radius:20px}
+.calhd{display:flex;align-items:center;justify-content:space-between;padding:0 6px 10px}
+.calhd b{font-weight:600}
+.nav{display:flex;gap:4px}
+.nav button,.chipg{border:1px solid var(--g-line);background:rgba(255,255,255,.04);color:var(--g-text);border-radius:999px;height:30px;min-width:30px;cursor:pointer;font-size:13px;padding:0 10px}
+.nav button:disabled{opacity:.3;cursor:default}
+.chipg[aria-pressed=true]{background:rgba(255,255,255,.16)}
+.grid{display:grid;grid-template-columns:repeat(7,1fr);row-gap:4px}
+.dow{font-size:11.5px;color:var(--g-faint);text-align:center;padding:2px 0 6px}
+.d{position:relative;height:46px;border:0;background:none;color:var(--g-text);cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:15px}
+.d span{position:relative;z-index:1;width:40px;height:40px;border-radius:50%;display:grid;place-items:center;transition:background .15s,color .15s}
+.d:hover span{background:rgba(255,255,255,.1)}
+.d.past{color:var(--g-faint);cursor:default}.d.past:hover span{background:none}
+.d.today span{box-shadow:inset 0 0 0 1px var(--g-faint)}
+.d.in::before,.d.pv::before{content:"";position:absolute;left:0;right:0;top:3px;bottom:3px;background:rgba(255,255,255,.1)}
+.d.pv::before{background:rgba(255,255,255,.05)}
+.d.s::before{left:50%}.d.e::before{right:50%}
+.d.s.e::before{display:none}
+.d.s span,.d.e span{background:var(--g-text);color:#0b0b0c;font-weight:650}
+.d i{position:absolute;bottom:1px;font-style:normal;font-size:9.5px;color:var(--g-dim);z-index:1;line-height:1}
+.d.best i{color:var(--accent);font-weight:700}
+.d.s i,.d.e i{color:#0b0b0c}
+.d.pr span{height:34px;margin-top:-8px}
+.calft{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 6px 4px;font-size:13.5px;color:var(--g-dim);border-top:1px solid var(--g-line);margin-top:8px}
+.calft b{color:var(--g-text);font-weight:600}
+.txtb{border:0;background:none;color:var(--g-text);cursor:pointer;font-size:13.5px;padding:4px 2px;text-decoration:underline;text-underline-offset:3px;text-decoration-color:var(--g-faint)}
+.txtb.dark{color:var(--text);text-decoration-color:var(--faint)}
+@media (max-width:640px){.d{height:42px}.d span{width:36px;height:36px}.cal{padding:12px 4px 8px}}
+
+/* results */
+.back{display:inline-flex;align-items:center;gap:10px;border-radius:999px;padding:9px 16px 9px 12px;font-size:14px;cursor:pointer;max-width:100%}
+.back .ar{color:var(--g-dim)}
+.back .t{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+h1{font-size:30px;letter-spacing:-.03em;line-height:1.15;font-weight:650;margin-top:26px}
+h1 .soft{color:var(--faint);font-weight:550}
+.est{color:var(--dim);font-size:13.5px;margin-top:8px}
+@media (max-width:640px){h1{font-size:25px}}
+.list{margin-top:22px}
+.row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 16px;padding:16px 0;border-top:1px solid var(--line);transition:background .15s}
+.row:last-child{border-bottom:1px solid var(--line)}
+.row:hover{background:linear-gradient(90deg,transparent,rgba(13,13,15,.025) 15%,rgba(13,13,15,.025) 85%,transparent)}
+.row .tm{font-size:19px;font-weight:600;letter-spacing:-.015em}
+.row .tm sup{font-size:11px;color:var(--dim);font-weight:500;margin-left:1px}
+.row .v{font-size:19px;font-weight:650;text-align:right;letter-spacing:-.015em}
+.row .v small{font-size:12px;color:var(--dim);font-weight:500;margin-left:2px}
+.list:not(.discovery) .row:first-child .v{color:var(--accent)}
+.row .m{font-size:13.5px;color:var(--dim);min-width:0}
+.row .m .fn{font-family:var(--mono);font-size:12.5px;color:var(--text)}
+.row .p{font-size:14px;text-align:right;color:var(--dim)}
+.hc{display:inline-block;font-size:12px;color:var(--text);border:1px solid var(--line);border-radius:6px;padding:0 6px;margin-left:4px;white-space:nowrap}
+.left{color:var(--faint);font-size:13px;margin-top:16px}
+
+/* fare */
+.hero{margin-top:28px}
+.hero .big{font-size:56px;font-weight:650;letter-spacing:-.04em;line-height:1}
+.hero .line{margin-top:10px;color:var(--dim);font-size:15px}
+.hero .line b{color:var(--text);font-weight:600}
+.hero .line .acc{color:var(--accent)}
+.who{color:var(--dim);font-size:14px;margin-top:26px}
+.legs{margin-top:22px;display:grid;gap:22px}
+.legh{font-size:12.5px;color:var(--faint);margin-bottom:8px}
+.tl{position:relative;padding-left:22px}
+.tl::before{content:"";position:absolute;left:4px;top:11px;bottom:11px;width:1.5px;background:var(--line)}
+.st{position:relative;padding:2px 0}
+.st::before{content:"";position:absolute;left:-22px;top:8px;width:10px;height:10px;border-radius:50%;background:var(--page);border:1.5px solid var(--text)}
+.st .t1{font-weight:600}
+.st .t1 .ap{color:var(--dim);font-weight:450}
+.lg{color:var(--dim);font-size:13.5px;padding:8px 0}
+.lg .fn{font-family:var(--mono);font-size:12.5px;color:var(--text)}
+.lay{font-size:13.5px;padding:8px 0;color:var(--dim)}
+.ghost{opacity:.35}.st.ghost::before{border-style:dashed}
+.leave{font-size:13.5px;padding:8px 0;color:var(--text)}
+.gold1{margin-top:30px;padding-top:18px;border-top:1px solid var(--line);font-size:14px;color:var(--dim);display:flex;align-items:center;gap:12px}
+.gold1 b{color:var(--text);font-weight:600}
+.gbar{flex:1;height:4px;border-radius:2px;background:var(--line);position:relative;overflow:hidden;max-width:160px}
+.gbar i{position:absolute;inset:0 auto 0 0;background:var(--text);border-radius:2px}
+.gbar u{position:absolute;top:0;bottom:0;background:var(--accent);animation:grow .6s ease-out both;transform-origin:left}
+@keyframes grow{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+.dock{position:sticky;bottom:16px;margin-top:30px;display:flex;justify-content:center;z-index:5}
+.book{border-radius:999px;padding:15px 30px;font-weight:600;font-size:16px;display:inline-flex;gap:10px;align-items:center;cursor:pointer;border:0}
+.book .arr{color:var(--accent)}
+
+/* gold page */
+.gwrap{display:flex;flex-direction:column;align-items:center;text-align:center;margin-top:10px}
+.gring{width:180px;height:180px;position:relative;margin:10px 0 18px}
+.gring svg{width:100%;height:100%;transform:rotate(-90deg)}
+.gring .n{position:absolute;inset:0;display:grid;place-content:center;font-size:32px;font-weight:650;letter-spacing:-.03em}
+.gring .n small{display:block;font-size:13px;color:var(--dim);font-weight:500;letter-spacing:0}
+.gform{width:100%;max-width:360px;border-radius:22px;padding:6px;margin-top:22px;text-align:left}
+.gform label{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:14px 14px;font-size:14px;color:var(--g-dim)}
+.gform label+label{border-top:1px solid var(--g-line)}
+.gform input{background:none;border:0;outline:none;text-align:right;color:var(--g-text);font-size:17px;font-weight:600;width:60%;color-scheme:dark}
+.gform input.err{color:#ffb4a8}
+.save{margin-top:14px}
+
+/* states */
+.state{margin-top:20px}
+.state p{color:var(--dim);margin-top:8px}
+.state .acts{display:flex;gap:16px;align-items:center;margin-top:22px;flex-wrap:wrap}
+.sk{height:72px;border-top:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;gap:20px}
+.sk i{display:block;height:12px;border-radius:6px;background:linear-gradient(90deg,#f2f2f4 0%,#e7e7ea 50%,#f2f2f4 100%);background-size:200% 100%;animation:sh 1.2s linear infinite}
+@keyframes sh{from{background-position:200% 0}to{background-position:-200% 0}}
+.spin{display:inline-block;width:12px;height:12px;border:1.5px solid var(--line);border-top-color:var(--text);border-radius:50%;animation:rot .8s linear infinite;vertical-align:-1px;margin-right:8px}
+@keyframes rot{to{transform:rotate(360deg)}}
+.shake{animation:shake .32s}
+@keyframes shake{20%{transform:translateX(-5px)}50%{transform:translateX(4px)}80%{transform:translateX(-2px)}}
+
+/* feedback */
+.toast{position:fixed;left:50%;bottom:24px;transform:translate(-50%,16px);opacity:0;padding:11px 18px;border-radius:999px;font-size:14px;transition:.2s;pointer-events:none;z-index:60}
+.toast.on{opacity:1;transform:translate(-50%,0)}
+.fade{animation:fd .22s ease-out}
+@keyframes fd{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+/* Live data qualifiers and keyboard access use the approved tokens. */
+.calnote{padding:7px 6px 0;font-size:11.5px;color:var(--g-dim)}
+.row .m{overflow-wrap:anywhere}.avios{white-space:nowrap}.hc{white-space:normal;margin:3px 0 0;display:table}
+button:disabled{cursor:default;opacity:.45}
+.where:focus-visible,.gform input:focus-visible,.popin:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <a class="logo" href="#/search" aria-label="Flights home">
+      <span class="mk glass"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="#fff" d="M21 16v-2l-8-5V3.5c0-.83-.67-1.5-1.5-1.5S10 2.67 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z"/></svg></span>
+      Flights
+    </a>
+    <a class="ring" id="ring" href="#/gold"></a>
+  </header>
+  <main id="app"></main>
+</div>
+<div class="toast glass" id="toast" role="status"></div>
+
+<script>
+'use strict';
+const AIRPORTS=[['LON','London','all airports'],['LHR','London Heathrow',''],['LGW','London Gatwick',''],['LCY','London City',''],['STN','London Stansted',''],['LTN','London Luton',''],['SEN','London Southend',''],['IBZ','Ibiza',''],['MAD','Madrid',''],['BCN','Barcelona',''],['JFK','New York','JFK'],['DOH','Doha',''],['DUB','Dublin',''],['HEL','Helsinki',''],['AMM','Amman',''],['HND','Tokyo','Haneda'],['VLC','Valencia',''],['SYD','Sydney',''],['LIS','Lisbon',''],['MXP','Milan','Malpensa'],['BKK','Bangkok',''],['LAX','Los Angeles',''],['SIN','Singapore',''],['HKG','Hong Kong',''],['CDG','Paris',''],['NRT','Tokyo Narita',''],['DXB','Dubai','']];
+const CITY=Object.fromEntries(AIRPORTS.map(a=>[a[0],a[1]]));
+const LONDON=['LHR','LGW','LCY','STN','LTN','SEN'];
+const CABINS={'Economy':'economy','Premium economy':'premium','Business':'business','First':'first'};
+const TODAY=new Date().toISOString().slice(0,10), LATEST=new Date(Date.now()+366*864e5).toISOString().slice(0,10);
+const S={from:'LON',to:'',out:'',back:'',cabin:'Economy',view:TODAY.slice(0,7),prices:false,hover:''};
+let calOpen=false,sugOpen=false,fromOpen=false,hint='',draft='',selection=-1;
+let response=null,resultQuery=null,searchController=null,searchSerial=0,searchState='idle',retryAt=0,retryTimer;
+let flexController=null,flexSerial=0,flexState='',flexRows=[],flexKey='';
+const verified=new Map(), $=s=>document.querySelector(s);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const fmt=n=>Math.round(n).toLocaleString('en-GB'), money=(n,pence=false)=>'£'+Number(n).toLocaleString('en-GB',{minimumFractionDigits:pence?2:0,maximumFractionDigits:pence?2:0});
+const ppt=f=>'£'+(f.priceGbp/f.estimate.tierPoints).toFixed(2);
+const D=k=>new Date(k+'T12:00:00Z');
+const key=d=>d.toISOString().slice(0,10);
+const dShort=k=>D(k).toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short',timeZone:'UTC'});
+const nights=(a,b)=>Math.round((D(b)-D(a))/864e5);
+const cityName=c=>response?.meta?.airports?.[c]||CITY[c]||c;
+const placeName=c=>c==='ANY'?'Anywhere':CITY[c]||response?.meta?.airports?.[c]||c;
+const realDate=v=>/^\d{4}-\d{2}-\d{2}$/.test(v||'')&&Number.isFinite(D(v).getTime())&&key(D(v))===v;
+function defaultGold(){const y=+TODAY.slice(0,4)+(TODAY.slice(5)>='04-01'?1:0);return{tp:0,target:20000,ends:y+'-03-31'}}
+// This is the only balance data boundary: replace it with the signed-in BA adapter later.
+function goldData(value){
+  const fallback=defaultGold();
+  try{
+    if(value){localStorage.setItem('flights.gold.v2',JSON.stringify(value));return{...value}}
+    const saved=JSON.parse(localStorage.getItem('flights.gold.v2')||'null');
+    if(!saved||!Number.isSafeInteger(saved.tp)||saved.tp<0||!realDate(saved.ends))return fallback;
+    return{tp:saved.tp,target:Number.isSafeInteger(saved.target)&&saved.target>0?saved.target:20000,ends:saved.ends};
+  }catch{return value?null:fallback}
+}
+let gold=goldData();
+function whenText(q=S){
+  if(!q.out)return '';
+  if(!q.back)return dShort(q.out);
+  const a=D(q.out),b=D(q.back),sameM=a.getUTCMonth()===b.getUTCMonth()&&a.getUTCFullYear()===b.getUTCFullYear();
+  return a.toLocaleDateString('en-GB',{weekday:'short',day:'numeric',...(sameM?{}:{month:'short'}),timeZone:'UTC'})+' – '+dShort(q.back);
+}
+function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('on');clearTimeout(toast.h);toast.h=setTimeout(()=>t.classList.remove('on'),2200)}
+function ring(size,stroke,pct){const r=(size-stroke)/2,c=2*Math.PI*r;return `<svg viewBox="0 0 ${size} ${size}" aria-hidden="true"><circle cx="${size/2}" cy="${size/2}" r="${r}" fill="none" stroke="var(--line)" stroke-width="${stroke}"/>${pct>0?`<circle cx="${size/2}" cy="${size/2}" r="${r}" fill="none" stroke="var(--text)" stroke-width="${stroke}" stroke-linecap="round" stroke-dasharray="${c*pct} ${c}"/>`: ""}</svg>`}
+function renderRing(){const pct=Math.min(1,gold.tp/gold.target),el=$('#ring');el.innerHTML=`<span>Gold</span><span class="mini"><i style="width:${pct*100}%"></i></span>`;el.setAttribute('aria-label',`Gold: ${fmt(gold.tp)} of ${fmt(gold.target)} tier points`);el.title=`${fmt(Math.max(0,gold.target-gold.tp))} tier points to Gold`}
+function origins(q){return q.from==='LON'?LONDON.filter(c=>c!==q.to).join(','):q.from}
+function params(action,q){const p=new URLSearchParams({action,origin:origins(q),departureDate:q.out});if(q.back)p.set('returnDate',q.back);if(action!=='anywhere')p.set('destination',q.to);if(action!=='flex')p.set('fareClass',CABINS[q.cabin]);else{p.set('mode','depart');p.set('sort','date')}return p}
+async function request(action,q,signal){
+  const r=await fetch('/api/flights?'+params(action,q),{signal,cache:'no-store',headers:{Accept:'application/json'}});
+  if(!r.ok){const e=new Error('Flight search failed');e.status=r.status;e.retryAfter=Math.min(3600,Math.max(1,Number(r.headers.get('Retry-After'))||60));throw e}
+  const data=await r.json();if(!Array.isArray(data.results))throw new Error('Invalid response');return data;
+}
+function cacheKey(q){return JSON.stringify([q.from,q.to,q.out,q.back,q.cabin])}
+function calendarQuote(k){const q={...S,out:k,back:S.back?key(new Date(D(k).getTime()+nights(S.out,S.back)*864e5)):''},v=verified.get(cacheKey(q));if(v)return{value:(v.priceGbp/v.estimate.tierPoints).toFixed(2),verified:true};const p=flexRows.filter(r=>r.departureDate===k).sort((a,b)=>a.priceGbp-b.priceGbp)[0];return p?{value:money(p.priceGbp),verified:false}:null}
+function calendarMonth(today=TODAY,selected=S.out){
+  if(selected)return selected.slice(0,7);
+  const d=D(today),end=new Date(Date.UTC(d.getUTCFullYear(),d.getUTCMonth()+1,0));
+  return end.getUTCDate()-d.getUTCDate()+1<7?key(new Date(Date.UTC(d.getUTCFullYear(),d.getUTCMonth()+1,1))).slice(0,7):today.slice(0,7);
+}
+function calHTML(){
+  const [y,m]=S.view.split('-').map(Number),first=new Date(Date.UTC(y,m-1,1)),n=new Date(Date.UTC(y,m,0)).getUTCDate(),lead=(first.getUTCDay()+6)%7;
+  const hasRoute=S.to&&S.to!=='ANY',showP=S.prices&&hasRoute;let cells='';
+  for(let i=0;i<lead;i++)cells+='<span></span>';
+  for(let d=1;d<=n;d++){
+    const k=key(new Date(Date.UTC(y,m-1,d))),past=k<TODAY||k>LATEST,isS=k===S.out,isE=S.back?k===S.back:isS,inR=S.out&&S.back&&k>S.out&&k<S.back;
+    const quote=showP&&!past?calendarQuote(k):null;
+    const cls=['d',past&&'past',k===TODAY&&'today',isS&&'s',isE&&'e',(inR||(S.back&&(isS||isE)))&&'in',showP&&!past&&'pr',quote?.verified&&'best'].filter(Boolean);
+    cells+=`<button type="button" class="${cls.join(' ')}" data-k="${k}" ${past?'disabled':''} aria-label="${dShort(k)}${isS?', outbound':''}${S.back&&isE?', return':''}${quote?', '+esc(quote.value)+(quote.verified?' per estimated tier point':' unverified discovery price'):''}" aria-pressed="${!!(isS||(S.back&&isE))}"><span>${d}</span>${showP&&!past?`<i>${quote?quote.value:'—'}</i>`:''}</button>`;
+  }
+  const foot=!S.out?'<span>Tap a date. Tap a second date for a return.</span>':`<span><b>${whenText()}</b> · ${S.back?nights(S.out,S.back)+' nights':'one way'}</span><button type="button" class="txtb" id="clr">Clear</button>`;
+  return `<div class="cal" id="cal"><div class="calhd"><b>${first.toLocaleDateString('en-GB',{month:'long',year:'numeric',timeZone:'UTC'})}</b><div class="nav">${hasRoute?`<button type="button" class="chipg" id="pt" aria-label="Calendar price per tier point" aria-pressed="${S.prices}">£/TP</button>`:''}<button type="button" id="pm" aria-label="Previous month" ${S.view<=TODAY.slice(0,7)?'disabled':''}>‹</button><button type="button" id="nm" aria-label="Next month" ${S.view>=LATEST.slice(0,7)?'disabled':''}>›</button></div></div><div class="grid">${['M','T','W','T','F','S','S'].map(x=>`<span class="dow">${x}</span>`).join('')}${cells}</div><div class="calft">${foot}</div>${showP?`<div class="calnote" role="status">${flexState==='loading'?'Loading dates…':flexState==='throttled'?'Too many requests. Try dates again shortly.':flexState==='error'?'Dates unavailable. Toggle £/TP to try again.':'£ discovery prices · £/TP after search'}</div>`:''}</div>`;
+}
+function tapDay(k){if(!S.out)S.out=k;else if(!S.back){if(k===S.out)S.out='';else if(k<S.out)S.out=k;else S.back=k}else{if(k===S.back)S.back='';else{S.out=k;S.back=''}}S.hover='';hint=''}
+function vSearch(){
+  document.title='Flights';return `<div class="fromwrap"><button class="from" id="fromBtn" aria-haspopup="true" aria-expanded="${fromOpen}">From <b>${esc(placeName(S.from))}</b></button>${fromOpen?fromPop():''}</div><form class="card glass" id="sf" novalidate autocomplete="off"><label class="bar" for="to"><span class="k">To</span><input class="where" id="to" placeholder="Where to?" value="${esc(S.to?placeName(S.to):draft)}" aria-label="Where to" aria-autocomplete="list" aria-expanded="${sugOpen}" aria-controls="destinations" role="combobox">${sugOpen?sugPop(draft):''}</label><div class="bar" id="whenBar"><span class="k">When</span><button type="button" class="when ${S.out?'':'ph'}" id="whenBtn" aria-label="When" aria-expanded="${calOpen}">${S.out?whenText()+(S.back?'':'<small>one way</small>'):'Add a date'}</button></div>${calOpen?calHTML():''}</form><div class="under acts"><label><span class="sr">Cabin</span><select class="cabin" id="cabin">${Object.keys(CABINS).map(c=>`<option ${S.cabin===c?'selected':''}>${c}</option>`).join('')}</select></label><button class="go glass press" id="go" form="sf" type="submit">Search <span class="arr">→</span></button></div><div class="hintline ${hint?'err':''}" role="status">${esc(hint)}</div>`;
+}
+function matches(q,origin=false){q=q.trim().toLowerCase();let list=AIRPORTS.filter(a=>(origin||a[0]!=='LON')&&(a[0].toLowerCase().startsWith(q)||a[1].toLowerCase().includes(q))).slice(0,6);if(/^[a-z]{3}$/.test(q)&&(origin||q!=='lon')&&!list.some(a=>a[0]===q.toUpperCase()))list.push([q.toUpperCase(),q.toUpperCase(),'airport']);return list}
+function sugPop(q){q=(q||'').trim().toLowerCase();const list=q?matches(q):AIRPORTS.filter(a=>['MAD','JFK','DOH'].includes(a[0]));const any=!q||'anywhere'.startsWith(q);return `<div class="pop glass" id="destinations" role="listbox" aria-label="Destinations">${any?`<button type="button" class="opt" role="option" aria-selected="false" data-to="ANY" id="suggest-ANY"><span>Anywhere</span><span class="s">explore destinations</span></button>${list.length?'<div class="popsep"></div>':''}`:''}${list.map(a=>`<button type="button" class="opt" role="option" aria-selected="false" data-to="${a[0]}" id="suggest-${a[0]}"><span>${a[1]}${a[2]?` <span class="s">${a[2]}</span>`:''}</span><span class="c">${a[0]}</span></button>`).join('')}${!list.length&&!any?'<div class="opt s">Enter a city or three-letter airport code</div>':''}</div>`}
+function fromPop(){const o=(c,l,s)=>`<button type="button" class="opt ${S.from===c?'on':''}" data-from="${c}"><span>${esc(l)}${s?` <span class="s">${esc(s)}</span>`:''}</span>${S.from===c?'<span class="tick">✓</span>':''}</button>`;return `<div class="pop glass" id="fromPop">${o('LON','London','all airports')}${o('IBZ','Ibiza','')}${!['LON','IBZ'].includes(S.from)?o(S.from,placeName(S.from),S.from):''}<input class="popin" id="fromQ" placeholder="Other airport" aria-label="Other airport"><div id="fromRes"></div></div>`}
+function backPill(){const q=resultQuery||S;return `<a class="back glass press" href="#/search"><span class="ar">←</span><span class="t">${esc(placeName(q.from))} → ${esc(placeName(q.to))}${q.out?' · '+whenText(q):''}</span></a>`}
+function earning(f){return Number.isFinite(f.estimate?.tierPoints)&&f.estimate.tierPoints>0&&Number.isFinite(f.priceGbp)&&f.priceGbp>0}
+function allFares(){return(response?.results||[]).filter(earning).sort((a,b)=>a.priceGbp/a.estimate.tierPoints-b.priceGbp/b.estimate.tierPoints||a.priceGbp-b.priceGbp)}
+function fares(){const seen=new Set();return allFares().filter(f=>{const k=JSON.stringify([flightGroups(f),f.departure?.dateTime,f.arrival?.dateTime,f.returnFlight?.departure?.dateTime,f.returnFlight?.arrival?.dateTime,f.hiddenCity,f.ticketedTo]);if(seen.has(k))return false;seen.add(k);return true})}
+function time(p){return typeof p?.dateTime==='string'&&/T\d{2}:\d{2}/.test(p.dateTime)?p.dateTime.slice(11,16):'Time unavailable'}
+function duration(f){const m=Math.round((new Date(f.arrival?.dateTime)-new Date(f.departure?.dateTime))/60000);return Number.isFinite(m)&&m>=0?Math.floor(m/60)+'h'+(m%60?String(m%60).padStart(2,'0'):''):''}
+function plusDays(f){return f.arrival?.dateTime&&f.departure?.dateTime?Math.max(0,nights(f.departure.dateTime.slice(0,10),f.arrival.dateTime.slice(0,10))):0}
+function flightGroups(f){if(f.legs?.length)return f.legs.map(l=>l.units.filter(u=>u.flown).flatMap(u=>u.flightNumbers));try{return new URLSearchParams(new URL(f.deepLink).hash.slice(1)).get('trip').split(',').map(g=>g.split('-'))}catch{return[f.flightNumbers||[]]}}
+function resultNote(){return 'Tier points and Avios are estimates; verify fare class, operator and earning before booking.'}
+function partialNote(){if(!response?.partial)return '';const codes=[...new Set((response.failures||[]).map(f=>f.origin))];return `<p class="left" role="status">${codes.length?esc(codes.length>1?codes.slice(0,-1).join(', ')+' and '+codes.at(-1):codes[0]):'Some airports'} didn't answer</p>`}
+function coverage(){const excluded=Object.values(response?.excluded||{}).reduce((a,b)=>a+b,0);return [excluded?`${fmt(excluded)} fares without verified earning routes are left out.`:'',response?.pages?.some(p=>p.hasMoreResults)?'More fares may be available on Skiplagged.':''].filter(Boolean).join(' ')}
+function vResults(){
+  if(!response)return vSearch();if(response.action==='anywhere')return vAnywhere();const list=fares();if(!list.length)return vEmpty();const b=list[0];document.title=`${placeName(resultQuery.from)} → ${placeName(resultQuery.to)} · Flights`;
+  return `${backPill()}<h1>${esc(flightGroups(b)[0][0])} <span class="soft">at</span> ${ppt(b)} <span class="soft">per tier point</span></h1><p class="est">${resultNote()}</p>${partialNote()}<div class="list">${list.map(f=>`<a class="row" href="#/fare/${encodeURIComponent(f.id)}"><span class="tm">${time(f.departure)} → ${time(f.arrival)}${plusDays(f)?`<sup>+${plusDays(f)}</sup>`:''}</span><span class="v">${ppt(f)}<small>/TP</small></span><span class="m">${esc(f.departure.airport)} · <span class="fn">${esc(flightGroups(f).flat().join(' · '))}</span> · ${flightGroups(f)[0].length>1?'connecting':'direct'}${duration(f)?' · '+duration(f):''} · <span class="avios">~${fmt(f.estimate.avios)} Avios</span>${f.hiddenCity?`<span class="hc">ticketed to ${esc(f.ticketedTo)}, leave at ${esc(f.leaveAt)}</span>`:''}${f.returnFlight?' · return':''}</span><span class="p">${money(f.priceGbp)}</span></a>`).join('')}</div>${coverage()?`<p class="left">${coverage()}</p>`:''}`;
+}
+function discoveries(){const seen=new Set();return response.results.slice().sort((a,b)=>a.priceGbp-b.priceGbp).filter(r=>{const city=response.meta?.airports?.[r.destination]||r.city||cityName(r.destination);if(seen.has(city))return false;seen.add(city);return true})}
+function vAnywhere(){
+  const list=discoveries();document.title='Anywhere · Flights';
+  if(!list.length)return `${backPill()}<div class="state"><h1>No destinations found</h1><p>Try another date or origin.</p>${partialNote()}<div class="acts"><a class="go glass press" href="#/search/when">Other dates <span class="arr">→</span></a></div></div>`;
+  return `${backPill()}<h1>Where to?</h1><p class="est">Discovery prices; choose a destination to check earning fares and £/TP.</p>${partialNote()}<div class="list discovery">${list.map((r,i)=>`<a class="row" href="#/results" data-discover="${i}"><span class="tm">${esc((response.meta?.airports?.[r.destination]||r.city||cityName(r.destination)).split(',')[0].trim())}</span><span class="v">${money(r.priceGbp)}</span><span class="m">from ${esc(r.origin)}${resultQuery.back?' · return':''}</span></a>`).join('')}</div>`;
+}
+function goldForFare(f){const y=+gold.ends.slice(0,4)-(gold.ends.slice(5)<'04-01'?1:0),start=y+'-04-01';return(f.estimate.breakdown||[]).filter(s=>s.date>=start&&s.date<=gold.ends&&Number.isFinite(s.tierPoints)).reduce((a,s)=>a+s.tierPoints,0)}
+function vFare(id){
+  const f=allFares().find(f=>f.id===id);if(!f)return vSearch();document.title=flightGroups(f).flat().join(' · ')+' · Flights';const groups=flightGroups(f);
+  const leg=(dep,arr,numbers,label)=>`<div><div class="legh">${label} · ${dShort(dep.dateTime.slice(0,10))}</div><div class="tl"><div class="st"><div class="t1">${time(dep)} <span class="ap">${esc(AIRPORTS.some(a=>a[0]===dep.airport)?placeName(dep.airport):cityName(dep.airport))} · ${esc(dep.airport)}</span></div></div><div class="lg"><span class="fn">${esc(numbers.join(' · '))}</span>${numbers.length>1?' · connecting':''}${duration({departure:dep,arrival:arr})?' · '+duration({departure:dep,arrival:arr}):''}</div><div class="st"><div class="t1">${time(arr)} <span class="ap">${esc(AIRPORTS.some(a=>a[0]===arr.airport)?placeName(arr.airport):cityName(arr.airport))} · ${esc(arr.airport)}</span></div></div>${f.hiddenCity&&label==='One way'?`<div class="leave">You leave at ${esc(cityName(f.leaveAt))}. Skipping a sector can invalidate the ticket and credit.</div>${(f.legs?.[0].units||[]).filter(u=>!u.flown).map(u=>`<div class="lg ghost"><span class="fn">${esc(u.flightNumbers.join(' · '))}</span>${duration(u)?' · '+duration(u):''}</div><div class="st ghost"><div class="t1">${time(u.arrival)} <span class="ap">${esc(cityName(u.to))} · ${esc(u.to)}</span></div></div>`).join('')}`:''}</div></div>`;
+  const credit=goldForFare(f),after=gold.tp+credit,pct=Math.min(1,gold.tp/gold.target),add=Math.min(1-pct,credit/gold.target);
+  const booking=safeBooking(f.deepLink),carrier=response.meta?.carriers?.find(c=>c.code===f.flightNumbers[0]?.slice(0,2));
+  return `<a class="back glass press" href="#/results"><span class="ar">←</span><span class="t">${esc(placeName(resultQuery.from))} → ${esc(placeName(resultQuery.to))}</span></a><div class="hero"><div class="big">${money(f.priceGbp,true)}</div><div class="line"><b class="acc">${ppt(f)}</b> per tier point · ~${fmt(f.estimate.tierPoints)} TP · <span class="avios">~${fmt(f.estimate.avios)} Avios</span></div></div><div class="who">${esc(carrier?.name||f.flightNumbers[0]?.slice(0,2))} · ${esc(resultQuery.cabin)}${f.hiddenCity?' · cabin bag only':''}</div><div class="legs">${leg(f.departure,f.arrival,groups[0],f.returnFlight?'Out':'One way')}${f.returnFlight?leg(f.returnFlight.departure,f.returnFlight.arrival,groups[1]||[],'Back'):''}</div><div class="gold1"><span>Gold</span><span class="gbar"><i style="width:${pct*100}%"></i><u style="left:${pct*100}%;width:${add*100}%"></u></span><span><b>${fmt(Math.min(after,gold.target))}</b> / ${fmt(gold.target)}</span></div>${f.estimate.tierPoints!==credit?'<p class="left">Gold progress includes only tier points in your collection year.</p>':''}${booking?`<div class="dock"><a class="book glass press" href="${esc(booking)}" id="book" target="_blank" rel="noopener noreferrer">Book on Skiplagged <span class="arr">↗</span></a></div>`:''}<p class="left" style="text-align:center">US$${esc(f.price.amount)}${response.meta?.fx?' at '+esc(response.meta.fx.usdToGbp)+' GBP/USD':''}</p>`;
+}
+function safeBooking(link){try{const u=new URL(link);return u.protocol==='https:'&&u.hostname==='skiplagged.com'&&!u.username&&!u.password&&!u.port?u.href:null}catch{return null}}
+function vGold(){document.title='Gold · Flights';const pct=Math.min(1,gold.tp/gold.target),left=Math.max(0,gold.target-gold.tp);return `<a class="back glass press" href="#/search"><span class="ar">←</span><span class="t">Search</span></a><div class="gwrap"><div class="gring">${ring(180,8,pct)}<div class="n">${left?fmt(left):'Kept'}<small>${left?'tier points to Gold':'Gold for next year'}</small></div></div><p style="color:var(--dim)">${fmt(gold.tp)} of ${fmt(gold.target)} · by ${D(gold.ends).toLocaleDateString('en-GB',{day:'numeric',month:'long',timeZone:'UTC'})}</p><form class="gform glass" id="gf" novalidate><label>Tier points so far<input id="gtp" inputmode="numeric" value="${gold.tp}" aria-describedby="gErr"></label><label>Target<input id="gtarget" inputmode="numeric" value="${gold.target}" aria-describedby="gErr"></label><label>Year ends<input id="gend" type="date" value="${gold.ends}" aria-describedby="gErr"></label></form><div class="hintline" id="gErr" role="status"></div><button class="go glass press save" form="gf" type="submit">Save</button><p class="left">Kept on this device.</p></div>`}
+function vLoading(){document.title='Searching · Flights';return `${backPill()}<p class="est" style="margin-top:28px" role="status"><span class="spin"></span>Searching Skiplagged</p><div class="list" aria-busy="true">${[0,1,2,3,4].map(i=>`<div class="sk"><div style="flex:1;display:grid;gap:9px"><i style="width:${42-i*3}%"></i><i style="width:${60-i*5}%"></i></div><i style="width:56px"></i></div>`).join('')}</div>`}
+function vEmpty(){document.title='No earning fares · Flights';return `${backPill()}<div class="state"><h1>No earning fares</h1><p>No fares with a positive tier-point estimate for these dates.</p>${partialNote()}<div class="acts"><a class="go glass press" href="#/search/when">Other dates <span class="arr">→</span></a><button class="txtb dark" id="anywhere">Anywhere from ${esc(placeName(S.from))}</button></div></div>`}
+function vError(){const throttled=searchState==='throttled',remaining=Math.max(0,Math.ceil((retryAt-Date.now())/1000));document.title=(throttled?'Too many requests':'Search failed')+' · Flights';return `${backPill()}<div class="state" role="status"><h1>${throttled?'A moment, please':"Skiplagged didn't answer"}</h1><p>${throttled?'Too many requests. '+(remaining?'Try again in '+remaining+' seconds.':'Ready to try again.'):'The search could not finish. Try again.'}</p><div class="acts"><button class="go glass press" id="retry" ${throttled&&remaining?'disabled':''}>Try again <span class="arr">→</span></button></div></div>`}
+function route(){return(location.hash||'#/search').slice(1).split('/').filter(Boolean)}
+function go(hash){history.replaceState(null,'',hash);render()}
+function render(){
+  const p=route();if(p[0]==='search'&&p[1]==='when'&&!calOpen)S.view=calendarMonth();if(p[0]!=='loading'&&searchState==='loading'){searchController?.abort();searchSerial++;searchState='idle'}
+  if(p[0]!=='search'){flexController?.abort();flexSerial++;if(flexState==='loading'){flexState='';flexKey=''}}
+  renderRing();let h;
+  switch(p[0]){case 'results':h=vResults();break;case 'fare':try{h=vFare(decodeURIComponent(p.slice(1).join('/')))}catch{h=vSearch()}break;case 'gold':h=vGold();break;case 'loading':h=searchState==='loading'?vLoading():vSearch();break;case 'error':h=vError();break;default:calOpen=p[1]==='when';fromOpen=p[1]==='from';h=vSearch()}
+  $('#app').innerHTML=`<div class="fade">${h}</div>`;bind();window.scrollTo(0,0);
+}
+function redraw(){if($('#sf')){$('#app').innerHTML=vSearch();bind()}}
+function clearFlex(){flexController?.abort();flexSerial++;flexRows=[];flexState='';flexKey=''}
+async function loadFlex(){
+  if(!S.prices||!S.to||S.to==='ANY')return;
+  const q={...S,out:S.view+'-01'};if(q.out<TODAY)q.out=TODAY;if(S.back){const duration=nights(S.out,S.back);q.back=key(new Date(D(q.out).getTime()+duration*864e5));if(q.back>LATEST)q.back=LATEST}
+  const k=params('flex',q).toString();if(k===flexKey&&flexState!=='error'&&flexState!=='throttled')return;
+  flexController?.abort();const serial=++flexSerial;flexController=new AbortController();flexKey=k;flexState='loading';redraw();
+  try{const data=await request('flex',q,flexController.signal);if(serial!==flexSerial)return;flexRows=data.results;flexState='ready'}catch(e){if(e.name==='AbortError'||serial!==flexSerial)return;flexState=e.status===429?'throttled':'error'}
+  if(route()[0]==='search')redraw();
+}
+function chooseDestination(code){S.to=code;draft='';sugOpen=false;hint='';selection=-1;clearFlex();if(!S.out){S.view=calendarMonth();calOpen=true;history.replaceState(null,'','#/search/when')}redraw();if(calOpen&&S.prices)loadFlex()}
+function redrawSug(){const input=$('#to'),bar=input.parentNode;bar.querySelector('.pop')?.remove();input.setAttribute('aria-expanded',String(sugOpen));input.removeAttribute('aria-activedescendant');if(!calOpen)$('#cal')?.remove();if(sugOpen){bar.insertAdjacentHTML('beforeend',sugPop(draft));bindSug()}}
+function bindSug(){document.querySelectorAll('.pop [data-to]').forEach(b=>{b.onmousedown=e=>e.preventDefault();b.onclick=()=>chooseDestination(b.dataset.to)})}
+function bindCal(){const cal=$('#cal');if(!cal)return;cal.querySelectorAll('.d[data-k]:not(.past)').forEach(b=>{b.onclick=()=>{tapDay(b.dataset.k);clearFlex();redraw();if(S.prices)loadFlex()};b.onmouseenter=()=>{if(S.out&&!S.back&&b.dataset.k>S.out){S.hover=b.dataset.k;paintHover()}}});cal.querySelector('.grid').onmouseleave=()=>{S.hover='';paintHover()};const sh=v=>{const[y,m]=S.view.split('-').map(Number);S.view=key(new Date(Date.UTC(y,m-1+v,1))).slice(0,7);clearFlex();redraw();if(S.prices)loadFlex()};$('#pm').onclick=()=>sh(-1);$('#nm').onclick=()=>sh(1);if($('#pt'))$('#pt').onclick=()=>{S.prices=!S.prices;redraw();if(S.prices)loadFlex()};if($('#clr'))$('#clr').onclick=()=>{S.out='';S.back='';clearFlex();redraw()}}
+function paintHover(){document.querySelectorAll('#cal .d[data-k]').forEach(b=>{const k=b.dataset.k,on=!!S.hover&&k>S.out&&k<=S.hover;b.classList.toggle('pv',on||(k===S.out&&!!S.hover));b.classList.toggle('e',k===S.out?!S.hover:on&&k===S.hover)})}
+function bind(){
+  const sf=$('#sf');if(sf){
+    const to=$('#to');to.onfocus=()=>{if(!sugOpen){sugOpen=true;calOpen=false;fromOpen=false;draft=S.to?placeName(S.to):draft;redrawSug()}};
+    to.oninput=()=>{draft=to.value;S.to='';sugOpen=true;selection=-1;clearFlex();redrawSug()};
+    to.onkeydown=e=>{const options=[...document.querySelectorAll('[data-to]')];if(e.key==='Escape'){sugOpen=false;redrawSug()}if(['ArrowDown','ArrowUp'].includes(e.key)){e.preventDefault();selection=(selection+(e.key==='ArrowDown'?1:-1)+options.length)%options.length;options.forEach((b,i)=>{b.classList.toggle('on',i===selection);b.setAttribute('aria-selected',String(i===selection))});if(options[selection])to.setAttribute('aria-activedescendant',options[selection].id)}if(e.key==='Enter'&&sugOpen){e.preventDefault();if(options.length)chooseDestination(options[Math.max(0,selection)].dataset.to)}};
+    bindSug();$('#whenBtn').onclick=()=>{if(!calOpen)S.view=calendarMonth();calOpen=!calOpen;sugOpen=false;fromOpen=false;go(calOpen?'#/search/when':'#/search');if(calOpen&&S.prices)loadFlex()};bindCal();
+    $('#cabin').onchange=e=>{S.cabin=e.target.value;clearFlex();if(S.prices)loadFlex()};
+    $('#fromBtn').onclick=()=>{fromOpen=!fromOpen;sugOpen=false;go(fromOpen?'#/search/from':'#/search')};
+    const setFrom=code=>{S.from=code;fromOpen=false;clearFlex();go('#/search')};document.querySelectorAll('[data-from]').forEach(b=>b.onclick=()=>setFrom(b.dataset.from));
+    const fq=$('#fromQ');if(fq){fq.oninput=()=>{const list=fq.value.trim()?matches(fq.value,true):[];$('#fromRes').innerHTML=list.map(a=>`<button type="button" class="opt" data-from2="${a[0]}"><span>${a[1]}</span><span class="c">${a[0]}</span></button>`).join('');document.querySelectorAll('[data-from2]').forEach(b=>b.onclick=()=>setFrom(b.dataset.from2))};fq.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();const b=$('[data-from2]');if(b)setFrom(b.dataset.from2)}}}
+    if(fromOpen)$('#fromPop .opt.on')?.focus();
+    sf.onsubmit=e=>{e.preventDefault();if(!S.to){hint='Choose where to, or Anywhere.';redraw();$('#to').focus();return}if(!S.out){hint='Pick a date.';S.view=calendarMonth();calOpen=true;go('#/search/when');$('#whenBar').classList.add('shake');return}if(origins(S).split(',').includes(S.to)){hint='Choose a different destination.';redraw();return}search()};
+  }
+  document.querySelectorAll('[data-discover]').forEach(a=>a.onclick=e=>{e.preventDefault();const r=discoveries()[+a.dataset.discover];S.to=r.destination;clearFlex();search()});
+  if($('#anywhere'))$('#anywhere').onclick=()=>{S.to='ANY';search()};if($('#retry'))$('#retry').onclick=search;
+  const gf=$('#gf');if(gf)gf.onsubmit=e=>{e.preventDefault();const tp=$('#gtp').value.replace(/[,\s]/g,''),target=$('#gtarget').value.replace(/[,\s]/g,''),ends=$('#gend').value;const err=$('#gErr');if(!/^\d+$/.test(tp)||!Number.isSafeInteger(+tp)||!/^\d+$/.test(target)||!Number.isSafeInteger(+target)||+target<=0){err.textContent='Enter whole tier points and a target above zero.';return}if(!realDate(ends)){err.textContent='Enter a valid year-end date.';return}const saved=goldData({tp:+tp,target:+target,ends});if(!saved){err.textContent='Could not save on this device.';return}gold=saved;render();toast('Saved')};
+}
+async function search(){
+  if(!S.out||!S.to){go('#/search');return}
+  searchController?.abort();flexController?.abort();const serial=++searchSerial;searchController=new AbortController();const q={...S};resultQuery=q;response=null;searchState='loading';calOpen=false;sugOpen=false;fromOpen=false;clearTimeout(retryTimer);go('#/loading');
+  try{const data=await request(q.to==='ANY'?'anywhere':'search',q,searchController.signal);if(serial!==searchSerial||route()[0]!=='loading')return;response=data;searchState='ready';if(data.action==='search'){const best=fares()[0];if(best){verified.set(cacheKey(q),best);if(verified.size>64)verified.delete(verified.keys().next().value)}}go('#/results')}
+  catch(e){if(e.name==='AbortError'||serial!==searchSerial)return;searchState=e.status===429?'throttled':'error';retryAt=Date.now()+e.retryAfter*1000;go('#/error');if(searchState==='throttled')retryTimer=setTimeout(()=>{if(route()[0]==='error'&&searchState==='throttled')render()},e.retryAfter*1000)}
+}
+window.addEventListener('hashchange',render);
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&fromOpen){fromOpen=false;go('#/search')}});
+document.addEventListener('click',e=>{if(fromOpen&&!e.target.closest('.fromwrap')){fromOpen=false;go('#/search')}if(sugOpen&&!e.target.closest('label.bar')){sugOpen=false;if($('#to'))redrawSug()}});
+render();
+
+</script>
+</body>
+</html>

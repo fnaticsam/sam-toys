@@ -13,6 +13,21 @@
         "Loading, no-earning-fares and error states are in the screen index."
       ],
       "fixed": []
+    },
+    {
+      "n": 2,
+      "file": "proto-v2.html",
+      "date": "2026-10-28",
+      "title": "Simpler search, black glass",
+      "notes": [
+        "Search is just Where to? and When; origin defaults to London and changes with one tap.",
+        "One date picker: one tap is one way, a second tap adds the return; tap the return again to drop it, Clear resets.",
+        "White page with black glass controls, one orange accent for the best value.",
+        "Anywhere lives in the Where to? suggestions; flexible dates are the £/TP switch inside the calendar; cabin and Gold sit quietly aside.",
+        "Gold target is 20,000 tier points; Vueling fares show only under Iberia flight numbers.",
+        "One layout; the A/B switch and chart are gone. New plane logo and favicon."
+      ],
+      "fixed": []
     }
   ]
 }

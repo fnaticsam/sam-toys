@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!-- TEMPLATE ONLY. Do not load before the supervised go-live checklist is complete. -->
+<plist version="1.0"><dict>
+  <key>Label</key><string>com.sam.flights.ba-balance</string>
+  <key>ProgramArguments</key><array>
+    <string>REPLACE_ABSOLUTE_NODE_PATH</string>
+    <string>REPLACE_ABSOLUTE_REPO_PATH/robot/ba/cli.js</string>
+    <string>balance</string>
+  </array>
+  <key>WorkingDirectory</key><string>REPLACE_ABSOLUTE_REPO_PATH</string>
+  <key>EnvironmentVariables</key><dict>
+    <key>BA_MEMBERSHIP</key><string>REPLACE_MEMBERSHIP_NUMBER</string>
+    <key>BA_DATA_STORE</key><string>file</string>
+    <key>BA_LIVE_ENABLED</key><string>0</string>
+    <key>BA_MAX_LOGINS_PER_DAY</key><string>3</string>
+    <key>BA_MAX_SEARCHES_PER_HOUR</key><string>6</string>
+  </dict>
+  <key>StartCalendarInterval</key><dict><key>Hour</key><integer>9</integer><key>Minute</key><integer>15</integer></dict>
+  <key>LimitLoadToSessionType</key><string>Aqua</string>
+  <key>RunAtLoad</key><false/>
+  <key>KeepAlive</key><false/>
+  <key>ProcessType</key><string>Background</string>
+  <!-- Avoid stdout logging of personal balances. Errors are bounded machine codes. -->
+  <key>StandardOutPath</key><string>/dev/null</string>
+  <key>StandardErrorPath</key><string>/dev/null</string>
+</dict></plist>

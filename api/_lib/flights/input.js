@@ -48,7 +48,7 @@ function parseInput(rawUrl, now = Date.now()) {
   if (!['depart','return'].includes(mode) || !['date','price'].includes(sort)) bad('Invalid calendar mode or sort.');
   if (action === 'flex' && mode === 'return' && !returnDate) bad('returnDate is required for a return calendar.');
   return { action, origins, destination, departureDate, returnDate, fareClass, limit, offset,
-    maxStops, includeHiddenCity: hidden !== 'false', airlines, mode, sort };
+    maxStops, includeHiddenCity: !returnDate && hidden !== 'false', airlines, mode, sort };
 }
 function toolInput(query, origin) {
   const q = query;
@@ -58,6 +58,6 @@ function toolInput(query, origin) {
   if (q.action === 'flex') return { name: q.mode === 'return' ? 'sk_flex_return_calendar' : 'sk_flex_departure_calendar', args: { ...dates, sort: q.sort, adults: 1 } };
   return { name: 'sk_flights_search', args: { ...dates, fareClass: q.fareClass, adults: 1,
     limit: q.limit, offset: q.offset, sort: 'price', preferredAirlines: q.airlines,
-    includeHiddenCity: q.includeHiddenCity, includeVirtualInterlining: false, includeStandard: true, maxStops: q.maxStops } };
+    includeHiddenCity: !q.returnDate && q.includeHiddenCity, includeVirtualInterlining: false, includeStandard: true, maxStops: q.maxStops } };
 }
 module.exports = { InputError, validDate, parseInput, toolInput };

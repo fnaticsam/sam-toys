@@ -20,12 +20,14 @@ function normalizeFlight(flight, query) {
   if (trip.getAll('trip').length !== 1) return fail('missing-flight-numbers');
   const groups = trip.get('trip').toUpperCase().split(',').map((g) => g.split('-'));
   const summaries = [flight, ...(flight.returnFlight ? [flight.returnFlight] : [])];
-  if (groups.length !== summaries.length || summaries.length !== (query.returnDate ? 2 : 1)) return fail('incomplete-itinerary');
   const hiddenCity = summaries.some((s) => Array.isArray(s.attributes) && s.attributes.some((a) => typeof a === 'string' && /hidden.?city/i.test(a))) ||
     !!(endpoint(flight.arrival) && flight.arrival.airport !== query.destination);
+  // A requested return forbids hidden-city fares even if the provider omits
+  // its return leg or ignores includeHiddenCity:false.
+  if (hiddenCity && query.returnDate) return fail('hidden-city-return-cannot-be-assumed-flown');
+  if (groups.length !== summaries.length || summaries.length !== (query.returnDate ? 2 : 1)) return fail('incomplete-itinerary');
   if (hiddenCity && query.includeHiddenCity === false) return fail('hidden-city-not-requested');
   if (summaries.some((s) => Array.isArray(s.attributes) && s.attributes.some((a) => typeof a === 'string' && /virtual.?interlin/i.test(a)))) return fail('virtual-interlining-excluded');
-  if (hiddenCity && query.returnDate) return fail('hidden-city-return-cannot-be-assumed-flown');
   const legs = [];
   let flownArrival = endpoint(flight.arrival);
   let operatorVerified = true, bookingClassKnown = true;

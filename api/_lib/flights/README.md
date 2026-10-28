@@ -1,7 +1,8 @@
 # Flights backend contract
 
-Backend only, researched 28 October 2026. No page, Vercel settings, credentials,
-deployment or live account integration is included.
+Backend researched 28 October 2026. The static UI is `flights/index.html`,
+served at `/flights` without a build step. No credentials or live account
+integration is included.
 
 ## HTTP
 
@@ -32,7 +33,7 @@ Search parameters:
 | `fareClass` | `basic-economy`, `economy` (default), `premium`, `business`, `first`. A search filter, not proof of the ticket cabin. |
 | `limit`, `offset` | Per-origin provider page: 1–100 (default 25), 0–99 (default 0). |
 | `maxStops` | Provider enum `none`, `one`, `many` (default). |
-| `includeHiddenCity` | Literal `true` or `false` (default true). |
+| `includeHiddenCity` | Literal `true` or `false` (default true for one-way; always false when `returnDate` is set). |
 | `airlines` | Optional comma-separated subset of eligible marketing codes. Sent as `preferredAirlines: string[]`, exactly as tools/list specifies; final eligibility is still checked locally. |
 
 Search always asks the provider for price order, one adult, standard flights,
@@ -194,7 +195,10 @@ or per-sector rounding. Opaque connections mixing revenue and distance earning
 remain unavailable. Detailed segment arrays, if supplied by the provider in
 future, are checked against flight numbers, airport continuity and destination.
 
-Hidden-city quotes default on; `includeHiddenCity=false` explicitly opts out.
+Hidden-city quotes default on for one-way searches; `includeHiddenCity=false` explicitly opts out.
+With `returnDate`, hidden-city inclusion is forced off in provider requests even
+if the caller sets `includeHiddenCity=true`. Results are independently checked
+and hidden-city fares excluded, including provider cards missing a return leg.
 Opaque hidden-city cards are excluded because
 the MCP cannot prove where the passenger gets off. With explicit segment data,
 only the flown prefix ending at the searched destination earns; the full ticket
@@ -268,9 +272,29 @@ Both maps and concurrency counters are local to a warm function instance and
 reset on restart; they are not a distributed provider-load guarantee. No browser
 payloads are logged and no automatic retries or discovery fan-out are added.
 
-`/api/flights?action=...` works without rewrites. A later UI can call it directly
-from the same origin without a password or proxy. This backend packet does not
-build the `/flights` page or change Vercel configuration.
+`/api/flights?action=...` works without rewrites. The `/flights` page calls it
+from the same origin without a password or proxy. Vercel rewrites `/flights`
+and `/flights/` to the static page and gives the API 25 seconds.
+
+The page sends the six London airports explicitly (excluding the destination),
+or a selected airport. A first calendar tap selects one way; a later second tap
+adds a return. It displays API totals and ranks positive earning estimates by
+GBP/TP without multiplying a return. Unavailable or zero estimates are excluded
+from the earning list. API errors and 429 with Retry-After have explicit states;
+navigation aborts obsolete requests and stale replies cannot replace the page.
+
+Anywhere and flex are **unverified discovery**, not earning quotes. Anywhere
+shows price order and an explicit destination click runs search; it does not
+silently fan out searches. The calendar's £/TP switch fetches flex once for the
+current context: unverified dates show £ discovery prices, and dates previously
+searched in the same route/cabin/trip context show their actual estimated ratio.
+The note distinguishes them. No tier points are invented from a discovery price.
+
+Gold values are entered by the user, defaulting to 0 TP, a 20,000 target and the
+next 31 March. `goldData()` is the single localStorage data boundary to replace
+when real BA balance access is added. Fare progress counts only dated backend
+breakdown sectors in the saved collection year and before the entered deadline.
+No login or balance claim is implied.
 
 ## Verification
 
@@ -284,3 +308,18 @@ LHR–BKK Qatar connection, IBZ-anywhere and LHR–MAD departure calendar. Mutat
 cases and return-calendar sorting cases are explicitly synthetic, not claimed
 as provider recordings. No private booking, ticket, account or credential data
 was recorded. No production calls are made by tests.
+
+
+### Local page QA
+
+`node tests/flights/browser-check.cjs` starts a loopback fixture server, runs
+Playwright at 1280 and 390 pixels, and captures screenshots plus a JSON report
+under `/tmp/flights-browser-qa` (override with `FLIGHTS_SCREENSHOT_DIR`). It uses
+`playwright` from the current installation, `FLIGHTS_PLAYWRIGHT_MODULE` when
+set, or the existing ai-mac installation. For approved reference captures, place
+the prototype from `git show origin/main:prototypes/flights/proto-v2.html` at
+`/tmp/flights-approved-v2.html`. The server uses the real handler with recorded
+fixtures and labelled synthetic route/date/hidden-city mutations. It has an
+explicit static-file allowlist and never contacts Skiplagged. It requires a
+runtime permitted to bind loopback sockets and launch Chromium. The Node UI
+tests use the shipping inline script and real handler without either permission.

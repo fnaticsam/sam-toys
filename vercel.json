@@ -24,6 +24,9 @@
     },
     "api/dev-ask.js": {
       "maxDuration": 30
+    },
+    "api/flights.js": {
+      "maxDuration": 25
     }
   },
   "crons": [
@@ -106,11 +109,30 @@
     {
       "source": "/dev/ask",
       "destination": "/api/dev-ask"
+    },
+    {
+      "source": "/flights",
+      "destination": "/flights/index.html"
+    },
+    {
+      "source": "/flights/",
+      "destination": "/flights/index.html"
     }
   ],
   "git": {
     "deploymentEnabled": {
       "main": false
     }
-  }
+  },
+  "headers": [
+    {
+      "source": "/flights/:path*",
+      "headers": [
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, nofollow"
+        }
+      ]
+    }
+  ]
 }

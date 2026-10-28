@@ -80,7 +80,7 @@ test('recorded return search produces ranked estimates and passes eligible airli
   assert.equal(r.body.meta.discoveryOnly,false);
   const [name,args]=s.calls[0];assert.equal(name,'sk_flights_search');
   assert(Array.isArray(args.preferredAirlines));assert(args.preferredAirlines.includes('EI'));
-  assert.equal(args.includeHiddenCity,true);assert.equal(args.includeVirtualInterlining,false);
+  assert.equal(args.includeHiddenCity,false);assert.equal(args.includeVirtualInterlining,false);
   assert.equal(args.adults,1);assert.equal(args.returnDate,'2026-11-21');
   assert.equal(r.body.pages[0].hasMoreResults,true);
 });
@@ -257,4 +257,28 @@ test('hidden-city fares default on, keep endpoint facts and rank normally with f
   assert.equal(row.estimate.breakdown.length,1);assert.equal(row.estimate.breakdown[0].to,'DOH');
   const optedOut=await s.call(url+'&includeHiddenCity=false');
   assert.equal(optedOut.body.results.length,1);assert.equal(optedOut.body.results[0].hiddenCity,false);
+});
+
+test('return searches force hidden-city off and reject provider hidden-city cards with or without a return leg',async()=>{
+  const labeled=structuredClone(fixtures.search.flights[0]);
+  labeled.attributes.push('hidden-city');
+  const missingReturn=structuredClone(labeled);
+  delete missingReturn.returnFlight;
+  const unlabelled=structuredClone(require('./fixtures/connecting.json').flights[0]);
+  unlabelled.attributes=[];
+  const calls=[];
+  const s=setup({callTool:async(name,args)=>{
+    calls.push([name,args]);
+    return {flights:[...fixtures.search.flights,labeled,missingReturn,unlabelled]};
+  }});
+  for(const suffix of ['', '&includeHiddenCity=true', '&includeHiddenCity=false']) {
+    const r=await s.call(URL+suffix);
+    assert.equal(r.statusCode,200);
+    assert.equal(r.body.results.length,6);
+    assert(r.body.results.every(f=>f.hiddenCity===false && f.returnFlight));
+    assert.equal(r.body.excluded['hidden-city-return-cannot-be-assumed-flown'],3);
+  }
+  // All three spellings have the same effective policy and share a cache entry.
+  assert.equal(calls.length,1);
+  assert.equal(calls[0][1].includeHiddenCity,false);
 });

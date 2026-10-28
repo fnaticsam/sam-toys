@@ -166,6 +166,28 @@ test('input validates real dates, IATA, bounded query options and default origin
   assert.throws(()=>parseInput('/api/flights?action=flex&origin=LHR&destination=MAD&departureDate=2026-11-18&mode=return',NOW));
 });
 
+test('returnDate disables hidden-city inclusion independently in parsing, tool arguments and normalization', () => {
+  const base='/api/flights?origin=LHR&destination=MAD&departureDate=2026-11-18&returnDate=2026-11-21';
+  for(const suffix of ['', '&includeHiddenCity=true', '&includeHiddenCity=false']) {
+    const q=parseInput(base+suffix,NOW);
+    assert.equal(q.includeHiddenCity,false);
+    assert.equal(toolInput(q,'LHR').args.includeHiddenCity,false);
+  }
+  // Defend a hand-built query as well as parsed HTTP input.
+  assert.equal(toolInput({...parseInput(base,NOW),includeHiddenCity:true},'LHR').args.includeHiddenCity,false);
+  for(const includeHiddenCity of [true,false]) {
+    const q={...query,includeHiddenCity};
+    const labeled=clone(search.flights[0]);
+    labeled.attributes.push('hidden-city');
+    assert.equal(normalizeFlight(labeled,q).excluded,'hidden-city-return-cannot-be-assumed-flown');
+    delete labeled.returnFlight;
+    assert.equal(normalizeFlight(labeled,q).excluded,'hidden-city-return-cannot-be-assumed-flown');
+    const unlabelled=clone(connecting.flights[0]);
+    unlabelled.attributes=[];
+    assert.equal(normalizeFlight(unlabelled,q).excluded,'hidden-city-return-cannot-be-assumed-flown');
+  }
+});
+
 test('tool arguments conform to recorded tools/list schema, including preferredAirlines array', () => {
   for(const tail of ['','&action=anywhere','&action=flex','&action=flex&mode=return&returnDate=2026-11-21']) {
     const url=tail.includes('anywhere') ? '/api/flights?departureDate=2026-11-18'+tail : '/api/flights?destination=MAD&departureDate=2026-11-18'+tail;

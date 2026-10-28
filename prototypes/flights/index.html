@@ -1,1173 +1,619 @@
-<meta name="robots" content="noindex, nofollow">
+<!doctype html><html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><script>try{var p=window.parent!==window&&window.parent.claude;if(p)window.__kitClaude=p}catch(e){}</script><meta name="kit:version" content="1">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
 <title>Flights</title>
-<meta name="claude:viewport-fit-sides" content="cover">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
 :root{
-  --bg:#eef0f3;--stage:#e6e9ee;--panel:#fff;--raise:#f6f7f9;
-  --ink:#161a21;--ink-2:#4d5563;--ink-3:#6b7280;--line:#dfe3ea;
-  --pencil:#2b5bd7;--pencil-ink:#fff;--pencil-soft:#e8eefc;
-  --done:#1f7a4a;--done-soft:#e3f3ea;--danger:#b42318;--danger-soft:#fdecea;
-  --clay:#b8532f;--clay-soft:#f8e9e2;
-  --shadow:rgba(22,26,33,.08);--scrim:rgba(15,18,24,.28);
-  --sans:"Hanken Grotesk",ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;
-  --mono:"IBM Plex Mono",ui-monospace,"SF Mono",Menlo,Consolas,monospace;
-  --peek:56px;
+  --bg:#0c0d10; --surface:#14161b; --surface-hi:#1b1e24; --line:#24272e; --line-soft:#1c1f25;
+  --text:#eeece6; --dim:#8f939b; --faint:#5f636b;
+  --accent:#ffb454; --accent-ink:#1a1206; --good:#7fd1a8; --warn:#f0a868; --bad:#ef7b6f;
+  --radius:14px; --mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+  --ba:#5b8fd9; --ib:#e2574c; --qr:#b4577d; --aa:#a7b3c2; --vy:#e3be3c; --ei:#4fb08a; --ay:#7aa7ff; --rj:#c9a36a; --jl:#e88a8a;
 }
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
-  --bg:#0f1216;--stage:#0b0d11;--panel:#161a20;--raise:#1d222a;
-  --ink:#e9ecf1;--ink-2:#aab2bf;--ink-3:#7d8696;--line:#272d37;
-  --pencil:#7ea2ff;--pencil-ink:#0f1216;--pencil-soft:#1c2640;
-  --done:#5cc98d;--done-soft:#15291f;--danger:#ff8a80;--danger-soft:#3a1b1a;
-  --clay:#e08a64;--clay-soft:#33221b;
-  --shadow:rgba(0,0,0,.4);--scrim:rgba(0,0,0,.5);
-  color-scheme:dark;
-}}
-:root[data-theme="dark"]{
-  --bg:#0f1216;--stage:#0b0d11;--panel:#161a20;--raise:#1d222a;
-  --ink:#e9ecf1;--ink-2:#aab2bf;--ink-3:#7d8696;--line:#272d37;
-  --pencil:#7ea2ff;--pencil-ink:#0f1216;--pencil-soft:#1c2640;
-  --done:#5cc98d;--done-soft:#15291f;--danger:#ff8a80;--danger-soft:#3a1b1a;
-  --clay:#e08a64;--clay-soft:#33221b;
-  --shadow:rgba(0,0,0,.4);--scrim:rgba(0,0,0,.5);
-  color-scheme:dark;
+@media (prefers-color-scheme:light){
+  :root{--bg:#f6f5f1; --surface:#ffffff; --surface-hi:#f1efe9; --line:#e2dfd7; --line-soft:#ecE9e2;
+    --text:#17181b; --dim:#666a72; --faint:#9a9da4; --accent:#d9861c; --accent-ink:#fff;
+    --good:#2f8f62; --warn:#b86a1e; --bad:#c2473a; --aa:#6d7a8a; --vy:#b8930d;}
 }
-html{overflow:hidden}
-body{background:var(--bg);color:var(--ink);font:14px/1.45 var(--sans);overflow:hidden;-webkit-font-smoothing:antialiased}
-button,textarea{font:inherit;color:inherit}
-button{cursor:pointer}
-:focus-visible{outline:2px solid var(--pencil);outline-offset:2px}
-.mono{font-family:var(--mono)}
-.link{border:0;background:none;padding:0;color:var(--pencil);font-weight:600}
-.link:hover{text-decoration:underline}
+*{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-text-size-adjust:100%}
+body{background:radial-gradient(800px 420px at 85% -8%,rgba(255,180,84,.07),transparent 60%),var(--bg);
+  color:var(--text);min-height:100dvh;font:15px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  -webkit-font-smoothing:antialiased;font-variant-numeric:tabular-nums}
+a{color:inherit}
+button,input,select{font:inherit;color:inherit}
+.wrap{max-width:920px;margin:0 auto;padding:28px 20px 120px}
+@media (max-width:640px){.wrap{padding:18px 14px 110px}}
 
-.app{box-sizing:border-box;height:calc(100dvh - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px));display:grid;grid-template-columns:minmax(0,1fr) clamp(340px,34vw,460px);gap:16px;padding-block:16px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+/* top bar */
+.top{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:28px}
+.mark{font-weight:750;letter-spacing:-.02em;font-size:18px;text-decoration:none;display:flex;align-items:baseline;gap:2px}
+.mark .host{color:var(--dim);font-weight:500}
+.mark .dot{color:var(--accent)}
+.gold{display:flex;align-items:center;gap:10px;text-decoration:none;color:var(--dim);font-size:12.5px;min-width:0}
+.gold .bar{position:relative;width:140px;height:5px;border-radius:3px;background:var(--line);overflow:hidden;flex:none}
+.gold .bar i{position:absolute;inset:0 auto 0 0;background:var(--accent);border-radius:3px}
+.gold .bar b{position:absolute;top:0;bottom:0;background:var(--accent);opacity:.4;transition:left .2s,width .2s}
+.gold:hover{color:var(--text)}
+.gold .gtx b{color:var(--text);font-weight:600}
+@media (max-width:520px){.gold .bar{width:70px}.gold .gtx .long{display:none}}
 
-.stage{position:relative;min-width:0;min-height:0;border-radius:14px;background:var(--stage);border:1px solid var(--line);overflow:hidden}
-.frame-wrap{position:absolute;inset:0}
-.frame-wrap iframe{position:absolute;inset:0;width:100%;height:100%;border:0;display:block;background:transparent}
-.pins{position:absolute;inset:0;pointer-events:none;overflow:hidden}
-.capture{position:absolute;inset:0;cursor:crosshair;touch-action:none;background:color-mix(in srgb,var(--pencil) 6%,transparent);box-shadow:inset 0 0 0 2px var(--pencil)}
-.capture:focus{outline:none}
-.stage-msg{position:absolute;inset:0;display:grid;place-items:center;padding:24px;background:var(--stage);text-align:center}
-.stage-msg>div{display:grid;gap:12px;justify-items:center;max-width:300px;color:var(--ink-2)}
-.stage-msg p{margin:0}
-.btn{border:1px solid var(--line);background:var(--panel);border-radius:8px;padding:6px 14px;font-size:13px;font-weight:600}
+/* headings */
+h1{font-size:26px;letter-spacing:-.02em;line-height:1.2;font-weight:700}
+h1 .soft{color:var(--dim);font-weight:500}
+.sub{color:var(--dim);margin-top:6px;font-size:14px}
+.sub b{color:var(--text);font-weight:600}
+@media (max-width:640px){h1{font-size:21px}}
+.crumb{display:inline-flex;gap:6px;align-items:center;color:var(--dim);text-decoration:none;font-size:13.5px;margin-bottom:14px}
+.crumb:hover{color:var(--text)}
 
-.pin{position:absolute;left:0;top:0;width:24px;height:24px;padding:0;border:0;background:none;pointer-events:auto;display:grid;place-items:center;will-change:transform}
-.pin-shape{position:absolute;inset:0;box-sizing:border-box;border-radius:50% 50% 50% 0;transform:rotate(-45deg);background:var(--pencil);border:2px solid var(--panel);box-shadow:0 2px 6px var(--shadow);transition:transform .15s}
-.pin-n{position:relative;font:600 11px/1 var(--mono);color:var(--pencil-ink)}
-.pin-old .pin-shape{background:var(--panel);border:2px dashed var(--pencil)}
-.pin-old .pin-n{color:var(--pencil)}
-.pin-done .pin-shape{background:var(--done)}
-.pin-draft .pin-shape{background:var(--pencil-soft);border:2px solid var(--pencil)}
-.pin.hot .pin-shape,.pin:hover .pin-shape{transform:rotate(-45deg) scale(1.18)}
-.pin:focus-visible{outline:none}
-.pin:focus-visible .pin-shape{box-shadow:0 0 0 3px var(--pencil-soft),0 0 0 5px var(--pencil)}
+/* search form */
+.seg{display:inline-flex;background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:3px;gap:2px}
+.seg button{border:0;background:none;padding:7px 14px;border-radius:999px;cursor:pointer;color:var(--dim);font-size:14px}
+.seg button[aria-pressed=true]{background:var(--surface-hi);color:var(--text);box-shadow:0 1px 0 rgba(0,0,0,.25)}
+.seg button:hover{color:var(--text)}
+.form{margin-top:18px;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:18px;
+  display:grid;gap:14px;grid-template-columns:1fr 1fr;box-shadow:0 20px 40px -24px rgba(0,0,0,.5)}
+.form .full{grid-column:1/-1}
+@media (max-width:640px){.form{grid-template-columns:1fr;padding:14px}}
+.field{position:relative;display:flex;flex-direction:column;gap:6px}
+.field label{font-size:12.5px;color:var(--dim)}
+.input{width:100%;background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:11px 12px;font-size:16px;outline:none;transition:border-color .15s}
+.input:focus{border-color:var(--accent)}
+.input.err{border-color:var(--bad)}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chip{border:1px solid var(--line);background:none;border-radius:999px;padding:4px 10px;font-size:13px;color:var(--dim);cursor:pointer}
+.chip:hover{color:var(--text);border-color:var(--faint)}
+.chip[aria-pressed=true]{color:var(--text);border-color:var(--accent);background:rgba(255,180,84,.08)}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.opts{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.sugg{position:absolute;top:100%;left:0;right:0;margin-top:4px;background:var(--surface-hi);border:1px solid var(--line);border-radius:10px;
+  z-index:5;overflow:hidden;box-shadow:0 16px 30px -12px rgba(0,0,0,.6)}
+.sugg button{display:flex;width:100%;justify-content:space-between;gap:10px;padding:9px 12px;border:0;background:none;cursor:pointer;text-align:left}
+.sugg button:hover,.sugg button:focus{background:var(--line)}
+.sugg .code{font-family:var(--mono);color:var(--dim);font-size:13px}
+.ferr{color:var(--bad);font-size:12.5px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:0;border-radius:10px;padding:12px 20px;font-weight:650;cursor:pointer;text-decoration:none;
+  background:var(--accent);color:var(--accent-ink);transition:transform .12s,filter .12s}
+.btn:hover{filter:brightness(1.06)}.btn:active{transform:scale(.98)}
+.btn.ghost{background:none;color:var(--text);border:1px solid var(--line);font-weight:550}
+.btn.ghost:hover{border-color:var(--faint)}
+.recent{margin-top:28px}
+.recent h2,.sec{font-size:12.5px;color:var(--dim);font-weight:600;margin-bottom:8px}
+.recent a{display:flex;justify-content:space-between;gap:12px;padding:11px 2px;border-bottom:1px solid var(--line-soft);text-decoration:none}
+.recent a:hover .r1{color:var(--accent)}
+.recent .r2{color:var(--dim);font-size:13.5px;white-space:nowrap}
 
-.rail{position:fixed;z-index:25;left:0;top:0;bottom:0;width:48px}
-.rail[hidden]{display:none}
-.app.has-rail{padding-left:calc(44px + max(16px,env(safe-area-inset-left,0px)))}
-.app.rail-docked{padding-left:calc(288px + max(16px,env(safe-area-inset-left,0px)))}
-.rail-btn{position:absolute;left:16px;top:16px;width:28px;display:flex;flex-direction:column;align-items:center;gap:12px;padding:12px 0;border:1px solid var(--line);border-radius:10px;background:var(--panel);box-shadow:0 2px 8px var(--shadow);color:var(--ink-2)}
-.rail-btn:hover{background:var(--raise);color:var(--ink)}
-.rail-btn:focus-visible{outline-offset:2px}
-.rail-btn span{writing-mode:vertical-rl;transform:rotate(180deg);font-size:11px;line-height:1;font-weight:600;letter-spacing:.08em;text-transform:uppercase}
-.rail-btn .chev{margin-top:4px;color:var(--ink-2);transition:transform .15s ease}
-.rail-btn:hover .chev{transform:translateX(2px)}
-.rail.docked .rail-btn{visibility:hidden}
-.rail-menu{position:absolute;left:16px;top:16px;bottom:16px;box-sizing:border-box;width:272px;display:flex;flex-direction:column;border:1px solid var(--line);border-radius:14px;background:var(--panel);box-shadow:0 2px 8px var(--shadow),0 16px 40px var(--shadow);overflow:hidden;transform:translateX(calc(-100% - 16px));visibility:hidden;transition:transform .18s ease,visibility 0s linear .18s}
-.rail.open .rail-menu,.rail.docked .rail-menu{transform:none;visibility:visible;transition:transform .18s ease,visibility 0s}
-.rail-head{display:flex;align-items:center;gap:6px;padding:10px;border-bottom:1px solid var(--line)}
-.rail-head .seg{display:flex;flex:1}
-.rail-head .seg button{flex:1;padding:6px 10px}
-.rail-hide{display:grid;place-items:center;width:30px;height:30px;margin-left:auto;border:0;border-radius:8px;background:none;color:var(--ink-3)}
-.rail-hide:hover{background:var(--raise);color:var(--ink)}
-.rail-list{flex:1;min-height:0;overflow:auto;overscroll-behavior:contain;padding:6px 8px 20px}
-.rail-list h2{margin:20px 10px 6px;font-size:11px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--ink-3)}
-.rail-list h2:first-child{margin-top:10px}
-.rail-item{display:block;width:100%;padding:6px 10px;border:0;border-radius:8px;background:none;text-align:left;font-size:14px;line-height:1.35;color:var(--ink)}
-.rail-item:hover{background:var(--raise)}
-.rail-item[aria-current="true"]{background:var(--raise);box-shadow:inset 2px 0 var(--ink);font-weight:600}
-.rail-foot{margin:22px 10px 0}
-.rail-foot .link{font-size:12.5px;font-weight:500;color:var(--ink-3);text-decoration:underline;text-underline-offset:2px}
-.rail-foot .link:hover{color:var(--ink)}
-
-.panel{min-width:0;min-height:0;display:flex;flex-direction:column;background:var(--panel);border:1px solid var(--line);border-radius:14px;box-shadow:0 1px 2px var(--shadow),0 8px 24px var(--shadow);overflow:hidden}
-.panel-body{flex:1;min-height:0;display:flex;flex-direction:column}
-.peek{display:none}
-.scrim{display:none}
-
-.ph{display:grid;gap:6px;padding:14px 18px 12px;border-bottom:1px solid var(--line)}
-.ph-row{display:flex;align-items:center;justify-content:space-between;gap:10px}
-.ph-title{margin:0;min-width:0;font-size:16px;font-weight:650;letter-spacing:-.01em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-wrap:balance}
-.ph-old{margin:0;font-size:12.5px;color:var(--clay)}
-.vmenu{position:relative;flex:none}
-.vbtn{display:inline-flex;align-items:center;gap:4px;border:1px solid var(--line);background:var(--raise);border-radius:7px;padding:5px 8px;font:500 12px/1 var(--mono);color:var(--ink-2)}
-.vbtn[aria-expanded="true"]{border-color:var(--pencil);color:var(--pencil)}
-.vlist{position:absolute;right:0;top:calc(100% + 6px);z-index:30;display:grid;width:max-content;min-width:240px;max-width:min(320px,calc(100vw - 32px));max-height:min(60vh,420px);overflow:auto;padding:4px;background:var(--panel);border:1px solid var(--line);border-radius:10px;box-shadow:0 12px 32px var(--shadow)}
-.vopt{display:grid;grid-template-columns:auto minmax(0,1fr);gap:10px;align-items:baseline;padding:8px 10px;border:0;border-radius:7px;background:none;text-align:left}
-.vopt:hover,.vopt:focus-visible{background:var(--raise);outline:none}
-.vopt-n{font:500 12px/1.4 var(--mono);color:var(--ink-3)}
-.vopt[aria-checked="true"] .vopt-n{color:var(--pencil)}
-.vopt-main{display:grid;gap:1px;min-width:0}
-.vopt-title{font-size:13.5px;font-weight:600;overflow-wrap:anywhere}
-.vopt-meta{font-size:12px;color:var(--ink-3)}
-.vnotes{font-size:13px;color:var(--ink-2)}
-.vnotes summary{cursor:pointer;font-size:12.5px;font-weight:600;color:var(--ink-2);width:max-content;max-width:100%}
-.vnotes-body{display:grid;gap:8px;padding:8px 0 2px}
-.vnotes ul{margin:0;padding-left:18px;display:grid;gap:3px}
-.vnotes-fixed{display:grid;gap:2px}
-.vnotes-fixed button{border:0;background:none;padding:2px 0;text-align:left;color:var(--ink-2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.vnotes-fixed button:hover{color:var(--ink)}
-
-.sbar{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 18px;border-bottom:1px solid var(--line)}
-.sbar-main{display:flex;align-items:baseline;gap:8px;min-width:0}
-.sbar-title{font-weight:600;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.sbar-count{flex:none;font:11.5px/1 var(--sans);color:var(--pencil)}
-.seg{flex:none;display:inline-flex;padding:2px;border-radius:8px;background:var(--raise);border:1px solid var(--line)}
-.seg button{border:0;background:none;padding:4px 10px;border-radius:6px;font-size:12.5px;font-weight:500;color:var(--ink-3)}
-.seg button[aria-pressed="true"]{background:var(--panel);color:var(--ink);box-shadow:0 1px 2px var(--shadow)}
-
-.notice{margin:10px 14px 0;padding:8px 12px;border-radius:8px;background:var(--raise);color:var(--ink-2);font-size:12.5px}
-.list{flex:1;min-height:0;overflow:auto;overscroll-behavior:contain;display:grid;align-content:start;gap:2px;padding:6px 4px 10px}
-.empty{margin:0;padding:32px 18px;text-align:center;font-size:13px;color:var(--ink-3)}
-.toast{margin:0;padding:0 18px 8px;font-size:12.5px;color:var(--danger)}
-.toast:empty{display:none}
-
-.grp{display:grid;gap:2px}
-.grp+.grp,.list>.shut{margin-top:8px}
-.g-head{display:flex;align-items:baseline;gap:8px;width:100%;padding:8px 14px 4px;border:0;background:none;text-align:left;font-size:12px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--ink-3)}
-.g-head:hover{color:var(--ink)}
-.g-head .here{color:var(--pencil);text-transform:none;letter-spacing:0;font-weight:500}
-
-.c{display:grid;gap:6px;padding:10px 14px;border-radius:10px;transition:background .15s}
-.c:hover,.c.hot{background:var(--raise)}
-.c.flash{animation:flash 1.1s ease-out}
-@keyframes flash{0%{background:var(--pencil-soft)}100%{background:var(--raise)}}
-.c-head{display:flex;align-items:center;gap:8px;min-width:0;font-size:13px}
-.badge{flex:none;box-sizing:border-box;display:inline-grid;place-items:center;min-width:19px;height:19px;padding:0 5px;border-radius:10px;background:var(--pencil);color:var(--pencil-ink);font:600 11px/1 var(--mono)}
-.badge-old{background:none;color:var(--pencil);border:1.5px dashed var(--pencil)}
-.av{flex:none;width:22px;height:22px;border-radius:50%;background:var(--line);object-fit:cover}
-.av-initial{display:grid;place-items:center;font:700 11px/1 var(--sans);color:var(--ink-2)}
-.av-claude{display:grid;place-items:center;background:var(--clay-soft);color:var(--clay);font:700 11px/1 var(--sans)}
-.c-name{min-width:0;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.c-meta{flex:none;font-size:11.5px;color:var(--ink-3);white-space:nowrap}
-.chip{flex:none;margin-left:auto;padding:2px 8px;border-radius:999px;background:var(--done-soft);color:var(--done);font-size:11.5px;font-weight:600;white-space:nowrap}
-.chip-no{background:var(--raise);color:var(--ink-3)}
-.c-screen{justify-self:start;font-size:12.5px;font-weight:500}
-.c-text{margin:0;font-size:14px;line-height:1.5;white-space:pre-wrap;overflow-wrap:anywhere}
-.c-shut .c-text{color:var(--ink-2)}
-.c-acts{display:flex;flex-wrap:wrap;gap:2px;margin-left:-6px}
-.act{border:0;background:none;padding:3px 6px;border-radius:6px;font-size:12.5px;font-weight:500;color:var(--ink-3)}
-.act:hover{color:var(--ink);background:var(--line)}
-.act.arm{color:var(--danger);background:var(--danger-soft)}
-.replies{display:grid;gap:10px;margin:2px 0 0 10px;padding-left:12px;border-left:2px solid var(--line)}
-.r{display:grid;gap:4px}
-.rbox{display:grid;gap:6px;margin-top:2px}
-.rbar{display:flex;justify-content:flex-end;align-items:center;gap:12px}
-.shut summary{cursor:pointer;padding:8px 14px;font-size:12.5px;font-weight:600;color:var(--ink-3);width:max-content}
-.shut summary:hover{color:var(--ink)}
-
-.composer{display:grid;gap:8px;padding:12px 14px 14px;border-top:1px solid var(--line);background:var(--panel)}
-textarea{box-sizing:border-box;width:100%;resize:none;min-height:44px;max-height:200px;padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:var(--raise);font-size:14px;line-height:1.45}
-textarea:focus{outline:none;border-color:var(--pencil);box-shadow:0 0 0 3px var(--pencil-soft);background:var(--panel)}
-.rbox textarea{min-height:38px;padding:8px 10px;font-size:13.5px}
-.hint{margin:0;font-size:12.5px;color:var(--pencil)}
-.cbar{display:flex;align-items:center;gap:8px}
-.pinbtn{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);background:var(--panel);border-radius:8px;padding:6px 10px;font-size:13px;font-weight:500;color:var(--ink-2)}
-.pinbtn svg{width:14px;height:14px}
-.pinbtn[aria-pressed="true"],.pinbtn.has{border-color:var(--pencil);color:var(--pencil);background:var(--pencil-soft)}
-.post{margin-left:auto;border:0;border-radius:8px;padding:7px 16px;background:var(--pencil);color:var(--pencil-ink);font-size:13px;font-weight:600}
-.post:disabled{opacity:1;background:var(--raise);color:var(--ink-3);cursor:default}
-.post-sm{margin-left:0;padding:5px 12px;font-size:12.5px}
-
-@media (max-width:759.98px){
-  .app,.app.has-rail,.app.rail-docked{display:block;padding-block:12px calc(var(--peek) + 12px);padding-left:max(16px,env(safe-area-inset-left,0px))}
-  .rail{display:none}
-  .stage{height:100%}
-  .panel{position:fixed;left:0;right:0;bottom:0;z-index:20;height:78dvh;border-radius:16px 16px 0 0;border-bottom:0;padding-left:env(safe-area-inset-left,0px);padding-right:env(safe-area-inset-right,0px);padding-bottom:env(safe-area-inset-bottom,0px);transform:translateY(calc(100% - var(--peek) - env(safe-area-inset-bottom,0px)));transition:transform .28s cubic-bezier(.2,.8,.2,1)}
-  .sheet-open .panel{transform:none}
-  .peek{display:grid;align-content:start;gap:8px;flex:none;height:var(--peek);box-sizing:border-box;padding:8px 18px 0;border:0;background:none;text-align:left}
-  .grab{justify-self:center;width:36px;height:4px;border-radius:2px;background:var(--line)}
-  .peek-row{display:flex;align-items:baseline;gap:8px;min-width:0}
-  .peek-title{font-weight:650}
-  .peek-screen{min-width:0;color:var(--ink-3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-  .peek-count{flex:none;margin-left:auto;font:11.5px/1 var(--sans);color:var(--pencil)}
-  .sheet-open .peek-row{display:none}
-  .sheet-open .peek{height:32px}
-  .act{padding:8px 10px}
-  .c-acts{gap:6px}
-  .seg button,.vbtn{padding:8px 12px}
-  .scrim{display:block;position:fixed;inset:0;z-index:15;background:var(--scrim)}
-  .scrim[hidden]{display:none}
+/* results */
+.rhead{display:flex;justify-content:space-between;align-items:flex-end;gap:14px;flex-wrap:wrap;margin-bottom:18px}
+.qline{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.qline a{font-size:13px;color:var(--dim);border:1px solid var(--line);border-radius:999px;padding:3px 10px;text-decoration:none}
+.qline a:hover{color:var(--text)}
+.sort{font-size:13px;color:var(--dim)}
+.sort select{background:none;border:0;color:var(--text);font-weight:600;cursor:pointer}
+.list{border-top:1px solid var(--line)}
+.fare{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px 18px;align-items:center;padding:14px 4px;border-bottom:1px solid var(--line);
+  text-decoration:none;transition:background .15s;border-radius:0}
+.fare:hover,.fare.hl{background:var(--surface)}
+.fare .who{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--dim);min-width:0}
+.dotc{width:8px;height:8px;border-radius:50%;flex:none;background:var(--c,var(--dim))}
+.fno{font-family:var(--mono);color:var(--text);font-size:13px}
+.times{font-size:17px;font-weight:600;letter-spacing:-.01em;margin-top:2px}
+.times .ap{color:var(--dim);font-weight:500;font-size:14px}
+.times .plus{font-size:11px;color:var(--warn);vertical-align:super}
+.meta{color:var(--dim);font-size:13px;margin-top:2px}
+.tag{display:inline-block;font-size:11.5px;border:1px solid var(--line);border-radius:6px;padding:0 6px;margin-left:6px;color:var(--dim);white-space:nowrap}
+.tag.hc{border-color:rgba(240,168,104,.45);color:var(--warn)}
+.nums{display:grid;grid-template-columns:auto auto auto;gap:0 18px;align-items:baseline;text-align:right}
+.nums .k{font-size:22px;font-weight:700;letter-spacing:-.02em}
+.nums .k small{font-size:12px;font-weight:500;color:var(--dim);margin-left:2px}
+.nums .p{font-size:16px;font-weight:600}
+.nums .t{font-size:13px;color:var(--dim)}
+.fare:first-child .nums .k{color:var(--accent)}
+@media (max-width:640px){
+  .fare{grid-template-columns:1fr;padding:13px 2px}
+  .nums{grid-template-columns:auto auto 1fr;text-align:left;gap:0 14px}
+  .nums .t{text-align:right}
+  .nums .k{font-size:19px}
 }
-@media (prefers-reduced-motion:reduce){.rail-menu,.rail.open .rail-menu,.rail.docked .rail-menu,.rail-btn .chev,.panel,.pin-shape,.c{transition:none}.c.flash{animation:none}}
+.foot{color:var(--faint);font-size:12.5px;margin-top:14px;display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.foot button{background:none;border:0;color:var(--dim);text-decoration:underline;text-underline-offset:3px;cursor:pointer;font-size:12.5px}
+
+/* chart (B) */
+.chart{display:none;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:12px 12px 6px;margin-bottom:16px}
+body.vb .chart{display:block}
+.chart svg{display:block;width:100%;height:auto;overflow:visible}
+.chart .ax{stroke:var(--line)}
+.chart .gl{stroke:var(--line);stroke-dasharray:3 4}
+.chart .gt{fill:var(--faint);font-size:10.5px}
+.chart .al{fill:var(--dim);font-size:11px}
+.chart circle{cursor:pointer;transition:r .15s}
+.chart .lab{fill:var(--text);font-size:11px;pointer-events:none}
+body.vb .fare{padding:10px 4px}
+body.vb .fare .times{font-size:15px}
+body.vb .nums .k{font-size:18px}
+body.vb .vbar{display:none}
+
+/* anywhere */
+.dest .times{font-size:18px}
+.vbar{height:4px;border-radius:2px;background:var(--line);margin-top:8px;max-width:260px;overflow:hidden}
+.vbar i{display:block;height:100%;background:var(--accent);opacity:.75;border-radius:2px}
+
+/* calendar */
+.cal{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-top:6px}
+.cal .dow{font-size:12px;color:var(--faint);text-align:center;padding-bottom:4px}
+.day{aspect-ratio:1/0.72;border-radius:10px;border:1px solid var(--line);background:var(--surface);display:flex;flex-direction:column;justify-content:space-between;
+  padding:7px 8px;text-decoration:none;position:relative;transition:transform .12s,border-color .12s;min-width:0}
+.day:hover{transform:translateY(-2px);border-color:var(--faint)}
+.day .d{font-size:12px;color:var(--dim)}
+.day .pr{font-weight:650;font-size:15px}
+.day .v{font-size:11.5px;color:var(--dim)}
+.day.best{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
+.day.past{opacity:.3;pointer-events:none}
+.day.none .pr{color:var(--faint);font-weight:500;font-size:13px}
+.day::after{content:"";position:absolute;left:8px;right:8px;bottom:5px;height:3px;border-radius:2px;background:var(--accent);opacity:var(--o,0)}
+@media (max-width:640px){.cal{gap:3px}.day{padding:5px;border-radius:8px}.day .pr{font-size:12.5px}.day .v{display:none}}
+.calnav{display:flex;align-items:center;gap:10px}
+.calnav button{border:1px solid var(--line);background:none;border-radius:8px;width:32px;height:32px;cursor:pointer;color:var(--dim)}
+.calnav button:hover{color:var(--text)}
+.key{display:flex;gap:14px;align-items:center;color:var(--faint);font-size:12px;margin-top:12px}
+.key i{display:inline-block;width:18px;height:3px;border-radius:2px;background:var(--accent);vertical-align:middle;margin-right:6px}
+
+/* fare detail */
+.hero{display:flex;gap:28px;flex-wrap:wrap;align-items:flex-end;margin:18px 0 26px}
+.hero .big{font-size:44px;font-weight:750;letter-spacing:-.03em;line-height:1}
+.hero .big small{font-size:16px;color:var(--dim);font-weight:500;margin-left:4px}
+.hero .cell .l{font-size:12.5px;color:var(--dim);margin-top:6px}
+.hero .cell .m{font-size:22px;font-weight:650;line-height:1}
+@media (max-width:640px){.hero{gap:18px}.hero .big{font-size:36px}}
+.cols{display:grid;grid-template-columns:1.4fr 1fr;gap:28px}
+@media (max-width:760px){.cols{grid-template-columns:1fr}}
+.tl{position:relative;padding-left:22px}
+.tl::before{content:"";position:absolute;left:5px;top:10px;bottom:10px;width:2px;background:var(--line)}
+.stop{position:relative;padding:4px 0 18px}
+.stop::before{content:"";position:absolute;left:-21px;top:9px;width:10px;height:10px;border-radius:50%;background:var(--bg);border:2px solid var(--dim)}
+.stop.end::before{border-color:var(--accent);background:var(--accent)}
+.stop .t1{font-weight:650;font-size:16px}
+.stop .t1 .ap{color:var(--dim);font-weight:500}
+.leg{color:var(--dim);font-size:13.5px;padding:0 0 18px}
+.lay{color:var(--warn);font-size:13px;padding:0 0 18px}
+.stop.ghost,.leg.ghost{opacity:.4}
+.stop.ghost::before{border-style:dashed}
+.facts{display:grid;grid-template-columns:auto 1fr;gap:9px 16px;font-size:14px;align-content:start}
+.facts dt{color:var(--dim)}
+.facts dd{text-align:right}
+.note{color:var(--dim);font-size:13px;margin-top:14px}
+.gp{margin-top:24px;padding-top:18px;border-top:1px solid var(--line)}
+.gp .gbar{position:relative;height:8px;border-radius:4px;background:var(--line);overflow:hidden;margin:10px 0 6px}
+.gp .gbar i{position:absolute;inset:0 auto 0 0;background:var(--accent);border-radius:4px}
+.gp .gbar b{position:absolute;top:0;bottom:0;background:var(--accent);opacity:.45;animation:grow .5s ease-out both}
+@keyframes grow{from{transform:scaleX(0);transform-origin:left}to{transform:scaleX(1)}}
+.gp .gl{display:flex;justify-content:space-between;color:var(--dim);font-size:12.5px}
+.actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:22px}
+
+/* states */
+.state{padding:56px 4px;max-width:46ch}
+.state h1{font-size:21px}
+.state .actions{margin-top:18px}
+.skel{height:64px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:16px}
+.skel i{display:block;height:12px;border-radius:6px;background:linear-gradient(90deg,var(--surface) 0%,var(--surface-hi) 50%,var(--surface) 100%);background-size:200% 100%;animation:sh 1.2s linear infinite}
+@keyframes sh{from{background-position:200% 0}to{background-position:-200% 0}}
+.loadline{color:var(--dim);font-size:13.5px;margin:4px 0 14px;display:flex;align-items:center;gap:8px}
+.spin{width:12px;height:12px;border:2px solid var(--line);border-top-color:var(--accent);border-radius:50%;animation:rot .8s linear infinite}
+@keyframes rot{to{transform:rotate(360deg)}}
+
+/* gold page */
+.gform{max-width:420px;display:grid;gap:14px;margin-top:20px}
+
+/* toast + chrome */
+.toast{position:fixed;left:50%;bottom:24px;transform:translate(-50%,20px);opacity:0;background:var(--surface-hi);border:1px solid var(--line);
+  padding:10px 16px;border-radius:10px;font-size:14px;transition:.2s;pointer-events:none;z-index:50}
+.toast.on{opacity:1;transform:translate(-50%,0)}
+.ab{position:fixed;left:14px;bottom:14px;z-index:40;display:flex;align-items:center;gap:6px;background:var(--surface);border:1px solid var(--line);
+  border-radius:999px;padding:3px 3px 3px 10px;font-size:12px;color:var(--dim);box-shadow:0 8px 20px -10px rgba(0,0,0,.6)}
+.ab button{border:0;background:none;border-radius:999px;padding:4px 10px;cursor:pointer;color:var(--dim);font-size:12px}
+.ab button[aria-pressed=true]{background:var(--surface-hi);color:var(--text)}
+.idx{position:fixed;right:14px;bottom:14px;z-index:40;font-size:13px}
+.idx>button{background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:6px 12px;cursor:pointer;color:var(--dim);box-shadow:0 8px 20px -10px rgba(0,0,0,.6)}
+.idx nav{display:none;position:absolute;right:0;bottom:40px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:6px;min-width:220px;
+  box-shadow:0 16px 36px -14px rgba(0,0,0,.7)}
+.idx.open nav{display:block}
+.idx nav a{display:block;padding:7px 10px;border-radius:8px;text-decoration:none;color:var(--dim)}
+.idx nav a:hover,.idx nav a.cur{background:var(--surface-hi);color:var(--text)}
+.idx nav .h{font-size:11px;color:var(--faint);padding:6px 10px 2px}
+.fade{animation:fd .22s ease-out}
+@keyframes fd{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 </style>
-
-<nav class="rail" data-kit="rail" aria-label="Screens" hidden>
-  <button type="button" class="rail-btn" aria-expanded="false" aria-controls="rail-menu"><svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true"><path d="M6.5 4.5h8M6.5 9h8M6.5 13.5h8" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><circle cx="3.25" cy="4.5" r="1" fill="currentColor"/><circle cx="3.25" cy="9" r="1" fill="currentColor"/><circle cx="3.25" cy="13.5" r="1" fill="currentColor"/></svg><span>Screens</span><svg class="chev" width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><path d="M5.5 3.5 9 7l-3.5 3.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
-  <div class="rail-menu" id="rail-menu"></div>
-</nav>
-<div class="app">
-  <main class="stage">
-    <div class="frame-wrap">
-      <iframe data-kit="frame" title="Prototype"></iframe>
-      <div class="pins"></div>
-      <div class="capture" tabindex="-1" hidden></div>
-      <div class="stage-msg" hidden><div><p></p><button type="button" class="btn" hidden>Retry</button></div></div>
-    </div>
-  </main>
-  <aside class="panel" data-kit="panel" aria-label="Feedback">
-    <button type="button" class="peek" aria-expanded="false" aria-controls="panel-body">
-      <span class="grab" aria-hidden="true"></span>
-      <span class="peek-row"><span class="peek-title">Feedback</span><span class="peek-screen"></span><span class="peek-count mono"></span></span>
-    </button>
-    <div class="panel-body" id="panel-body">
-      <header class="ph">
-        <div class="ph-row">
-          <h1 class="ph-title">Prototype</h1>
-          <div class="vmenu">
-            <button type="button" class="vbtn" data-kit="version" aria-haspopup="menu" aria-expanded="false" hidden><span class="vbtn-n"></span><svg width="10" height="10" viewBox="0 0 10 10" aria-hidden="true"><path d="M2 3.5l3 3 3-3" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
-            <div class="vlist" role="menu" aria-label="Versions" hidden></div>
-          </div>
-        </div>
-        <p class="ph-old" hidden><span></span> · <button type="button" class="link">Back to latest</button></p>
-        <details class="vnotes" hidden><summary></summary><div class="vnotes-body"></div></details>
-      </header>
-      <div class="sbar">
-        <div class="sbar-main"><span class="sbar-title" data-kit="screen">…</span><span class="sbar-count mono"></span></div>
-        <div class="seg" role="group" aria-label="Show feedback for">
-          <button type="button" data-kit="scope" data-scope="screen" aria-pressed="true">This screen</button>
-          <button type="button" data-kit="scope" data-scope="all" aria-pressed="false">All</button>
-        </div>
-      </div>
-      <p class="notice" data-kit="readonly" hidden>View only · ask the owner for Contributor access</p>
-      <p class="notice notice-off" hidden>Feedback can’t load in this view.</p>
-      <div class="list"></div>
-      <p class="toast" role="status" aria-live="polite"></p>
-      <form class="composer" novalidate hidden>
-        <textarea data-kit="composer" rows="2" maxlength="4000" placeholder="Add feedback" aria-label="Feedback"></textarea>
-        <p class="hint" hidden>Click the screen to place a pin · Esc to cancel</p>
-        <div class="cbar">
-          <button type="button" class="pinbtn" data-kit="pin-toggle" aria-pressed="false"><svg viewBox="0 0 14 14" aria-hidden="true"><path d="M7 13s4.5-4.2 4.5-7.3A4.5 4.5 0 0 0 2.5 5.7C2.5 8.8 7 13 7 13z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><circle cx="7" cy="5.8" r="1.4" fill="currentColor"/></svg><span>Pin</span></button>
-          <button type="submit" class="post" data-kit="submit" disabled>Post</button>
-        </div>
-      </form>
-    </div>
-  </aside>
-  <div class="scrim" hidden></div>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <a class="mark" href="#/search"><span class="host">sam.toys/</span>flights<span class="dot">.</span></a>
+    <a class="gold" id="goldStrip" href="#/gold" aria-label="Gold progress"></a>
+  </header>
+  <main id="app"></main>
 </div>
+<div class="ab" role="group" aria-label="Layout option">Layout
+  <button data-v="a" aria-pressed="true">A · List</button><button data-v="b" aria-pressed="false">B · Chart</button>
+</div>
+<div class="idx" id="idx"><button aria-expanded="false">Screens</button><nav></nav></div>
+<div class="toast" id="toast" role="status"></div>
 
 <script>
-(() => {
-  'use strict';
-  const $ = (s, r) => (r || document).querySelector(s);
-  const app = $('.app'), frame = $('[data-kit="frame"]'), pinsEl = $('.pins'), capture = $('.capture');
-  const stageMsg = $('.stage-msg'), list = $('.list'), toastEl = $('.toast');
-  const vbtn = $('[data-kit="version"]'), vlist = $('.vlist'), vnotes = $('.vnotes');
-  const form = $('.composer'), composer = $('[data-kit="composer"]'), submitBtn = $('[data-kit="submit"]');
-  const pinToggle = $('[data-kit="pin-toggle"]'), hint = $('.hint'), peek = $('.peek'), scrim = $('.scrim');
-  const panelBody = $('.panel-body');
-  const rail = $('[data-kit="rail"]'), railBtn = $('.rail-btn'), railMenu = $('.rail-menu');
-  const narrowMq = matchMedia('(max-width: 759.98px)');
-  const coarse = matchMedia('(pointer: coarse)').matches;
+/* ---------- data ---------- */
+const AIRLINES={BA:{n:'British Airways',c:'var(--ba)'},IB:{n:'Iberia',c:'var(--ib)'},QR:{n:'Qatar Airways',c:'var(--qr)'},AA:{n:'American',c:'var(--aa)'},
+  VY:{n:'Vueling',c:'var(--vy)'},EI:{n:'Aer Lingus',c:'var(--ei)'},AY:{n:'Finnair',c:'var(--ay)'},RJ:{n:'Royal Jordanian',c:'var(--rj)'},JL:{n:'Japan Airlines',c:'var(--jl)'}};
+const AIRPORTS=[['LON','London (all airports)'],['LHR','London Heathrow'],['LGW','London Gatwick'],['LCY','London City'],['STN','London Stansted'],['IBZ','Ibiza'],
+  ['MAD','Madrid'],['BCN','Barcelona'],['JFK','New York JFK'],['DOH','Doha'],['DUB','Dublin'],['HEL','Helsinki'],['AMM','Amman'],['HND','Tokyo Haneda'],
+  ['VLC','Valencia'],['SYD','Sydney'],['LIS','Lisbon'],['MXP','Milan Malpensa']];
+const NAME=Object.fromEntries(AIRPORTS);
+const USD=0.79;
+// segment: [flight, from, dep, to, arr, mins, plusDays]
+const ROUTES={
+  MAD:{from:'LON',to:'MAD',date:'Thu 13 Nov',trip:'One way',excluded:13,fares:[
+    {id:'ba460',al:'BA',segs:[['BA 460','LHR','11:30','MAD','14:45',135]],gbp:92,tp:78,av:700},
+    {id:'ba458',al:'BA',segs:[['BA 458','LHR','06:40','MAD','09:55',135]],gbp:68,tp:52,av:470},
+    {id:'ib3167',al:'IB',segs:[['IB 3167','LHR','07:15','MAD','10:35',140]],gbp:54,tp:40,av:360},
+    {id:'ba2700',al:'BA',segs:[['BA 2700','LCY','08:10','MAD','11:30',140]],gbp:81,tp:60,av:540},
+    {id:'ib3173',al:'IB',segs:[['IB 3173','LHR','15:55','MAD','19:15',140],['IB 8962','MAD','20:40','VLC','21:35',55]],gbp:49,tp:35,av:315,hidden:'VLC'},
+    {id:'vy7101',al:'VY',sold:'IB 5401',segs:[['VY 7101','LGW','06:05','MAD','09:20',135]],gbp:39,tp:20,av:180}]},
+  JFK:{from:'LON',to:'JFK',date:'Tue 18 Nov',trip:'One way',excluded:9,fares:[
+    {id:'ba173',al:'BA',segs:[['BA 173','LHR','14:15','JFK','17:20',485]],gbp:402,tp:300,av:2700},
+    {id:'ba117',al:'BA',segs:[['BA 117','LHR','08:15','JFK','11:15',480]],gbp:356,tp:260,av:2340},
+    {id:'aa101',al:'AA',segs:[['AA 101','LHR','08:25','JFK','11:20',475]],gbp:318,tp:210,av:1890},
+    {id:'aa105',al:'AA',segs:[['AA 105','LHR','10:05','JFK','13:05',480],['AA 1832','JFK','15:10','CLT','17:25',135]],gbp:289,tp:190,av:1710,hidden:'CLT'},
+    {id:'ei155',al:'EI',segs:[['EI 155','LHR','06:30','DUB','07:50',80],['EI 105','DUB','10:50','JFK','13:15',445]],gbp:274,tp:160,av:1440}]},
+  DOH:{from:'LON',to:'DOH',date:'Sat 22 Nov',trip:'One way',excluded:6,fares:[
+    {id:'ba125',al:'BA',segs:[['BA 125','LHR','15:20','DOH','00:55',395,1]],gbp:455,tp:330,av:2970},
+    {id:'qr4',al:'QR',segs:[['QR 4','LHR','08:00','DOH','17:40',400]],gbp:412,tp:280,av:2520},
+    {id:'qr16',al:'QR',segs:[['QR 16','LHR','20:15','DOH','06:10',415,1]],gbp:389,tp:250,av:2250},
+    {id:'rj112',al:'RJ',segs:[['RJ 112','LHR','12:45','AMM','19:35',350],['RJ 610','AMM','22:10','DOH','00:55',165,1]],gbp:301,tp:170,av:1530}]},
+  LHR_FROM_IBZ:{from:'IBZ',to:'LON',date:'Sun 16 Nov',trip:'One way',excluded:4,fares:[
+    {id:'ib1702',al:'IB',segs:[['IB 1702','IBZ','08:05','MAD','09:20',75],['BA 459','MAD','11:05','LHR','12:30',145]],gbp:131,tp:95,av:850},
+    {id:'ib1704',al:'IB',segs:[['IB 1704','IBZ','07:30','MAD','08:45',75],['IB 3166','MAD','11:20','LHR','12:45',145]],gbp:118,tp:80,av:720},
+    {id:'ib1710',al:'IB',segs:[['IB 1710','IBZ','12:10','MAD','13:25',75],['IB 3170','MAD','15:00','LHR','16:25',145],['EI 163','LHR','18:10','DUB','19:30',80]],gbp:97,tp:60,av:540,hidden:'DUB'},
+    {id:'vy3809',al:'VY',sold:'IB 5809',segs:[['VY 3809','IBZ','09:40','BCN','10:35',55],['VY 7820','BCN','12:15','LGW','13:40',145]],gbp:86,tp:45,av:400}]},
+};
+const ANYWHERE=[
+  {code:'MAD',city:'Madrid',al:'BA',gbp:131,tp:104,note:'Direct'},
+  {code:'HEL',city:'Helsinki',al:'AY',gbp:168,tp:120,note:'Direct'},
+  {code:'DOH',city:'Doha',al:'QR',gbp:598,tp:420,note:'Direct'},
+  {code:'JFK',city:'New York',al:'BA',gbp:512,tp:350,note:'Direct'},
+  {code:'DUB',city:'Dublin',al:'EI',gbp:72,tp:46,note:'Direct'},
+  {code:'AMM',city:'Amman',al:'RJ',gbp:244,tp:150,note:'Direct'},
+  {code:'IBZ',city:'Ibiza',al:'IB',gbp:196,tp:112,note:'1 stop · MAD'},
+  {code:'HND',city:'Tokyo',al:'JL',gbp:812,tp:440,note:'Direct'}];
+const ALLFARES={};for(const r of Object.values(ROUTES))for(const f of r.fares){f.route=r;ALLFARES[f.id]=f}
 
-  const S = {
-    manifest: null, versions: [], cur: null,
-    db: null, user: null, me: null, owner: false, canWrite: false, feed: 'loading',
-    comments: [], replies: [], gotC: false,
-    people: {}, peopleKey: '', peopleSeq: 0,
-    scope: 'screen', screen: null, adapter: null, win: null, token: 0, unsub: [],
-    placing: false, draft: null, replyFor: null, replyDraft: {}, confirm: null, confirmT: 0,
-    resolvedOpen: new Set(), hot: null, sheet: false, menu: false, posting: false, busy: false,
-    notesFor: null, rq: 0, pq: 0, followEnd: 0, toastT: 0,
-    rail: { key: '', side: null, hidden: false, pinned: false, hovering: false, pressing: false, quiet: false, pointer: 'mouse', timer: 0 }
-  };
+/* ---------- state ---------- */
+const S={mode:'route',from:'LON',to:'MAD',out:'2026-11-13',back:'',trip:'one',cabin:'Economy',sort:'value',month:10};
+let gold=JSON.parse(localStorage.getItem('flights.gold')||'null')||{tp:2140,ends:'2027-03-14'};
+const TARGET=3500;
+let variant='a',hl=null,showExcluded=false;
 
-  /* ---------- small helpers ---------- */
-  function h(tag, props, ...kids) {
-    const el = document.createElement(tag);
-    for (const k in props || {}) {
-      const v = props[k];
-      if (v == null || v === false) continue;
-      if (k === 'class') el.className = v;
-      else if (k === 'text') el.textContent = v;
-      else if (k === 'value') el.value = v;
-      else if (k.slice(0, 2) === 'on') el.addEventListener(k.slice(2), v);
-      else el.setAttribute(k, v === true ? '' : String(v));
-    }
-    for (const kid of kids.flat(Infinity)) if (kid != null && kid !== false) el.append(kid.nodeType ? kid : String(kid));
-    return el;
-  }
-  function sget(kind, k) { try { return window[kind].getItem(k); } catch (e) { return null; } }
-  function sset(kind, k, v) { try { window[kind].setItem(k, v); } catch (e) {} }
-  const str = (v, max) => (typeof v === 'string' ? v.slice(0, max) : '');
-  const iso = () => new Date().toISOString();
-  const byCreated = (a, b) => (a.createdAt < b.createdAt ? -1 : a.createdAt > b.createdAt ? 1 : 0);
-  const isOpen = (c) => c.status === 'open';
-  const clamp = (n, lo, hi) => Math.min(hi, Math.max(lo, n));
-  const isNarrow = () => narrowMq.matches;
-  const latest = () => S.versions[S.versions.length - 1];
-  function grow(ta) { ta.style.height = 'auto'; ta.style.height = Math.min(ta.scrollHeight + 2, 200) + 'px'; }
-  function ago(t) {
-    const ms = Date.parse(t);
-    if (!ms) return '';
-    const s = (Date.now() - ms) / 1000;
-    if (s < 60) return 'now';
-    if (s < 3600) return Math.floor(s / 60) + 'm';
-    if (s < 86400) return Math.floor(s / 3600) + 'h';
-    if (s < 604800) return Math.floor(s / 86400) + 'd';
-    return new Date(ms).toLocaleDateString(undefined, { day: 'numeric', month: 'short' });
-  }
-  function fullDate(t) { const ms = Date.parse(t); return ms ? new Date(ms).toLocaleString() : ''; }
-  function dayLabel(d) {
-    const ms = Date.parse(typeof d === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(d) ? d + 'T00:00:00' : d);
-    return ms ? new Date(ms).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' }) : '';
-  }
-  function flash(msg) {
-    toastEl.textContent = msg;
-    clearTimeout(S.toastT);
-    if (msg) S.toastT = setTimeout(() => { toastEl.textContent = ''; }, 4000);
-  }
+/* ---------- helpers ---------- */
+const $=s=>document.querySelector(s);
+const per=f=>f.gbp/f.tp;
+const money=n=>'£'+Math.round(n).toLocaleString('en-GB');
+const ppt=f=>'£'+per(f).toFixed(2);
+const fmt=n=>n.toLocaleString('en-GB');
+const dur=m=>Math.floor(m/60)+'h'+(m%60?String(m%60).padStart(2,'0'):'');
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function fareInfo(f){
+  const flown=f.hidden?f.segs.slice(0,-1):f.segs;
+  const first=flown[0],last=flown[flown.length-1];
+  let total=0;flown.forEach((s,i)=>{total+=s[5];if(i)total+=gap(flown[i-1],s)});
+  const plus=flown.reduce((a,s)=>a+(s[6]||0),0);
+  return {first,last,flown,total,plus,stops:flown.length-1};
+}
+function gap(a,b){const t=x=>+x.slice(0,2)*60+ +x.slice(3);let g=t(b[2])-t(a[4]);if(g<0)g+=1440;return g}
+function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('on');clearTimeout(toast.h);toast.h=setTimeout(()=>t.classList.remove('on'),2200)}
+function href(path){return '#'+path+(variant==='b'?'/b':'')}
 
-  /* ---------- adapters ---------- */
-  const rootScroller = (w) => w.document.scrollingElement || w.document.documentElement;
+function renderGold(add){
+  const pct=Math.min(1,gold.tp/TARGET),addp=add?Math.min(1-pct,add/TARGET):0;
+  const left=Math.max(0,TARGET-gold.tp);
+  const ends=new Date(gold.ends).toLocaleDateString('en-GB',{day:'numeric',month:'short'});
+  $('#goldStrip').innerHTML=`<span class="gtx">${left?`<b>${fmt(left)}</b> TP to Gold<span class="long"> · by ${ends}</span>`:'<b>Gold kept</b>'}</span>
+    <span class="bar"><i style="width:${pct*100}%"></i><b style="left:${pct*100}%;width:${addp*100}%"></b></span>`;
+}
 
-  const generic = {
-    name: 'generic',
-    detect() { return true; },
-    screen(w) {
-      const hs = w.location.hash || '';
-      return { id: hs.replace(/^#/, '') || '/', title: w.document.title || (S.manifest && S.manifest.title) || 'Page', hash: hs };
-    },
-    onChange(w, cb) {
-      w.addEventListener('hashchange', cb); w.addEventListener('popstate', cb);
-      return () => { w.removeEventListener('hashchange', cb); w.removeEventListener('popstate', cb); };
-    },
-    target(w) { return { el: w.document.documentElement, scroller: rootScroller(w) }; },
-    go(w, c) { if (w.location.hash !== c.hash) w.location.hash = c.hash || ''; }
-  };
-  const ADAPTERS = new Map([['generic', generic]]);
-  const registered = [];
-  async function loadAdapters() {
-    await new Promise((resolve) => {
-      const script = document.createElement('script');
-      let timer;
-      const finish = () => {
-        clearTimeout(timer);
-        script.onload = script.onerror = null;
-        script.remove();
-        resolve();
-      };
-      script.src = 'adapters.js';
-      script.onload = script.onerror = finish;
-      timer = setTimeout(finish, 1500);
-      document.head.appendChild(script);
-    });
-    const entries = window.kitAdapters;
-    if (entries == null) return;
-    if (!Array.isArray(entries)) { console.warn('kit: window.kitAdapters must be an array.'); return; }
-    const methods = ['detect', 'screen', 'onChange', 'target', 'go'];
-    for (const entry of entries) {
-      // Read each property once, inside try, so a throwing getter skips the entry instead of stalling startup.
-      let name = null;
-      try {
-        if (entry && typeof entry === 'object' && !Array.isArray(entry) &&
-            typeof entry.name === 'string' && methods.every((key) => typeof entry[key] === 'function')) name = entry.name;
-      } catch (e) {}
-      if (!name || name !== name.toLowerCase() || ADAPTERS.has(name)) {
-        console.warn('kit: skipping invalid or duplicate adapter entry.', entry);
-        continue;
-      }
-      ADAPTERS.set(name, entry);
-      registered.push(entry);
-    }
-  }
+/* ---------- screens ---------- */
+function vSearch(){
+  const isAny=S.mode==='anywhere',isCal=S.mode==='calendar';
+  const chip=(c,l)=>`<button class="chip" type="button" data-from="${c}" aria-pressed="${S.from===c}">${l}</button>`;
+  return `<h1>Where to?</h1>
+  <p class="sub">Fares on airlines that earn Avios and tier points, cheapest per tier point first.</p>
+  <div style="margin-top:20px" class="seg" role="group" aria-label="Search type">
+    ${[['route','Route'],['anywhere','Anywhere'],['calendar','Flexible dates']].map(([k,l])=>`<button type="button" data-mode="${k}" aria-pressed="${S.mode===k}">${l}</button>`).join('')}
+  </div>
+  <form class="form" id="sf" novalidate>
+    <div class="field ${isAny?'full':''}"><label for="from">From</label>
+      <input class="input" id="from" autocomplete="off" value="${esc(apLabel(S.from))}" data-code="${S.from}">
+      <div class="chips">${chip('LON','London (all)')}${chip('IBZ','Ibiza')}</div></div>
+    ${isAny?'':`<div class="field"><label for="to">To</label>
+      <input class="input" id="to" autocomplete="off" placeholder="City or airport" value="${esc(S.to?apLabel(S.to):'')}" data-code="${S.to}">
+      <span class="ferr" id="toErr" hidden>Choose a destination, or search Anywhere.</span></div>`}
+    ${isCal?`<div class="field full"><label for="month">Month</label>
+      <select class="input" id="month"><option value="10" selected>November 2026</option><option value="11">December 2026</option><option value="0">January 2027</option></select></div>`
+    :`<div class="field full"><div class="row2">
+      <div class="field"><label for="out">Out</label><input class="input" id="out" type="date" value="${S.out}"></div>
+      <div class="field"><label for="back">Back</label><input class="input" id="back" type="date" value="${S.back}" ${S.trip==='one'?'disabled placeholder="One way"':''}></div>
+    </div></div>`}
+    <div class="full opts">
+      <div class="seg" role="group" aria-label="Trip">
+        <button type="button" data-trip="one" aria-pressed="${S.trip==='one'}">One way</button><button type="button" data-trip="return" aria-pressed="${S.trip==='return'}">Return</button></div>
+      <div class="seg" role="group" aria-label="Cabin">${['Economy','Premium','Business','First'].map(c=>`<button type="button" data-cabin="${c}" aria-pressed="${S.cabin===c}">${c}</button>`).join('')}</div>
+      <span style="flex:1"></span>
+      <button class="btn" type="submit">Search</button>
+    </div>
+  </form>
+  <section class="recent"><h2>Recent</h2>
+    <a href="${href('/route/MAD')}"><span class="r1">London → Madrid · 13 Nov</span><span class="r2">from £1.18/TP</span></a>
+    <a href="${href('/route/IBZ-LON')}"><span class="r1">Ibiza → London · 16 Nov</span><span class="r2">from £1.38/TP</span></a>
+    <a href="${href('/anywhere')}"><span class="r1">London → Anywhere · 13–16 Nov</span><span class="r2">from £1.26/TP</span></a>
+    <a href="${href('/calendar')}"><span class="r1">London → New York · November</span><span class="r2">from £1.29/TP</span></a>
+  </section>`;
+}
+function apLabel(c){return NAME[c]?`${NAME[c]} · ${c}`:c}
 
-  /* ---------- the screens rail ---------- */
-  // A slim tab at the window's left edge, for adapters that list their screens. Hovering slides the list out as a
-  // floating card and it stays while the pointer is over it; a tap or key press opens it until a tap outside (the
-  // prototype included), Escape or focus leaving it. On touch, picking a screen closes it so the new page shows.
-  // On wide windows showing a phone screen the card is docked open beside the stage until the viewer hides it.
-  const railShown = () => rail.classList.contains('open');
-  const dockRoom = matchMedia('(min-width:1200px)');
-  function railOpen(on) {
-    const R = S.rail;
-    clearTimeout(R.timer);
-    if (on && !railShown()) railToCurrent();
-    rail.classList.toggle('open', on);
-    railBtn.setAttribute('aria-expanded', String(on));
-    if (!on) R.pinned = false;
-  }
-  function closeRailWithFocus() {
-    railOpen(false);
-    S.rail.quiet = true; railBtn.focus(); S.rail.quiet = false;
-  }
-  function railToCurrent() {
-    requestAnimationFrame(() => { const cur = $('[aria-current="true"]', railMenu); if (cur) cur.scrollIntoView({ block: 'center' }); });
-  }
-  function railDock() {
-    const R = S.rail, docked = !rail.hidden && R.side !== 'web' && dockRoom.matches && !R.hidden;
-    if (docked === rail.classList.contains('docked')) return;
-    rail.classList.toggle('docked', docked);
-    app.classList.toggle('rail-docked', docked);
-    if (docked) railToCurrent();
-  }
-  function railHide() {
-    const docked = rail.classList.contains('docked');
-    railOpen(false);
-    if (docked) { S.rail.hidden = true; sset('localStorage', 'kit:rail', 'hidden'); railDock(); }
-    if (rail.contains(document.activeElement)) { S.rail.quiet = true; railBtn.focus(); S.rail.quiet = false; }
-  }
-  function railCall(fn, ...args) {
-    const a = S.adapter;
-    if (!a || !S.win || typeof a[fn] !== 'function') return null;
-    try { return a[fn](S.win, ...args); } catch (e) { return null; }
-  }
-  function renderRail() {
-    const groups = railCall('screens'), on = Array.isArray(groups) && groups.length > 0;
-    rail.hidden = !on;
-    app.classList.toggle('has-rail', on);
-    if (!on) { if (railShown()) railOpen(false); S.rail.key = ''; railMenu.replaceChildren(); railDock(); return; }
-    const side = railCall('side'), sides = side === 'phone' || side === 'web', cur = S.screen ? S.screen.id : '';
-    S.rail.side = side;
-    const key = JSON.stringify([groups, side]);
-    if (key !== S.rail.key) { S.rail.key = key; buildRail(groups, sides); }
-    for (const b of railMenu.querySelectorAll('[data-side]')) b.setAttribute('aria-pressed', String(b.dataset.side === side));
-    for (const b of railMenu.querySelectorAll('.rail-item')) {
-      if (b.dataset.id === cur) b.setAttribute('aria-current', 'true'); else b.removeAttribute('aria-current');
-    }
-    railDock();
-  }
-  function buildRail(groups, sides) {
-    const ae = document.activeElement, focused = ae && railMenu.contains(ae) ? ae.dataset.id || ae.dataset.side : null;
-    const go = (it) => { railCall('go', { hash: it.hash }); if (S.rail.pointer !== 'mouse') railOpen(false); };
-    const hide = h('button', { type: 'button', class: 'rail-hide', 'aria-label': 'Hide screens', title: 'Hide screens', onclick: railHide });
-    hide.innerHTML = '<svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M9.5 4 5.5 8l4 4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
-    const list = h('div', { class: 'rail-list' }, ...[
-      groups.map((g) => [
-        h('h2', { text: str(g.name, 60) }),
-        (Array.isArray(g.items) ? g.items : []).map((it) => h('button', {
-          type: 'button', class: 'rail-item', 'data-id': String(it.id), title: it.job || null, onclick: () => go(it)
-        }, str(it.title, 80) || String(it.id)))
-      ]),
-      S.adapter && typeof S.adapter.reset === 'function' ? h('div', { class: 'rail-foot' }, h('button', { type: 'button', class: 'link', text: 'Reset', onclick: () => railCall('reset') })) : null
-    ].flat(Infinity).filter(Boolean));
-    railMenu.replaceChildren(h('div', { class: 'rail-head' },
-      sides ? h('div', { class: 'seg', role: 'group', 'aria-label': 'Phone or web' },
-        ['phone', 'web'].map((k) => h('button', { type: 'button', 'data-side': k, text: k === 'phone' ? 'Phone' : 'Web', onclick: () => railCall('setSide', k) }))) : null,
-      hide), list);
-    if (focused) { const el = railMenu.querySelector('[data-id="' + CSS.escape(focused) + '"],[data-side="' + CSS.escape(focused) + '"]'); if (el) el.focus(); }
-  }
-  rail.addEventListener('pointerdown', (e) => { S.rail.pointer = e.pointerType; S.rail.pressing = true; });
-  document.addEventListener('pointerup', () => setTimeout(() => { S.rail.pressing = false; }), true);
-  // A short delay before opening, so a pointer passing the window edge on its way elsewhere doesn't slide the list out.
-  rail.addEventListener('pointerenter', (e) => {
-    if (e.pointerType !== 'mouse') return;
-    S.rail.hovering = true;
-    clearTimeout(S.rail.timer);
-    if (!railShown()) S.rail.timer = setTimeout(() => railOpen(true), 120);
-  });
-  rail.addEventListener('pointerleave', (e) => {
-    if (e.pointerType !== 'mouse') return;
-    S.rail.hovering = false;
-    clearTimeout(S.rail.timer);
-    if (railShown() && !S.rail.pinned) S.rail.timer = setTimeout(() => railOpen(false), 220);
-  });
-  // The open list covers the button, so a click on it only ever comes from a key press or a tap: it toggles.
-  railBtn.addEventListener('click', () => {
-    // Where the card can dock, the tab brings it back docked; elsewhere it toggles the floating card.
-    if (S.rail.hidden && S.rail.side !== 'web' && dockRoom.matches) { S.rail.hidden = false; sset('localStorage', 'kit:rail', ''); railOpen(false); railDock(); railMenu.querySelector('.rail-hide').focus(); return; }
-    S.rail.pinned = !railShown(); railOpen(S.rail.pinned);
-  });
-  dockRoom.addEventListener('change', railDock);
-  rail.addEventListener('focusin', () => { if (!S.rail.quiet && !S.rail.pressing) railOpen(true); });
-  rail.addEventListener('focusout', (e) => { if (!rail.contains(e.relatedTarget) && !S.rail.hovering && !S.rail.pressing) railOpen(false); });
-  document.addEventListener('pointerdown', (e) => { if (railShown() && !rail.contains(e.target)) railOpen(false); }, true);
+function fareRow(f,i){
+  const x=fareInfo(f),al=AIRLINES[f.al];
+  const fn=x.flown.map(s=>s[0]).join(' + ');
+  const stops=x.stops?`${x.stops} stop · ${x.flown.slice(0,-1).map(s=>s[3]).join(', ')}`:'Direct';
+  return `<a class="fare" href="${href('/fare/'+f.id)}" data-id="${f.id}">
+    <div><div class="who"><span class="dotc" style="--c:${al.c}"></span><span class="fno">${fn}</span><span>${al.n}${f.sold?` · sold as ${f.sold}`:''}</span></div>
+      <div class="times">${x.first[2]} <span class="ap">${x.first[1]}</span> → ${x.last[4]}${x.plus?'<span class="plus">+'+x.plus+'</span>':''} <span class="ap">${x.last[3]}</span></div>
+      <div class="meta">${stops} · ${dur(x.total)}${f.hidden?`<span class="tag hc">Ticketed to ${f.hidden} · leave at ${x.last[3]}</span>`:''}</div></div>
+    <div class="nums"><span class="k">${ppt(f)}<small>/TP</small></span><span class="p">${money(f.gbp)}</span><span class="t">~${f.tp} TP · ~${fmt(f.av)} Avios</span></div>
+  </a>`;
+}
+function scatter(items,{label,id,link}){
+  const W=Math.max(320,Math.min(860,innerWidth-54)),H=W<600?220:240,P={l:44,r:16,t:14,b:30};
+  const mx=Math.max(...items.map(f=>f.gbp))*1.12,my=Math.max(...items.map(f=>f.tp))*1.15;
+  const X=v=>P.l+(v/mx)*(W-P.l-P.r),Y=v=>H-P.b-(v/my)*(H-P.t-P.b);
+  const best=Math.min(...items.map(per));
+  let g='';
+  for(const k of [1,1.5,2]){const x2=Math.min(mx,my*k),y2=x2/k;g+=`<line class="gl" x1="${X(0)}" y1="${Y(0)}" x2="${X(x2)}" y2="${Y(y2)}"/><text class="gt" x="${X(x2)-4}" y="${Y(y2)-6}" text-anchor="end">£${k.toFixed(2)}/TP</text>`}
+  const ticks=n=>{const st=[10,20,25,50,100,200,250,500];const s=st[st.findIndex(v=>n/v<=5)]||500;const a=[];for(let v=s;v<n;v+=s)a.push(v);return a};
+  for(const v of ticks(mx))g+=`<text class="gt" x="${X(v)}" y="${H-P.b+16}" text-anchor="middle">£${v}</text>`;
+  for(const v of ticks(my))g+=`<text class="gt" x="${P.l-6}" y="${Y(v)+3}" text-anchor="end">${v}</text>`;
+  const dots=items.map(f=>{const b=per(f)===best;return `<g data-id="${id(f)}" data-link="${link(f)}"><circle cx="${X(f.gbp)}" cy="${Y(f.tp)}" r="${b?8:6}" fill="${AIRLINES[f.al].c}" stroke="${b?'var(--accent)':'var(--surface)'}" stroke-width="${b?3:2}"/>
+    <text class="lab" x="${X(f.gbp)+11}" y="${Y(f.tp)+4}">${label(f)}</text></g>`}).join('');
+  return `<div class="chart"><svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Price against tier points">
+    <line class="ax" x1="${P.l}" y1="${H-P.b}" x2="${W-P.r}" y2="${H-P.b}"/><line class="ax" x1="${P.l}" y1="${P.t}" x2="${P.l}" y2="${H-P.b}"/>
+    ${g}<text class="al" x="${W-P.r}" y="${H-4}" text-anchor="end">Price →</text><text class="al" x="${P.l+6}" y="${P.t+4}">↑ Tier points</text>${dots}</svg></div>`;
+}
+function vRoute(key){
+  const r=ROUTES[key==='IBZ-LON'?'LHR_FROM_IBZ':key]||synth(key);
+  if(!r)return vEmpty(key);
+  const fares=[...r.fares].sort(S.sort==='value'?(a,b)=>per(a)-per(b):S.sort==='price'?(a,b)=>a.gbp-b.gbp:(a,b)=>fareInfo(a).total-fareInfo(b).total);
+  const best=[...r.fares].sort((a,b)=>per(a)-per(b))[0];
+  const bx=fareInfo(best);
+  document.title=`${r.from} → ${r.to} · Flights`;
+  return `<a class="crumb" href="${href('/search')}">← Search</a>
+  <div class="rhead"><div>
+    <h1>${bx.flown[0][0]} <span class="soft">is the best value at</span> ${ppt(best)} <span class="soft">a tier point</span></h1>
+    <div class="qline"><a href="${href('/search')}">${apLabel(r.from)} → ${apLabel(r.to)}</a><a href="${href('/calendar')}">${r.date}</a><a href="${href('/search')}">${r.trip} · ${S.cabin}</a></div>
+  </div>
+  <label class="sort">Sort <select id="sort"><option value="value" ${S.sort==='value'?'selected':''}>£ per TP</option><option value="price" ${S.sort==='price'?'selected':''}>Price</option><option value="time" ${S.sort==='time'?'selected':''}>Duration</option></select></label></div>
+  ${scatter(r.fares,{label:f=>fareInfo(f).flown[0][0],id:f=>f.id,link:f=>href('/fare/'+f.id)})}
+  <div class="list">${fares.map(fareRow).join('')}</div>
+  <div class="foot"><span>Tier points and Avios are estimates; the fare class is only known at booking.</span>
+    <button id="exBtn">${showExcluded?'Hide':'Show'} ${r.excluded} non-earning fares</button></div>
+  ${showExcluded?`<div class="list" style="margin-top:10px;opacity:.55">${['FR 5994 · Ryanair · £29','U2 8701 · easyJet · £33','VY 7103 · Vueling own flight number · £35'].slice(0,3).map(t=>`<div class="fare"><div class="meta">${t}</div><div class="nums"><span class="t">earns nothing</span></div></div>`).join('')}<div class="foot"><span>…and ${r.excluded-3} more</span></div></div>`:''}`;
+}
+function synth(code){
+  const d=ANYWHERE.find(a=>a.code===code);if(!d)return null;
+  const id='s'+code.toLowerCase();
+  const fares=[{id:id+'1',al:d.al,segs:[[d.al+' '+(100+code.charCodeAt(0)),'LHR','09:10',code,'13:40',d.gbp>500?600:180]],gbp:Math.round(d.gbp/2),tp:Math.round(d.tp/2),av:Math.round(d.tp*4.5)},
+    {id:id+'2',al:d.al,segs:[[d.al+' '+(200+code.charCodeAt(1)),'LHR','17:25',code,'21:55',d.gbp>500?600:180]],gbp:Math.round(d.gbp/2*1.2),tp:Math.round(d.tp/2*1.1),av:Math.round(d.tp*5)}];
+  const r={from:'LON',to:code,date:'Thu 13 Nov',trip:'One way',excluded:5,fares};fares.forEach(f=>{f.route=r;ALLFARES[f.id]=f});return r;
+}
+function vAnywhere(){
+  document.title='London → Anywhere · Flights';
+  const list=[...ANYWHERE].sort((a,b)=>per(a)-per(b));const best=list[0],worst=per(list[list.length-1]);
+  return `<a class="crumb" href="${href('/search')}">← Search</a>
+  <div class="rhead"><div><h1>${best.city} <span class="soft">is the best value from London at</span> ${ppt(best)} <span class="soft">a tier point</span></h1>
+    <div class="qline"><a href="${href('/search')}">London (all) → Anywhere</a><a href="${href('/search')}">13–16 Nov · Return</a><a href="${href('/search')}">Economy</a></div></div></div>
+  ${scatter(list,{label:d=>d.city,id:d=>d.code,link:d=>href('/route/'+d.code)})}
+  <div class="list">${list.map(d=>`<a class="fare dest" href="${href('/route/'+d.code)}" data-id="${d.code}">
+    <div><div class="who"><span class="dotc" style="--c:${AIRLINES[d.al].c}"></span><span>${AIRLINES[d.al].n} · ${d.note}</span></div>
+    <div class="times">${d.city} <span class="ap">${d.code}</span></div>
+    <div class="vbar"><i style="width:${Math.round(100*(1-(per(d)-1)/(worst-0.8)))}%"></i></div></div>
+    <div class="nums"><span class="k">${ppt(d)}<small>/TP</small></span><span class="p">${money(d.gbp)}</span><span class="t">~${d.tp} TP return</span></div></a>`).join('')}</div>
+  <div class="foot"><span>Tier points are estimates; the fare class is only known at booking.</span><span>31 destinations without earning fares left out</span></div>`;
+}
+function calData(m){
+  const days=[];const n=m===10?30:31;
+  for(let d=1;d<=n;d++){const s=(d*37+m*11)%23;const gbp=290+s*9+(d%7===5||d%7===6?60:0);const tp=200+((d*13)%5)*25;days.push(d===26?null:{d,gbp,tp})}
+  return days;
+}
+function vCalendar(){
+  document.title='London → New York, November · Flights';
+  const m=S.month,days=calData(m),y=m===0?2027:2026;
+  const first=(new Date(y,m,1).getDay()+6)%7;
+  const vals=days.filter(Boolean).map(per),lo=Math.min(...vals),hi=Math.max(...vals);
+  const top=[...days.filter(Boolean)].sort((a,b)=>per(a)-per(b)).slice(0,3).map(x=>x.d);
+  const mname=new Date(y,m,1).toLocaleDateString('en-GB',{month:'long',year:'numeric'});
+  const bestDay=days.find(x=>x&&x.d===top[0]);
+  const dl=d=>new Date(y,m,d).toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'});
+  let cells='';for(let i=0;i<first;i++)cells+='<span></span>';
+  days.forEach((x,i)=>{const d=i+1,past=(m===10&&d<1);
+    if(!x){cells+=`<span class="day none" title="No earning fares"><span class="d">${d}</span><span class="pr">none</span></span>`;return}
+    const rk=vals.filter(v=>v<per(x)).length/(vals.length-1);const o=(1-rk)*.85+.08;
+    cells+=`<a class="day ${top.includes(d)?'best':''} ${past?'past':''}" style="--o:${o.toFixed(2)}" href="${href('/route/JFK')}" title="${dl(d)}: ${money(x.gbp)}, ~${x.tp} TP">
+      <span class="d">${d}</span><span><span class="pr">${money(x.gbp)}</span><br><span class="v">${ppt(x)}/TP</span></span></a>`});
+  return `<a class="crumb" href="${href('/search')}">← Search</a>
+  <div class="rhead"><div><h1>${dl(bestDay.d)} <span class="soft">is the best value at</span> ${ppt(bestDay)} <span class="soft">a tier point</span></h1>
+    <div class="qline"><a href="${href('/search')}">London (all) → New York JFK</a><a href="${href('/search')}">One way · Economy</a></div></div>
+    <div class="calnav"><button id="pm" aria-label="Previous month">‹</button><b>${mname}</b><button id="nm" aria-label="Next month">›</button></div></div>
+  <div class="cal">${['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].map(d=>`<span class="dow">${d}</span>`).join('')}${cells}</div>
+  <div class="key"><span><i></i>stronger = less per tier point</span><span>Outlined: best three days</span></div>
+  <div class="foot"><span>Cheapest earning fare per day. Tier points are estimates.</span></div>`;
+}
+function vFare(id){
+  const f=ALLFARES[id];if(!f)return vError();
+  const x=fareInfo(f),al=AIRLINES[f.al],r=f.route;
+  document.title=`${x.flown.map(s=>s[0]).join(' + ')} · Flights`;
+  let tl='';f.segs.forEach((s,i)=>{const ghost=f.hidden&&i===f.segs.length-1;
+    if(i){const g=gap(f.segs[i-1],s);tl+=f.hidden&&ghost?`<div class="lay">You leave at ${s[1]}. The ticket continues to ${s[3]}.</div>`:`<div class="lay">${dur(g)} connection in ${NAME[s[1]]||s[1]}</div>`}
+    if(i===0)tl+=`<div class="stop"><div class="t1">${s[2]} <span class="ap">${NAME[s[1]]||s[1]} · ${s[1]}</span></div></div>`;
+    tl+=`<div class="leg ${ghost?'ghost':''}"><span class="fno">${s[0]}</span> · ${dur(s[5])}</div>
+      <div class="stop ${ghost?'ghost':''} ${(!f.hidden&&i===f.segs.length-1)||(f.hidden&&i===f.segs.length-2)?'end':''}"><div class="t1">${s[4]}${s[6]?'<span class="plus" style="color:var(--warn);font-size:11px;vertical-align:super">+1</span>':''} <span class="ap">${NAME[s[3]]||s[3]} · ${s[3]}</span></div></div>`});
+  const after=gold.tp+f.tp,left=Math.max(0,TARGET-after);
+  renderGold(f.tp);
+  return `<a class="crumb" href="${href('/route/'+(r.from==='IBZ'?'IBZ-LON':r.to))}">← ${r.from} → ${r.to}</a>
+  <div class="who" style="font-size:14px"><span class="dotc" style="--c:${al.c}"></span><span>${al.n}${f.sold?` · sold as ${f.sold}`:''} · ${r.date} · ${S.cabin}</span></div>
+  <div class="hero">
+    <div class="cell"><div class="big">${money(f.gbp)}</div><div class="l">US$${Math.round(f.gbp/USD)} at ${USD}</div></div>
+    <div class="cell"><div class="m">${ppt(f)}</div><div class="l">per tier point</div></div>
+    <div class="cell"><div class="m">~${f.tp}</div><div class="l">tier points</div></div>
+    <div class="cell"><div class="m">~${fmt(f.av)}</div><div class="l">Avios</div></div>
+  </div>
+  <div class="cols">
+    <div class="tl">${tl}</div>
+    <div>
+      <dl class="facts">
+        <dt>Duration</dt><dd>${dur(x.total)}</dd>
+        <dt>Stops</dt><dd>${x.stops?x.stops+' · '+x.flown.slice(0,-1).map(s=>s[3]).join(', '):'Direct'}</dd>
+        ${f.hidden?`<dt>Ticket</dt><dd>To ${NAME[f.hidden]||f.hidden} · ${f.hidden}</dd><dt>Bags</dt><dd>Cabin bag only</dd>`:''}
+        <dt>Earning</dt><dd>${f.sold?`On ${f.sold}`:'oneworld'}</dd>
+        <dt>Fare class</dt><dd>Known at booking</dd>
+      </dl>
+      <div class="gp"><div class="sec">Gold</div>
+        <div class="gbar"><i style="width:${Math.min(100,gold.tp/TARGET*100)}%"></i><b style="left:${Math.min(100,gold.tp/TARGET*100)}%;width:${Math.min(100-gold.tp/TARGET*100,f.tp/TARGET*100)}%"></b></div>
+        <div class="gl"><span>${fmt(gold.tp)} → <b style="color:var(--text)">${fmt(Math.min(after,TARGET))}</b></span><span>${left?fmt(left)+' to go':'Gold kept'}</span></div>
+      </div>
+    </div>
+  </div>
+  <div class="actions"><a class="btn" href="#" id="book">Book on Skiplagged ↗</a><a class="btn ghost" href="${href('/calendar')}">Other dates</a></div>`;
+}
+function vLoading(){
+  document.title='Searching · Flights';
+  return `<a class="crumb" href="${href('/search')}">← Search</a>
+  <h1><span class="soft">London → Madrid · Thu 13 Nov</span></h1>
+  <div class="loadline" style="margin-top:14px"><span class="spin"></span>Searching Skiplagged</div>
+  <div class="list">${Array.from({length:5},(_,i)=>`<div class="skel"><div style="flex:1;display:grid;gap:8px"><i style="width:${30+i*7}%"></i><i style="width:${50-i*4}%"></i></div><i style="width:90px"></i></div>`).join('')}</div>`;
+}
+function vEmpty(key){
+  document.title='No earning fares · Flights';
+  return `<a class="crumb" href="${href('/search')}">← Search</a>
+  <div class="state"><h1>No earning fares from Ibiza to Sydney on 13 Nov</h1>
+  <p class="sub">23 fares found, none on oneworld or a BA earning partner.</p>
+  <div class="actions"><a class="btn ghost" href="${href('/calendar')}">Try other dates</a><a class="btn ghost" href="${href('/anywhere')}">Anywhere from Ibiza</a></div></div>`;
+}
+function vError(){
+  document.title="Search failed · Flights";
+  return `<a class="crumb" href="${href('/search')}">← Search</a>
+  <div class="state"><h1>Skiplagged didn't answer</h1>
+  <p class="sub">No reply after 20 seconds. Nothing is wrong with the search itself.</p>
+  <div class="actions"><button class="btn" id="retry">Try again</button><a class="btn ghost" href="${href('/search')}">Edit search</a></div></div>`;
+}
+function vGold(){
+  document.title='Gold · Flights';
+  const ends=new Date(gold.ends).toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'});
+  const left=Math.max(0,TARGET-gold.tp);
+  return `<a class="crumb" href="${href('/search')}">← Search</a>
+  <h1>${left?`${fmt(left)} <span class="soft">tier points to keep Gold by</span> ${ends}`:'Gold kept for next year'}</h1>
+  <div class="gp" style="border:0;padding-top:4px;max-width:520px"><div class="gbar"><i style="width:${Math.min(100,gold.tp/TARGET*100)}%"></i></div>
+    <div class="gl"><span>${fmt(gold.tp)} earned</span><span>${fmt(TARGET)}</span></div></div>
+  <form class="gform" id="gf">
+    <div class="field"><label for="gtp">Tier points so far</label><input class="input" id="gtp" inputmode="numeric" value="${gold.tp}"><span class="ferr" id="gErr" hidden>Enter a whole number.</span></div>
+    <div class="field"><label for="gend">Membership year ends</label><input class="input" id="gend" type="date" value="${gold.ends}"></div>
+    <div><button class="btn" type="submit">Save</button></div>
+  </form>
+  <p class="note">Kept on this device only.</p>`;
+}
 
-  /* ---------- versions and the frame ---------- */
-  function showStage(text, retry) {
-    stageMsg.hidden = false;
-    $('p', stageMsg).textContent = text;
-    const b = $('button', stageMsg);
-    b.hidden = !retry;
-    b.onclick = retry || null;
+/* ---------- router ---------- */
+const SCREENS=[['Search','/search'],['Route results','/route/MAD'],['Route · New York','/route/JFK'],['Route · Doha','/route/DOH'],['Route · from Ibiza','/route/IBZ-LON'],
+  ['Fare · BA 460','/fare/ba460'],['Fare · hidden city','/fare/ib3173'],['Fare · 1 stop','/fare/ei155'],['Anywhere','/anywhere'],['Flexible dates','/calendar'],
+  ['Gold','/gold'],['Loading','/loading'],['No earning fares','/empty'],['Error','/error']];
+function parse(){let p=(location.hash||'#/search').slice(1).split('/').filter(Boolean);
+  if(p[p.length-1]==='b'){p.pop();variant='b'}else variant='a';return p}
+function render(){
+  const p=parse(),app=$('#app');let html;
+  document.body.classList.toggle('vb',variant==='b');
+  document.querySelectorAll('.ab button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.v===variant));
+  renderGold(0);
+  switch(p[0]){
+    case 'route':html=vRoute(p[1]);break;case 'fare':html=vFare(p[1]);break;case 'anywhere':html=vAnywhere();break;
+    case 'calendar':html=vCalendar();break;case 'gold':html=vGold();break;case 'loading':html=vLoading();break;
+    case 'empty':html=vEmpty();break;case 'error':html=vError();break;default:document.title='Search · Flights';html=vSearch();
   }
-  function cleanVersion(v) {
-    return {
-      n: v.n, file: v.file, date: str(v.date, 40), title: str(v.title, 120),
-      notes: Array.isArray(v.notes) ? v.notes.filter((s) => typeof s === 'string').slice(0, 50).map((s) => s.slice(0, 300)) : [],
-      fixed: Array.isArray(v.fixed) ? v.fixed.filter((s) => typeof s === 'string').slice(0, 500) : []
+  app.innerHTML=`<div class="fade">${html}</div>`;
+  const cur='/'+p.join('/');
+  $('#idx nav').innerHTML='<div class="h">Screens</div>'+SCREENS.map(([l,h])=>`<a href="${href(h)}" class="${h===cur?'cur':''}">${l}</a>`).join('');
+  bind(p);window.scrollTo(0,0);
+}
+function go(path){location.hash=href(path)}
+function bind(p){
+  const sf=$('#sf');
+  if(sf){
+    document.querySelectorAll('[data-mode]').forEach(b=>b.onclick=()=>{S.mode=b.dataset.mode;render()});
+    document.querySelectorAll('[data-trip]').forEach(b=>b.onclick=()=>{S.trip=b.dataset.trip;if(S.trip==='return'&&!S.back)S.back='2026-11-16';render()});
+    document.querySelectorAll('[data-cabin]').forEach(b=>b.onclick=()=>{S.cabin=b.dataset.cabin;document.querySelectorAll('[data-cabin]').forEach(x=>x.setAttribute('aria-pressed',x===b))});
+    document.querySelectorAll('[data-from]').forEach(b=>b.onclick=()=>{S.from=b.dataset.from;render()});
+    ['from','to'].forEach(k=>{const el=$('#'+k);if(!el)return;
+      el.addEventListener('focus',()=>el.select());
+      el.addEventListener('input',()=>suggest(el,k));
+      el.addEventListener('blur',()=>setTimeout(()=>{const s=el.parentNode.querySelector('.sugg');s&&s.remove()},150));});
+    const o=$('#out');o&&o.addEventListener('change',()=>S.out=o.value);
+    const bk=$('#back');bk&&bk.addEventListener('change',()=>S.back=bk.value);
+    sf.onsubmit=e=>{e.preventDefault();
+      if(S.mode==='anywhere'){loadThen('/anywhere');return}
+      const to=$('#to');if(!S.to||!to.value.trim()){to.classList.add('err');$('#toErr').hidden=false;to.focus();return}
+      if(S.mode==='calendar'){loadThen('/calendar');return}
+      const key=S.from==='IBZ'&&['LON','LHR','LGW'].includes(S.to)?'IBZ-LON':S.to;
+      loadThen(ROUTES[key]||ROUTES[key==='IBZ-LON'?'LHR_FROM_IBZ':'']||ANYWHERE.some(a=>a.code===key)?'/route/'+key:'/empty');
     };
   }
-  async function loadManifest() {
-    showStage('Loading prototype…');
-    let m;
-    try {
-      const r = await fetch('versions.json', { cache: 'no-store' });
-      if (!r.ok) throw new Error(String(r.status));
-      m = await r.json();
-    } catch (e) { showStage('Couldn’t load the version list.', loadManifest); return; }
-    const vs = (m && Array.isArray(m.versions) ? m.versions : [])
-      .filter((v) => v && Number.isInteger(v.n) && v.n > 0 && typeof v.file === 'string' && /^[\w.-]+\.html$/.test(v.file))
-      .map(cleanVersion).sort((a, b) => a.n - b.n);
-    if (!vs.length) { showStage('No versions published yet.'); return; }
-    S.manifest = {
-      title: str(m.title, 80) || 'Prototype',
-      adapter: typeof m.adapter === 'string' ? m.adapter : null,
-      adapterWaitMs: Number.isInteger(m.adapterWaitMs) && m.adapterWaitMs >= 0 && m.adapterWaitMs <= 8000 ? m.adapterWaitMs : 0,
-      narrowQuery: typeof m.narrowQuery === 'string' && /^[\w=&.-]*$/.test(m.narrowQuery) ? m.narrowQuery : '',
-      wideQuery: typeof m.wideQuery === 'string' && /^[\w=&.-]*$/.test(m.wideQuery) ? m.wideQuery : ''
-    };
-    S.versions = vs;
-    document.title = S.manifest.title;
-    const fromHash = /^#v(\d+)$/.exec(location.hash);
-    const want = fromHash ? +fromHash[1] : +(sget('sessionStorage', 'kit:version') || 0);
-    openVersion(vs.find((v) => v.n === want) || latest(), false);
-  }
-  async function openVersion(v, keepScreen) {
-    const hash = keepScreen && S.screen && S.screen.hash ? S.screen.hash : '';
-    S.cur = v;
-    sset('sessionStorage', 'kit:version', String(v.n));
-    showStage('Loading v' + v.n + '…');
-    render();
-    let ok = false;
-    try { const r = await fetch(v.file, { method: 'HEAD', cache: 'no-store' }); ok = r.status !== 404 && r.status < 500; } catch (e) {}
-    if (S.cur !== v) return;
-    if (!ok) { showStage('v' + v.n + ' isn’t available.', () => openVersion(v, keepScreen)); return; }
-    detach();
-    S.token++;
-    S.screen = null; S.draft = null; S.replyFor = null;
-    setPlacing(false);
-    frame.title = S.manifest.title + ' v' + v.n;
-    const q = isNarrow() ? S.manifest.narrowQuery : S.manifest.wideQuery;
-    frame.src = v.file + (q ? '?' + q : '') + hash;
-    render();
-  }
-  frame.addEventListener('load', () => {
-    if (!frame.getAttribute('src')) return;
-    stageMsg.hidden = true;
-    attach();
-  });
-
-  function detach() {
-    for (const f of S.unsub.splice(0)) { try { f(); } catch (e) {} }
-    S.win = null; S.adapter = null;
-    renderRail();
-  }
-  function attach() {
-    detach();
-    const token = ++S.token;
-    let w = null;
-    try { w = frame.contentWindow; void w.document.body; } catch (e) { w = null; }
-    if (!w) { S.screen = { id: 'page', title: S.manifest.title, hash: '' }; render(); return; }
-    const named = S.manifest.adapter;
-    const selected = named && ADAPTERS.get(named);
-    const wait = S.manifest.adapterWaitMs || 0;
-    // Explicit selection stays immediate unless the manifest opts into readiness detection.
-    if (selected && (!wait || selected === generic)) { bind(token, w, selected); return; }
-    if (named && !selected) console.warn('kit: unknown adapter "' + named + '"; falling back to detection.');
-    const pool = selected ? [selected] : registered;
-    const limit = selected ? wait : pool.length ? 2000 : 0, t0 = performance.now();
-    const poll = () => {
-      if (token !== S.token) return;
-      let a = null;
-      for (const x of pool) { try { if (x.detect(w)) { a = x; break; } } catch (e) {} }
-      if (!a && performance.now() - t0 < limit) { setTimeout(poll, 100); return; }
-      bind(token, w, a || generic);
-    };
-    poll();
-  }
-  function bind(token, w, a) {
-    S.win = w; S.adapter = a;
-    const on = (t, type, fn, opt) => { t.addEventListener(type, fn, opt); S.unsub.push(() => t.removeEventListener(type, fn, opt)); };
-    try { const u = a.onChange(w, () => onNav(token)); if (typeof u === 'function') S.unsub.push(u); } catch (e) {}
-    on(w, 'scroll', queuePosition, true);
-    on(w, 'resize', queuePosition);
-    on(w, 'keydown', (e) => { if (e.key === 'Escape') { if (railShown()) closeRailWithFocus(); else if (S.placing) setPlacing(false); } });
-    on(w, 'pointerdown', () => railOpen(false), true);
-    const iv = setInterval(() => { onNav(token, true); renderRail(); }, 500);  // catches screens that change without an event
-    S.unsub.push(() => clearInterval(iv));
-    onNav(token);
-  }
-  function onNav(token, quiet) {
-    if (token !== S.token || !S.adapter) return;
-    let s = null;
-    try { s = S.adapter.screen(S.win); } catch (e) {}
-    if (!s || s.id == null) return;
-    const next = { id: String(s.id), title: String(s.title || s.id), hash: String(s.hash || '') };
-    const changed = !S.screen || next.id !== S.screen.id;
-    if (quiet && !changed && next.hash === S.screen.hash && next.title === S.screen.title) return;
-    S.screen = next;
-    if (changed) { S.draft = null; S.replyFor = null; if (S.placing) setPlacing(false); }
-    render();
-    renderRail();
-    follow(600);
-  }
-  function goTo(c) {
-    if (!S.adapter || !S.win) return;
-    if (S.screen && c.screen === S.screen.id) return;
-    try { S.adapter.go(S.win, c); } catch (e) {}
-    if (isNarrow()) setSheet(false);
-  }
-
-  /* ---------- pins ---------- */
-  function geom() {
-    const w = S.win, a = S.adapter;
-    if (!w || !a) return null;
-    let t = null;
-    try { t = a.target(w); } catch (e) {}
-    if (!t || !t.el || !t.el.isConnected) return null;
-    const d = w.document;
-    const sc = t.scroller && typeof t.scroller.getBoundingClientRect === 'function' ? t.scroller : rootScroller(w);
-    const er = t.el.getBoundingClientRect();
-    if (!er.width) return null;
-    const vh = w.innerHeight;
-    if (sc === d.scrollingElement || sc === d.documentElement || sc === d.body) {
-      return { er, k: 1, top: -(w.scrollY || 0), clipTop: 0, clipBottom: vh, sc: null, w };
-    }
-    const sr = sc.getBoundingClientRect();
-    const k = sc.offsetHeight ? sr.height / sc.offsetHeight : 1;
-    return { er, k, top: sr.top + (sc.clientTop - sc.scrollTop) * k, clipTop: Math.max(0, sr.top), clipBottom: Math.min(vh, sr.bottom), sc, w };
-  }
-  function pinNumbers(items) {
-    const by = new Map(), nums = new Map();
-    for (const c of items) if (c.pin) { if (!by.has(c.screen)) by.set(c.screen, []); by.get(c.screen).push(c); }
-    for (const arr of by.values()) arr.sort(byCreated).forEach((c, i) => nums.set(c.id, i + 1));
-    return nums;
-  }
-  function renderPins() {
-    const out = [];
-    if (S.screen && S.feed === 'ready') {
-      const nums = pinNumbers(S.comments.filter((c) => c.screen === S.screen.id));
-      for (const c of S.comments) {
-        if (c.screen !== S.screen.id || !c.pin || (!isOpen(c) && S.hot !== c.id)) continue;
-        const n = nums.get(c.id);
-        const el = h('button', {
-          type: 'button', 'data-kit': 'pin', 'data-id': c.id, 'aria-label': 'Pin ' + n + ': ' + c.text.slice(0, 80),
-          class: 'pin' + (c.version === S.cur.n ? '' : ' pin-old') + (isOpen(c) ? '' : ' pin-done') + (S.hot === c.id ? ' hot' : ''),
-          onclick: () => focusComment(c.id), onmouseenter: () => setHot(c.id), onmouseleave: () => setHot(null)
-        }, h('span', { class: 'pin-shape', 'aria-hidden': 'true' }), h('span', { class: 'pin-n', 'aria-hidden': 'true', text: n }));
-        el._pin = c.pin;
-        out.push(el);
-      }
-    }
-    if (S.draft) {
-      const el = h('span', { class: 'pin pin-draft', 'aria-hidden': 'true' }, h('span', { class: 'pin-shape' }));
-      el._pin = S.draft;
-      out.push(el);
-    }
-    pinsEl.replaceChildren(...out);
-    positionPins();
-  }
-  function positionPins() {
-    S.pq = 0;
-    const g = geom();
-    for (const el of pinsEl.children) {
-      const p = el._pin;
-      if (!p) continue;
-      const vx = g ? g.er.left + p.x * g.er.width : 0, vy = g ? g.top + p.y * g.k : 0;
-      const show = !!g && vy >= g.clipTop - 2 && vy <= g.clipBottom + 2 && vx >= g.er.left - 2 && vx <= g.er.right + 2;
-      el.hidden = !show;
-      if (show) el.style.transform = 'translate(' + Math.round(vx - 12) + 'px,' + Math.round(vy - 29) + 'px)';
-    }
-  }
-  function queuePosition() { if (!S.pq) S.pq = requestAnimationFrame(positionPins); }
-  function follow(ms) {
-    const running = S.followEnd > performance.now();
-    S.followEnd = performance.now() + ms;
-    if (running) return;
-    const step = () => { positionPins(); if (performance.now() < S.followEnd) requestAnimationFrame(step); };
-    requestAnimationFrame(step);
-  }
-  new ResizeObserver(queuePosition).observe(frame);
-
-  function setPlacing(on) {
-    if (on && !geom()) { flash('Pins don’t work on this screen.'); return; }
-    S.placing = on;
-    capture.hidden = !on;
-    if (on) { if (isNarrow()) setSheet(false); capture.focus({ preventScroll: true }); }
-    renderComposer();
-  }
-  function scrollFrame(dx, dy) {
-    const g = geom();
-    if (!g) return;
-    if (g.sc) g.sc.scrollBy(dx / g.k, dy / g.k); else g.w.scrollBy(dx, dy);
-  }
-  function place(e) {
-    const g = geom();
-    if (!g) { setPlacing(false); return; }
-    const r = pinsEl.getBoundingClientRect(), cx = e.clientX - r.left, cy = e.clientY - r.top;
-    if (cx < g.er.left || cx > g.er.right || cy < g.clipTop || cy > g.clipBottom) { flash('Place the pin on the screen.'); return; }
-    S.draft = { x: Math.round(clamp((cx - g.er.left) / g.er.width, 0, 1) * 10000) / 10000, y: Math.max(0, Math.round((cy - g.top) / g.k)) };
-    setPlacing(false);
-    if (isNarrow()) setSheet(true);
-    render();
-    composer.focus({ preventScroll: true });
-  }
-  let drag = null;
-  capture.addEventListener('pointerdown', (e) => {
-    drag = { x: e.clientX, y: e.clientY, lx: e.clientX, ly: e.clientY, moved: false };
-    try { capture.setPointerCapture(e.pointerId); } catch (err) {}
-    e.preventDefault();
-  });
-  capture.addEventListener('pointermove', (e) => {
-    if (!drag) return;
-    if (!drag.moved && Math.hypot(e.clientX - drag.x, e.clientY - drag.y) > 6) drag.moved = true;
-    if (drag.moved) scrollFrame(drag.lx - e.clientX, drag.ly - e.clientY);
-    drag.lx = e.clientX; drag.ly = e.clientY;
-  });
-  capture.addEventListener('pointerup', (e) => { const d = drag; drag = null; if (d && !d.moved) place(e); });
-  capture.addEventListener('pointercancel', () => { drag = null; });
-  capture.addEventListener('wheel', (e) => {
-    e.preventDefault();
-    const m = e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? 400 : 1;
-    scrollFrame(e.deltaX * m, e.deltaY * m);
-  }, { passive: false });
-
-  function setHot(id) {
-    if (S.hot === id) return;
-    const prev = S.hot;
-    S.hot = id;
-    for (const sel of ['.c[data-id]', '.pin[data-id]']) {
-      for (const el of document.querySelectorAll(sel)) el.classList.toggle('hot', el.dataset.id === id);
-    }
-    const shut = (x) => { const c = x && S.comments.find((k) => k.id === x); return c && c.pin && !isOpen(c); };
-    if (shut(prev) || shut(id)) renderPins();
-  }
-  function focusComment(id) {
-    const c = S.comments.find((k) => k.id === id);
-    if (!c) return;
-    if (S.scope === 'screen' && (!S.screen || c.screen !== S.screen.id)) S.scope = 'all';
-    if (!isOpen(c)) S.resolvedOpen.add(S.scope);
-    render();
-    if (isNarrow()) setSheet(true);
-    const row = list.querySelector('.c[data-id="' + CSS.escape(id) + '"]');
-    if (!row) return;
-    row.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
-    row.classList.remove('flash'); void row.offsetWidth; row.classList.add('flash');
-  }
-
-  /* ---------- data ---------- */
-  function normComment(id, d) {
-    if (!d || typeof d.text !== 'string' || typeof d.screen !== 'string') return null;
-    const p = d.pin && typeof d.pin === 'object' && Number.isFinite(d.pin.x) && Number.isFinite(d.pin.y) ? { x: clamp(d.pin.x, 0, 1), y: Math.max(0, d.pin.y) } : null;
-    const hash = typeof d.hash === 'string' ? d.hash.slice(0, 500) : '';
-    return {
-      id, screen: d.screen, screenTitle: str(d.screenTitle, 120) || d.screen, hash: hash && hash[0] !== '#' ? '#' + hash : hash,
-      version: Number.isInteger(d.version) ? d.version : null, pin: p, text: d.text.slice(0, 4000),
-      author: typeof d.author === 'string' ? d.author : null, by: d.by === 'claude' ? 'claude' : null,
-      createdAt: str(d.createdAt, 40), status: ['open', 'done', 'wontdo'].includes(d.status) ? d.status : 'open',
-      resolvedIn: Number.isInteger(d.resolvedIn) ? d.resolvedIn : null
-    };
-  }
-  function normReply(id, d) {
-    if (!d || typeof d.text !== 'string' || typeof d.commentId !== 'string') return null;
-    return {
-      id, commentId: d.commentId, text: d.text.slice(0, 4000), author: typeof d.author === 'string' ? d.author : null,
-      by: d.by === 'claude' ? 'claude' : null, createdAt: str(d.createdAt, 40), version: Number.isInteger(d.version) ? d.version : null
-    };
-  }
-  async function connect() {
-    const C = window.claude;
-    if (!C || typeof C.use !== 'function') { S.feed = 'off'; render(); return; }
-    const [db, user] = await Promise.all([C.use('db').catch(() => null), C.use('user').catch(() => null)]);
-    S.user = user;
-    if (user) {
-      try {
-        const [me, can] = await Promise.all([user.me(), user.can('data.write')]);
-        S.me = (me && me.id) || null; S.owner = !!(me && me.isOwner); S.canWrite = !!S.me && can !== false;
-      } catch (e) {}
-    }
-    // Set after the viewer resolves so writers never see the read-only notice flash.
-    S.db = db;
-    if (!db) { S.feed = 'off'; render(); return; }
-    const fail = () => { S.feed = 'off'; render(); };
-    try {
-      db.collection('comments').orderBy('createdAt', 'desc').limit(1000).onSnapshot((snap) => {
-        S.comments = snap.docs.map((d) => normComment(d.id, d.data())).filter(Boolean).sort(byCreated);
-        S.gotC = true;
-        if (S.feed === 'loading') S.feed = 'ready';
-        scheduleRender();
-      }, fail);
-      db.collection('replies').orderBy('createdAt', 'desc').limit(1000).onSnapshot((snap) => {
-        S.replies = snap.docs.map((d) => normReply(d.id, d.data())).filter(Boolean).sort(byCreated);
-        scheduleRender();
-      }, () => {});
-    } catch (e) { fail(); }
-    render();
-  }
-  async function write(fn, kind) {
-    try { return await fn(); } catch (e) {
-      let err = e;
-      if (err && err.code === 'unavailable') {
-        await new Promise((r) => setTimeout(r, 400 + Math.random() * 800));
-        try { return await fn(); } catch (e2) { err = e2; }
-      }
-      const code = err && err.code;
-      if (['not_granted', 'revoked', 'capability_disabled', 'capability_removed'].includes(code) || (code === 'invalid_argument' && kind === 'create')) {
-        S.canWrite = false; flash('');
-      } else if (code === 'invalid_argument') flash('That comment changed. Try again.');
-      else if (code === 'quota_exceeded' || code === 'resource_exhausted') flash('Feedback storage is full.');
-      else flash('Couldn’t save. Try again.');
-      render();
-      throw err;
-    }
-  }
-  const coll = (name) => S.db.collection(name);
-
-  async function post() {
-    const text = composer.value.trim();
-    if (!text || S.posting || !S.screen || !S.db || !S.cur || !S.me) return;
-    S.posting = true;
-    const now = iso(), pin = S.draft, saved = composer.value;
-    const data = {
-      screen: S.screen.id, screenTitle: S.screen.title, hash: S.screen.hash, version: S.cur.n,
-      pin: pin ? { x: pin.x, y: pin.y } : null, text: text.slice(0, 4000), author: S.me,
-      createdAt: now, updatedAt: now, status: 'open', resolvedIn: null
-    };
-    composer.value = ''; grow(composer); S.draft = null;
-    render();
-    try { const ref = coll('comments').doc(); await write(() => ref.set(data), 'create'); } catch (e) {
-      if (!composer.value) { composer.value = saved; grow(composer); }
-      if (!S.draft) S.draft = pin;
-    }
-    S.posting = false;
-    render();
-  }
-  async function sendReply(c) {
-    const text = (S.replyDraft[c.id] || '').trim();
-    if (!text || S.busy || !S.me) return;
-    S.busy = true;
-    try {
-      const ref = coll('replies').doc();
-      await write(() => ref.set({ commentId: c.id, text: text.slice(0, 4000), author: S.me, createdAt: iso(), version: S.cur ? S.cur.n : null }), 'create');
-      S.replyDraft[c.id] = ''; S.replyFor = null;
-    } catch (e) {}
-    S.busy = false;
-    render();
-  }
-  async function toggleResolve(c) {
-    if (S.busy) return;
-    S.busy = true;
-    const patch = isOpen(c) ? { status: 'done', resolvedIn: null, updatedAt: iso() } : { status: 'open', resolvedIn: null, updatedAt: iso() };
-    try { await write(() => coll('comments').doc(c.id).update(patch), 'update'); } catch (e) {}
-    S.busy = false;
-    render();
-  }
-  function arm(key) {
-    if (S.confirm === key) return true;
-    S.confirm = key;
-    clearTimeout(S.confirmT);
-    S.confirmT = setTimeout(() => { S.confirm = null; render(); }, 4000);
-    render();
-    return false;
-  }
-  async function delComment(c) {
-    if (!arm('c:' + c.id) || S.busy) return;
-    S.confirm = null; S.busy = true;
-    try {
-      await write(() => coll('comments').doc(c.id).delete(), 'update');
-      for (const r of S.replies.filter((x) => x.commentId === c.id)) {
-        try { await coll('replies').doc(r.id).delete(); } catch (e) { break; }
-      }
-    } catch (e) {}
-    S.busy = false;
-    render();
-  }
-  async function delReply(r) {
-    if (!arm('r:' + r.id) || S.busy) return;
-    S.confirm = null; S.busy = true;
-    try { await write(() => coll('replies').doc(r.id).delete(), 'update'); } catch (e) {}
-    S.busy = false;
-    render();
-  }
-
-  /* ---------- people ---------- */
-  function refreshPeople(ids) {
-    if (!S.user || !ids.length) return;
-    const seq = ++S.peopleSeq;
-    S.user.profiles(ids).then((ps) => {
-      if (seq !== S.peopleSeq || !ps) return;
-      const key = ids.map((id) => id + ':' + (ps[id] ? ps[id].name + '|' + ps[id].avatarUrl : '')).join(',');
-      S.people = ps;
-      if (key !== S.peopleKey) { S.peopleKey = key; scheduleRender(); }
-    }, () => {});
-  }
-  function who(x) {
-    if (x.by === 'claude') return 'Claude';
-    if (x.author && x.author === S.me) return 'You';
-    const p = x.author && S.people[x.author];
-    return (p && p.name) || 'Someone';
-  }
-  function avatar(x) {
-    if (x.by === 'claude') return h('span', { class: 'av av-claude', 'aria-hidden': 'true', text: 'C' });
-    const p = x.author && S.people[x.author];
-    if (p && p.avatarUrl) return h('img', { class: 'av', src: p.avatarUrl, alt: '', width: 22, height: 22 });
-    const initial = (who(x).trim()[0] || '?').toUpperCase();
-    return h('span', { class: 'av av-initial', 'aria-hidden': 'true', text: initial });
-  }
-
-  /* ---------- render ---------- */
-  function scheduleRender() { if (!S.rq) S.rq = requestAnimationFrame(render); }
-  function render() {
-    if (S.rq) { cancelAnimationFrame(S.rq); S.rq = 0; }
-    renderHeader(); renderBar(); renderNotices(); renderList(); renderComposer(); renderPins(); renderPeek();
-  }
-  function renderHeader() {
-    $('.ph-title').textContent = S.manifest ? S.manifest.title : 'Prototype';
-    const v = S.cur, top = latest();
-    vbtn.hidden = !v;
-    if (!v) return;
-    $('.vbtn-n', vbtn).textContent = 'v' + v.n;
-    vbtn.setAttribute('aria-label', 'Version ' + v.n + ', choose another');
-    vbtn.setAttribute('aria-expanded', String(S.menu));
-    vlist.hidden = !S.menu;
-    const old = $('.ph-old');
-    old.hidden = !top || v.n === top.n;
-    $('span', old).textContent = 'Viewing v' + v.n;
-    vnotes.hidden = !v.notes.length && !v.fixed.length;
-    if (S.notesFor !== v.n) { S.notesFor = v.n; vnotes.open = false; }
-    $('summary', vnotes).textContent = 'What changed in v' + v.n + (v.fixed.length ? ' · ' + v.fixed.length + ' fixed' : '');
-    const fixed = v.fixed.map((id) => S.comments.find((c) => c.id === id)).filter(Boolean);
-    $('.vnotes-body', vnotes).replaceChildren(
-      v.notes.length ? h('ul', null, v.notes.map((s) => h('li', { text: s }))) : null,
-      v.fixed.length ? h('div', { class: 'vnotes-fixed' },
-        fixed.map((c) => h('button', { type: 'button', text: c.screenTitle + ' · ' + c.text, title: c.text, onclick: () => { goTo(c); focusComment(c.id); } }))) : null
-    );
-  }
-  function buildMenu() {
-    const top = latest();
-    vlist.replaceChildren(...S.versions.slice().reverse().map((v) => h('button', {
-      type: 'button', role: 'menuitemradio', class: 'vopt', 'data-kit': 'version-option', 'data-n': v.n,
-      'aria-checked': String(v.n === S.cur.n), tabindex: '-1', onclick: () => chooseVersion(v.n)
-    }, h('span', { class: 'vopt-n', text: 'v' + v.n }), h('span', { class: 'vopt-main' },
-      h('span', { class: 'vopt-title', text: v.title || 'Version ' + v.n }),
-      h('span', { class: 'vopt-meta', text: [dayLabel(v.date), v.n === top.n ? 'Latest' : ''].filter(Boolean).join(' · ') })))));
-  }
-  function openMenu() {
-    if (!S.cur) return;
-    S.menu = true; buildMenu(); renderHeader();
-    const el = vlist.querySelector('[aria-checked="true"]') || vlist.firstElementChild;
-    if (el) el.focus();
-  }
-  function closeMenu(focusBtn) { S.menu = false; renderHeader(); if (focusBtn) vbtn.focus(); }
-  function chooseVersion(n) {
-    closeMenu(true);
-    const v = S.versions.find((x) => x.n === n);
-    if (v && v !== S.cur) openVersion(v, true);
-  }
-  function openCount(scope) {
-    return S.comments.filter((c) => isOpen(c) && (scope === 'all' || (S.screen && c.screen === S.screen.id))).length;
-  }
-  function renderBar() {
-    $('[data-kit="screen"]').textContent = S.screen ? S.screen.title : '…';
-    const n = S.feed === 'ready' ? openCount(S.scope) : 0;
-    $('.sbar-count').textContent = n ? n + ' open' : '';
-    for (const b of document.querySelectorAll('[data-kit="scope"]')) b.setAttribute('aria-pressed', String(b.dataset.scope === S.scope));
-  }
-  function renderNotices() {
-    $('[data-kit="readonly"]').hidden = !(S.db && S.feed !== 'off' && !S.canWrite);
-    $('.notice-off').hidden = S.feed !== 'off';
-  }
-  function renderPeek() {
-    $('.peek-screen', peek).textContent = S.screen ? S.screen.title : '';
-    const n = S.feed === 'ready' ? openCount('screen') : 0;
-    $('.peek-count', peek).textContent = n ? n + ' open' : '';
-  }
-  function renderComposer() {
-    const can = !!S.db && S.feed !== 'off' && S.canWrite;
-    form.hidden = !can;
-    composer.placeholder = S.screen ? 'Add feedback on ' + S.screen.title : 'Add feedback';
-    submitBtn.disabled = S.posting || !S.screen || !composer.value.trim();
-    pinToggle.disabled = !S.screen;
-    pinToggle.setAttribute('aria-pressed', String(S.placing));
-    pinToggle.classList.toggle('has', !!S.draft && !S.placing);
-    $('span', pinToggle).textContent = S.placing ? 'Cancel' : S.draft ? 'Pinned ×' : 'Pin';
-    pinToggle.setAttribute('aria-label', S.placing ? 'Cancel pin' : S.draft ? 'Remove pin' : 'Place a pin');
-    hint.hidden = !S.placing;
-    hint.textContent = (coarse ? 'Tap' : 'Click') + ' the screen to place a pin · Esc to cancel';
-  }
-  function chip(c) {
-    if (c.status === 'done') return h('span', { class: 'chip', text: '✓ ' + (c.resolvedIn ? 'Done in v' + c.resolvedIn : 'Done') });
-    if (c.status === 'wontdo') return h('span', { class: 'chip chip-no', text: 'Won’t do' });
-    return null;
-  }
-  function replyRow(r) {
-    const canDel = S.canWrite && S.feed === 'ready' && ((r.author && r.author === S.me) || S.owner);
-    const armed = S.confirm === 'r:' + r.id;
-    return h('div', { class: 'r' },
-      h('div', { class: 'c-head' }, avatar(r), h('span', { class: 'c-name', text: who(r) }),
-        h('time', { class: 'c-meta mono', datetime: r.createdAt, title: fullDate(r.createdAt), text: ago(r.createdAt) })),
-      h('p', { class: 'c-text', text: r.text }),
-      canDel ? h('div', { class: 'c-acts' },
-        h('button', { type: 'button', class: 'act' + (armed ? ' arm' : ''), 'data-fk': 'rdel:' + r.id, text: armed ? 'Delete?' : 'Delete', onclick: () => delReply(r) })) : null);
-  }
-  function replyBox(c) {
-    return h('div', { class: 'rbox' },
-      h('textarea', {
-        rows: '1', maxlength: '4000', placeholder: 'Reply', 'aria-label': 'Reply', 'data-fk': 'rtext:' + c.id, value: S.replyDraft[c.id] || '',
-        oninput: (e) => { S.replyDraft[c.id] = e.target.value; grow(e.target); },
-        onkeydown: (e) => {
-          if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') { e.preventDefault(); sendReply(c); }
-          else if (e.key === 'Escape') { e.stopPropagation(); S.replyFor = null; render(); }
-        }
-      }),
-      h('div', { class: 'rbar' },
-        h('button', { type: 'button', class: 'link', text: 'Cancel', onclick: () => { S.replyFor = null; render(); } }),
-        h('button', { type: 'button', class: 'post post-sm', 'data-fk': 'rsend:' + c.id, text: 'Reply', disabled: S.busy, onclick: () => sendReply(c) })));
-  }
-  function row(c, nums, reps, showScreen) {
-    const n = nums.get(c.id), rs = reps.get(c.id) || [];
-    const canAct = S.canWrite && S.feed === 'ready';
-    const canDel = canAct && ((c.author && c.author === S.me) || S.owner);
-    const curN = S.cur ? S.cur.n : null;
-    const armed = S.confirm === 'c:' + c.id;
-    return h('article', {
-      class: 'c' + (isOpen(c) ? '' : ' c-shut') + (S.hot === c.id ? ' hot' : ''), 'data-kit': 'comment', 'data-id': c.id, 'data-status': c.status,
-      onclick: (e) => { if (S.scope === 'all' && !e.target.closest('button,textarea,a')) goTo(c); },
-      onmouseenter: () => setHot(c.id), onmouseleave: () => setHot(null)
-    },
-      h('div', { class: 'c-head' },
-        n ? h('span', { class: 'badge' + (c.version === curN ? '' : ' badge-old'), title: 'Pin ' + n, text: n }) : null,
-        avatar(c), h('span', { class: 'c-name', text: who(c) }),
-        h('span', { class: 'c-meta mono' },
-          h('time', { datetime: c.createdAt, title: fullDate(c.createdAt), text: ago(c.createdAt) }),
-          c.version && c.version !== curN ? ' · v' + c.version : ''),
-        chip(c)),
-      showScreen ? h('button', { type: 'button', class: 'c-screen link', text: c.screenTitle, onclick: () => goTo(c) }) : null,
-      h('p', { class: 'c-text', text: c.text }),
-      rs.length ? h('div', { class: 'replies' }, rs.map(replyRow)) : null,
-      canAct ? h('div', { class: 'c-acts' },
-        h('button', { type: 'button', class: 'act', 'data-kit': 'reply', 'data-fk': 'reply:' + c.id, text: 'Reply', onclick: () => openReply(c.id) }),
-        h('button', { type: 'button', class: 'act', 'data-kit': 'resolve', 'data-fk': 'resolve:' + c.id, text: isOpen(c) ? 'Resolve' : 'Reopen', disabled: S.busy, onclick: () => toggleResolve(c) }),
-        canDel ? h('button', { type: 'button', class: 'act' + (armed ? ' arm' : ''), 'data-fk': 'del:' + c.id, text: armed ? 'Delete?' : 'Delete', onclick: () => delComment(c) }) : null) : null,
-      canAct && S.replyFor === c.id ? replyBox(c) : null);
-  }
-  function resolvedBlock(items, nums, reps, key, showScreen) {
-    if (!items.length) return null;
-    return h('details', {
-      class: 'shut', open: S.resolvedOpen.has(key),
-      ontoggle: (e) => { if (e.target.open) S.resolvedOpen.add(key); else S.resolvedOpen.delete(key); }
-    }, h('summary', { text: items.length + ' resolved' }), items.map((c) => row(c, nums, reps, showScreen)));
-  }
-  function buildList() {
-    if (S.feed === 'off') return [];
-    if (!S.gotC) return [h('p', { class: 'empty', text: 'Loading feedback…' })];
-    const all = S.comments;
-    const nums = pinNumbers(all), reps = new Map();
-    for (const r of S.replies) { if (!reps.has(r.commentId)) reps.set(r.commentId, []); reps.get(r.commentId).push(r); }
-    if (S.scope === 'screen') {
-      const here = S.screen ? all.filter((c) => c.screen === S.screen.id) : [];
-      if (!here.length) return [h('p', { class: 'empty', text: 'No feedback on this screen yet.' })];
-      const open = here.filter(isOpen);
-      return [
-        open.length ? open.map((c) => row(c, nums, reps, false)) : h('p', { class: 'empty', text: 'Nothing open on this screen.' }),
-        resolvedBlock(here.filter((c) => !isOpen(c)), nums, reps, 'screen', false)
-      ];
-    }
-    if (!all.length) return [h('p', { class: 'empty', text: 'No feedback yet.' })];
-    const groups = new Map();
-    for (const c of all) {
-      if (!isOpen(c)) continue;
-      if (!groups.has(c.screen)) groups.set(c.screen, { id: c.screen, items: [], last: '' });
-      const g = groups.get(c.screen);
-      g.items.push(c); g.title = c.screenTitle; g.first = g.first || c; if (c.createdAt > g.last) g.last = c.createdAt;
-    }
-    const here = S.screen && S.screen.id;
-    const ordered = [...groups.values()].sort((a, b) => (a.id === here ? -1 : b.id === here ? 1 : a.last < b.last ? 1 : -1));
-    return [
-      ordered.length ? ordered.map((g) => h('section', { class: 'grp' },
-        h('button', { type: 'button', class: 'g-head', onclick: () => goTo(g.first), 'aria-label': 'Go to ' + g.title },
-          h('span', { text: g.title }), g.id === here ? h('span', { class: 'here', text: 'on screen' }) : null),
-        g.items.map((c) => row(c, nums, reps, false)))) : h('p', { class: 'empty', text: 'Nothing open.' }),
-      resolvedBlock(all.filter((c) => !isOpen(c)), nums, reps, 'all', true)
-    ];
-  }
-  function renderList() {
-    const keep = list.scrollTop, ae = document.activeElement;
-    const fk = ae && list.contains(ae) ? ae.dataset.fk : null;
-    const sel = fk && ae.tagName === 'TEXTAREA' ? [ae.selectionStart, ae.selectionEnd] : null;
-    list.replaceChildren(...buildList().flat(Infinity).filter(Boolean));
-    for (const ta of list.querySelectorAll('textarea')) grow(ta);
-    list.scrollTop = keep;
-    if (fk) {
-      const el = list.querySelector('[data-fk="' + CSS.escape(fk) + '"]');
-      if (el) { el.focus({ preventScroll: true }); if (sel) try { el.setSelectionRange(sel[0], sel[1]); } catch (e) {} }
-    }
-    const ids = new Set();
-    for (const x of S.comments.concat(S.replies)) if (x.author && x.by !== 'claude') ids.add(x.author);
-    refreshPeople([...ids]);
-  }
-  function openReply(id) {
-    S.replyFor = id;
-    render();
-    const ta = list.querySelector('[data-fk="rtext:' + CSS.escape(id) + '"]');
-    if (ta) ta.focus();
-  }
-
-  /* ---------- sheet (narrow screens) ---------- */
-  function setSheet(open) {
-    S.sheet = open;
-    app.classList.toggle('sheet-open', open);
-    peek.setAttribute('aria-expanded', String(open));
-    syncSheet();
-  }
-  function syncSheet() {
-    const narrow = isNarrow();
-    scrim.hidden = !(narrow && S.sheet);
-    panelBody.inert = narrow && !S.sheet;
-  }
-  narrowMq.addEventListener('change', syncSheet);
-  peek.addEventListener('click', () => setSheet(!S.sheet));
-  scrim.addEventListener('click', () => setSheet(false));
-
-  /* ---------- wiring ---------- */
-  vbtn.addEventListener('click', () => (S.menu ? closeMenu(true) : openMenu()));
-  vlist.addEventListener('keydown', (e) => {
-    const items = [...vlist.querySelectorAll('[role="menuitemradio"]')];
-    const i = items.indexOf(document.activeElement);
-    const go = (j) => { e.preventDefault(); items[(j + items.length) % items.length].focus(); };
-    if (e.key === 'ArrowDown') go(i + 1);
-    else if (e.key === 'ArrowUp') go(i - 1);
-    else if (e.key === 'Home') go(0);
-    else if (e.key === 'End') go(items.length - 1);
-    else if (e.key === 'Tab') closeMenu(false);
-  });
-  document.addEventListener('pointerdown', (e) => { if (S.menu && !e.target.closest('.vmenu')) closeMenu(false); });
-  document.addEventListener('keydown', (e) => {
-    if (e.key !== 'Escape') return;
-    if (railShown()) { e.preventDefault(); closeRailWithFocus(); }
-    else if (S.menu) { e.preventDefault(); closeMenu(true); }
-    else if (S.placing) { e.preventDefault(); setPlacing(false); }
-    else if (S.sheet && isNarrow()) { e.preventDefault(); setSheet(false); peek.focus(); }
-  });
-  $('.ph-old .link').addEventListener('click', () => { const top = latest(); if (top && top !== S.cur) openVersion(top, true); });
-  for (const b of document.querySelectorAll('[data-kit="scope"]')) {
-    b.addEventListener('click', () => {
-      S.scope = b.dataset.scope === 'all' ? 'all' : 'screen';
-      sset('localStorage', 'kit:scope', S.scope);
-      list.scrollTop = 0;
-      render();
-    });
-  }
-  composer.addEventListener('input', () => { grow(composer); submitBtn.disabled = S.posting || !S.screen || !composer.value.trim(); });
-  composer.addEventListener('keydown', (e) => { if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') { e.preventDefault(); post(); } });
-  form.addEventListener('submit', (e) => { e.preventDefault(); post(); });
-  pinToggle.addEventListener('click', () => {
-    if (S.draft && !S.placing) { S.draft = null; render(); return; }
-    setPlacing(!S.placing);
-  });
-  setInterval(() => { if (!document.hidden && !S.rq) scheduleRender(); }, 60000);
-
-  S.scope = sget('localStorage', 'kit:scope') === 'all' ? 'all' : 'screen';
-  S.rail.hidden = sget('localStorage', 'kit:rail') === 'hidden';
-  syncSheet();
-  render();
-  loadAdapters().then(loadManifest);
-  connect();
-})();
+  const so=$('#sort');so&&(so.onchange=()=>{S.sort=so.value;render()});
+  const ex=$('#exBtn');ex&&(ex.onclick=()=>{showExcluded=!showExcluded;const y=scrollY;render();scrollTo(0,y)});
+  document.querySelectorAll('.chart g[data-id]').forEach(g=>{
+    const row=document.querySelector(`.fare[data-id="${g.dataset.id}"]`);
+    g.onmouseenter=()=>row&&row.classList.add('hl');g.onmouseleave=()=>row&&row.classList.remove('hl');
+    g.onclick=()=>location.hash=g.dataset.link;});
+  document.querySelectorAll('.fare[data-id]').forEach(r=>{const id=r.dataset.id;
+    r.onmouseenter=()=>{const c=document.querySelector(`.chart g[data-id="${id}"] circle`);c&&c.setAttribute('r',10);
+      const f=ALLFARES[id];if(f)renderGold(f.tp)};
+    r.onmouseleave=()=>{const c=document.querySelector(`.chart g[data-id="${id}"] circle`);c&&c.setAttribute('r',6);renderGold(0)};});
+  const pm=$('#pm'),nm=$('#nm');
+  pm&&(pm.onclick=()=>{S.month=S.month===0?11:S.month===11?10:10;render();if(S.month===10)toast('Earlier months have passed')});
+  nm&&(nm.onclick=()=>{S.month=S.month===10?11:S.month===11?0:0;render()});
+  const bk=$('#book');bk&&(bk.onclick=e=>{e.preventDefault();toast('Opens the fare on Skiplagged in a new tab')});
+  const rt=$('#retry');rt&&(rt.onclick=()=>loadThen('/route/MAD'));
+  const gf=$('#gf');gf&&(gf.onsubmit=e=>{e.preventDefault();const v=$('#gtp').value.replace(/[,\s]/g,'');
+    if(!/^\d+$/.test(v)){$('#gtp').classList.add('err');$('#gErr').hidden=false;return}
+    gold={tp:+v,ends:$('#gend').value||gold.ends};localStorage.setItem('flights.gold',JSON.stringify(gold));render();toast('Saved')});
+}
+function suggest(el,k){
+  const q=el.value.trim().toLowerCase();let box=el.parentNode.querySelector('.sugg');
+  if(!q){box&&box.remove();return}
+  const m=AIRPORTS.filter(([c,n])=>c.toLowerCase().startsWith(q)||n.toLowerCase().includes(q)).slice(0,6);
+  if(!box){box=document.createElement('div');box.className='sugg';el.after(box)}
+  box.innerHTML=m.length?m.map(([c,n])=>`<button type="button" data-c="${c}"><span>${n}</span><span class="code">${c}</span></button>`).join(''):'<div style="padding:9px 12px;color:var(--dim)">No airport matches</div>';
+  box.querySelectorAll('button').forEach(b=>b.onmousedown=e=>{e.preventDefault();S[k]=b.dataset.c;el.value=apLabel(b.dataset.c);el.classList.remove('err');
+    const er=$('#toErr');er&&(er.hidden=true);box.remove();if(k==='from')render()});
+}
+function loadThen(path){
+  const key=path.split('/')[2];
+  $('#app').innerHTML=`<div class="fade">${vLoading()}</div>`;
+  const h=$('#app h1 .soft');
+  if(h)h.textContent=path==='/anywhere'?'London → Anywhere · 13–16 Nov':path==='/calendar'?'London → New York · November':`${apLabel(S.from)} → ${key?apLabel(key==='IBZ-LON'?'LON':key):'…'}`;
+  setTimeout(()=>go(path),900);
+}
+document.querySelectorAll('.ab button').forEach(b=>b.onclick=()=>{const p=parse();variant=b.dataset.v;location.hash='#/'+(p.length?p.join('/'):'search')+(variant==='b'?'/b':'')});
+const idx=$('#idx'),ib=idx.querySelector('button');
+ib.onclick=()=>{const o=idx.classList.toggle('open');ib.setAttribute('aria-expanded',o)};
+idx.addEventListener('click',e=>{if(e.target.tagName==='A'){idx.classList.remove('open');ib.setAttribute('aria-expanded',false)}});
+document.addEventListener('keydown',e=>{if(e.key==='Escape')idx.classList.remove('open')});
+window.addEventListener('hashchange',render);
+render();
 </script>
+</body>
+</html>

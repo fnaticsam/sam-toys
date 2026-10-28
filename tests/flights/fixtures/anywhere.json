@@ -1,0 +1,668 @@
+{
+  "searchUrl": "https://skiplagged.com/flights/IBZ/2026-11-18?utm_source=mcp&utm_medium=ai&utm_campaign=skiplagged_mcp",
+  "results": [
+    {
+      "type": "DealCard",
+      "id": "deal_https://skiplagged.com/flights/IBZ/BCN/2026-11-18",
+      "destination": {
+        "city": "Barcelona",
+        "region": "Spain",
+        "airport": "BCN"
+      },
+      "price": {
+        "amount": 17,
+        "currency": "USD"
+      },
+      "flightType": "Standard",
+      "description": "Great deal to Barcelona",
+      "deepLink": "https://skiplagged.com/flights/IBZ/BCN/2026-11-18?utm_source=mcp&utm_medium=ai&utm_campaign=skiplagged_mcp"
+    },
+    {
+      "type": "DealCard",
+      "id": "deal_https://skiplagged.com/flights/IBZ/MAD/2026-11-18",
+      "destination": {
+        "city": "Madrid",
+        "region": "Spain",
+        "airport": "MAD"
+      },
+      "price": {
+        "amount": 17,
+        "currency": "USD"
+      },
+      "flightType": "Standard",
+      "description": "Great deal to Madrid",
+      "deepLink": "https://skiplagged.com/flights/IBZ/MAD/2026-11-18?utm_source=mcp&utm_medium=ai&utm_campaign=skiplagged_mcp"
+    },
+    {
+      "type": "DealCard",
+      "id": "deal_https://skiplagged.com/flights/IBZ/VLC/2026-11-18",
+      "destination": {
+        "city": "Valencia",
+        "region": "Spain",
+        "airport": "VLC"
+      },
+      "price": {
+        "amount": 41,
+        "currency": "USD"
+      },
+      "flightType": "Standard",
+      "description": "Great deal to Valencia",
+      "deepLink": "https://skiplagged.com/flights/IBZ/VLC/2026-11-18?utm_source=mcp&utm_medium=ai&utm_campaign=skiplagged_mcp"
+    },
+    {
+      "type": "DealCard",
+      "id": "deal_https://skiplagged.com/flights/IBZ/BOD/2026-11-18",
+      "destination": {
+        "city": "Bordeaux/M\u00e9rignac",
+        "region": "France",
+        "airport": "BOD"
+      },
+      "price": {
+        "amount": 45,
+        "currency": "USD"
+      },
+      "flightType": "Standard",
+      "description": "Great deal to Bordeaux/M\u00e9rignac",
+      "deepLink": "https://skiplagged.com/flights/IBZ/BOD/2026-11-18?utm_source=mcp&utm_medium=ai&utm_campaign=skiplagged_mcp"
+    },
+    {
+      "type": "DealCard",
+      "id": "deal_https://skiplagged.com/flights/IBZ/MXP/2026-11-18",
+      "destination": {
+        "city": "Ferno VA",
+        "region": "Italy",
+        "airport": "MXP"
+      },
+      "price": {
+        "amount": 50,
+        "currency": "USD"
+      },
+      "flightType": "Standard",
+      "description": "Great deal to Ferno VA",
+      "deepLink": "https://skiplagged.com/flights/IBZ/MXP/2026-11-18?utm_source=mcp&utm_medium=ai&utm_campaign=skiplagged_mcp"
+    },
+    {
+      "type": "DealCard",
+      "id": "deal_https://skiplagged.com/flights/IBZ/PMI/2026-11-18",
+      "destination": {
+        "city": "Palma de Mallorca",
+        "region": "Spain",
+        "airport": "PMI"
+      },
+      "price": {
+        "amount": 50,
+        "currency": "USD"
+      },
+      "flightType": "Standard",
+      "description": "Great deal to Palma de Mallorca",
+      "deepLink": "https://skiplagged.com/flights/IBZ/PMI/2026-11-18?utm_source=mcp&utm_medium=ai&utm_campaign=skiplagged_mcp"
+    },
+    {
+      "type": "DealCard",
+      "id": "deal_https://skiplagged.com/flights/IBZ/SVQ/2026-11-18",
+      "destination": {
+        "city": "Sevilla",
+        "region": "Spain",
+        "airport": "SVQ"
+      },
+      "price": {
+        "amount": 58,
+        "currency": "USD"
+      },
+      "flightType": "Standard",
+      "description": "Great deal to Sevilla",
+      "deepLink": "https://skiplagged.com/flights/IBZ/SVQ/2026-11-18?utm_source=mcp&utm_medium=ai&utm_campaign=skiplagged_mcp"
+    },
+    {
+      "type": "DealCard",
+      "id": "deal_https://skiplagged.com/flights/IBZ/VCE/2026-11-18",
+      "destination": {
+        "city": "Venezia VE",
+        "region": "Italy",
+        "airport": "VCE"
+      },
+      "price": {
+        "amount": 58,
+        "currency": "USD"
+      },
+      "flightType": "Standard",
+      "description": "Great deal to Venezia VE",
+      "deepLink": "https://skiplagged.com/flights/IBZ/VCE/2026-11-18?utm_source=mcp&utm_medium=ai&utm_campaign=skiplagged_mcp"
+    },
+    {
+      "type": "DealCard",
+      "id": "deal_https://skiplagged.com/flights/IBZ/MRS/2026-11-18",
+      "destination": {
+        "city": "Marignane, Bouches-du-Rh\u00f4ne",
+        "region": "France",
+        "airport": "MRS"
+      },
+      "price": {
+        "amount": 60,
+        "currency": "USD"
+      },
+      "flightType": "Standard",
+      "description": "Great deal to Marignane, Bouches-du-Rh\u00f4ne",
+      "deepLink": "https://skiplagged.com/flights/IBZ/MRS/2026-11-18?utm_source=mcp&utm_medium=ai&utm_campaign=skiplagged_mcp"
+    },
+    {
+      "type": "DealCard",
+      "id": "deal_https://skiplagged.com/flights/IBZ/CAG/2026-11-18",
+      "destination": {
+        "city": "Cagliari",
+        "region": "Italy",
+        "airport": "CAG"
+      },
+      "price": {
+        "amount": 65,
+        "currency": "USD"
+      },
+      "flightType": "Standard",
+      "description": "Great deal to Cagliari",
+      "deepLink": "https://skiplagged.com/flights/IBZ/CAG/2026-11-18?utm_source=mcp&utm_medium=ai&utm_campaign=skiplagged_mcp"
+    },
+    {
+      "type": "DealCard",
+      "id": "deal_https://skiplagged.com/flights/IBZ/FCO/2026-11-18",
+      "destination": {
+        "city": "Rome",
+        "region": "Italy",
+        "airport": "FCO"
+      },
+      "price": {
+        "amount": 65,
+        "currency": "USD"
+      },
+      "flightType": "Standard",
+      "description": "Great deal to Rome",
+      "deepLink": "https://skiplagged.com/flights/IBZ/FCO/2026-11-18?utm_source=mcp&utm_medium=ai&utm_campaign=skiplagged_mcp"
+    },
+    {
+      "type": "DealCard",
+      "id": "deal_https://skiplagged.com/flights/IBZ/NCE/2026-11-18",
+      "destination": {
+        "city": "Nice, Alpes-Maritimes",
+        "region": "France",
+        "airport": "NCE"
+      },
+      "price": {
+        "amount": 65,
+        "currency": "USD"
+      },
+      "flightType": "Standard",
+      "description": "Great deal to Nice, Alpes-Maritimes",
+      "deepLink": "https://skiplagged.com/flights/IBZ/NCE/2026-11-18?utm_source=mcp&utm_medium=ai&utm_campaign=skiplagged_mcp"
+    },
+    {
+      "type": "DealCard",
+      "id": "deal_https://skiplagged.com/flights/IBZ/CDG/2026-11-18",
+      "destination": {
+        "city": "Paris Roissy-en-France, Val-d'Oise",
+        "region": "France",
+        "airport": "CDG"
+      },
+      "price": {
+        "amount": 71,
+        "currency": "USD"
+      },
+      "flightType": "Standard",
+      "description": "Great deal to Paris Roissy-en-France, Val-d'Oise",
+      "deepLink": "https://skiplagged.com/flights/IBZ/CDG/2026-11-18?utm_source=mcp&utm_medium=ai&utm_campaign=skiplagged_mcp"
+    },
+    {
+      "type": "DealCard",
+      "id": "deal_https://skiplagged.com/flights/IBZ/AGP/2026-11-18",
+      "destination": {
+        "city": "M\u00e1laga",
+        "region": "Spain",
+        "airport": "AGP"
+      },
+      "price": {
+        "amount": 74,
+        "currency": "USD"
+      },
+      "flightType": "Standard",
+      "description": "Great deal to M\u00e1laga",
+      "deepLink": "https://skiplagged.com/flights/IBZ/AGP/2026-11-18?utm_source=mcp&utm_medium=ai&utm_campaign=skiplagged_mcp"
+    },
+    {
+      "type": "DealCard",
+      "id": "deal_https://skiplagged.com/flights/IBZ/LIS/2026-11-18",
+      "destination": {
+        "city": "Lisbon",
+        "region": "Portugal",
+        "airport": "LIS"
+      },
+      "price": {
+        "amount": 75,
+        "currency": "USD"
+      },
+      "flightType": "Standard",
+      "description": "Great deal to Lisbon",
+      "deepLink": "https://skiplagged.com/flights/IBZ/LIS/2026-11-18?utm_source=mcp&utm_medium=ai&utm_campaign=skiplagged_mcp"
+    },
+    {
+      "type": "DealCard",
+      "id": "deal_https://skiplagged.com/flights/IBZ/OPO/2026-11-18",
+      "destination": {
+        "city": "Porto",
+        "region": "Portugal",
+        "airport": "OPO"
+      },
+      "price": {
+        "amount": 75,
+        "currency": "USD"
+      },
+      "flightType": "Standard",
+      "description": "Great deal to Porto",
+      "deepLink": "https://skiplagged.com/flights/IBZ/OPO/2026-11-18?utm_source=mcp&utm_medium=ai&utm_campaign=skiplagged_mcp"
+    },
+    {
+      "type": "DealCard",
+      "id": "deal_https://skiplagged.com/flights/IBZ/ZRH/2026-11-18",
+      "destination": {
+        "city": "Zurich",
+        "region": "Switzerland",
+        "airport": "ZRH"
+      },
+      "price": {
+        "amount": 77,
+        "currency": "USD"
+      },
+      "flightType": "Standard",
+      "description": "Great deal to Zurich",
+      "deepLink": "https://skiplagged.com/flights/IBZ/ZRH/2026-11-18?utm_source=mcp&utm_medium=ai&utm_campaign=skiplagged_mcp"
+    },
+    {
+      "type": "DealCard",
+      "id": "deal_https://skiplagged.com/flights/IBZ/MAN/2026-11-18",
+      "destination": {
+        "city": "Manchester, Greater Manchester",
+        "region": "United Kingdom",
+        "airport": "MAN"
+      },
+      "price": {
+        "amount": 80,
+        "currency": "USD"
+      },
+      "flightType": "Standard",
+      "description": "Great deal to Manchester, Greater Manchester",
+      "deepLink": "https://skiplagged.com/flights/IBZ/MAN/2026-11-18?utm_source=mcp&utm_medium=ai&utm_campaign=skiplagged_mcp"
+    },
+    {
+      "type": "DealCard",
+      "id": "deal_https://skiplagged.com/flights/IBZ/AMS/2026-11-18",
+      "destination": {
+        "city": "Amsterdam",
+        "region": "Netherlands",
+        "airport": "AMS"
+      },
+      "price": {
+        "amount": 84,
+        "currency": "USD"
+      },
+      "flightType": "Standard",
+      "description": "Great deal to Amsterdam",
+      "deepLink": "https://skiplagged.com/flights/IBZ/AMS/2026-11-18?utm_source=mcp&utm_medium=ai&utm_campaign=skiplagged_mcp"
+    },
+    {
+      "type": "DealCard",
+      "id": "deal_https://skiplagged.com/flights/IBZ/LGW/2026-11-18",
+      "destination": {
+        "city": "London",
+        "region": "United Kingdom",
+        "airport": "LGW"
+      },
+      "price": {
+        "amount": 90,
+        "currency": "USD"
+      },
+      "flightType": "Standard",
+      "description": "Great deal to London",
+      "deepLink": "https://skiplagged.com/flights/IBZ/LGW/2026-11-18?utm_source=mcp&utm_medium=ai&utm_campaign=skiplagged_mcp"
+    },
+    {
+      "type": "DealCard",
+      "id": "deal_https://skiplagged.com/flights/IBZ/HAM/2026-11-18",
+      "destination": {
+        "city": "Hamburg",
+        "region": "Germany",
+        "airport": "HAM"
+      },
+      "price": {
+        "amount": 96,
+        "currency": "USD"
+      },
+      "flightType": "Standard",
+      "description": "Great deal to Hamburg",
+      "deepLink": "https://skiplagged.com/flights/IBZ/HAM/2026-11-18?utm_source=mcp&utm_medium=ai&utm_campaign=skiplagged_mcp"
+    },
+    {
+      "type": "DealCard",
+      "id": "deal_https://skiplagged.com/flights/IBZ/FLR/2026-11-18",
+      "destination": {
+        "city": "Firenze FI",
+        "region": "Italy",
+        "airport": "FLR"
+      },
+      "price": {
+        "amount": 97,
+        "currency": "USD"
+      },
+      "flightType": "Standard",
+      "description": "Great deal to Firenze FI",
+      "deepLink": "https://skiplagged.com/flights/IBZ/FLR/2026-11-18?utm_source=mcp&utm_medium=ai&utm_campaign=skiplagged_mcp"
+    },
+    {
+      "type": "DealCard",
+      "id": "deal_https://skiplagged.com/flights/IBZ/MUC/2026-11-18",
+      "destination": {
+        "city": "Munich",
+        "region": "Germany",
+        "airport": "MUC"
+      },
+      "price": {
+        "amount": 133,
+        "currency": "USD"
+      },
+      "flightType": "Standard",
+      "description": "Great deal to Munich",
+      "deepLink": "https://skiplagged.com/flights/IBZ/MUC/2026-11-18?utm_source=mcp&utm_medium=ai&utm_campaign=skiplagged_mcp"
+    },
+    {
+      "type": "DealCard",
+      "id": "deal_https://skiplagged.com/flights/IBZ/FRA/2026-11-18",
+      "destination": {
+        "city": "Frankfurt am Main",
+        "region": "Germany",
+        "airport": "FRA"
+      },
+      "price": {
+        "amount": 134,
+        "currency": "USD"
+      },
+      "flightType": "Standard",
+      "description": "Great deal to Frankfurt am Main",
+      "deepLink": "https://skiplagged.com/flights/IBZ/FRA/2026-11-18?utm_source=mcp&utm_medium=ai&utm_campaign=skiplagged_mcp"
+    },
+    {
+      "type": "DealCard",
+      "id": "deal_https://skiplagged.com/flights/IBZ/PRG/2026-11-18",
+      "destination": {
+        "city": "Prague",
+        "region": "Czech Republic",
+        "airport": "PRG"
+      },
+      "price": {
+        "amount": 154,
+        "currency": "USD"
+      },
+      "flightType": "Standard",
+      "description": "Great deal to Prague",
+      "deepLink": "https://skiplagged.com/flights/IBZ/PRG/2026-11-18?utm_source=mcp&utm_medium=ai&utm_campaign=skiplagged_mcp"
+    },
+    {
+      "type": "DealCard",
+      "id": "deal_https://skiplagged.com/flights/IBZ/VIE/2026-11-18",
+      "destination": {
+        "city": "Vienna",
+        "region": "Austria",
+        "airport": "VIE"
+      },
+      "price": {
+        "amount": 168,
+        "currency": "USD"
+      },
+      "flightType": "Standard",
+      "description": "Great deal to Vienna",
+      "deepLink": "https://skiplagged.com/flights/IBZ/VIE/2026-11-18?utm_source=mcp&utm_medium=ai&utm_campaign=skiplagged_mcp"
+    },
+    {
+      "type": "DealCard",
+      "id": "deal_https://skiplagged.com/flights/IBZ/DUB/2026-11-18",
+      "destination": {
+        "city": "Dublin",
+        "region": "Ireland",
+        "airport": "DUB"
+      },
+      "price": {
+        "amount": 175,
+        "currency": "USD"
+      },
+      "flightType": "Standard",
+      "description": "Great deal to Dublin",
+      "deepLink": "https://skiplagged.com/flights/IBZ/DUB/2026-11-18?utm_source=mcp&utm_medium=ai&utm_campaign=skiplagged_mcp"
+    },
+    {
+      "type": "DealCard",
+      "id": "deal_https://skiplagged.com/flights/IBZ/BER/2026-11-18",
+      "destination": {
+        "city": "Berlin",
+        "region": "Germany",
+        "airport": "BER"
+      },
+      "price": {
+        "amount": 176,
+        "currency": "USD"
+      },
+      "flightType": "Standard",
+      "description": "Great deal to Berlin",
+      "deepLink": "https://skiplagged.com/flights/IBZ/BER/2026-11-18?utm_source=mcp&utm_medium=ai&utm_campaign=skiplagged_mcp"
+    },
+    {
+      "type": "DealCard",
+      "id": "deal_https://skiplagged.com/flights/IBZ/DBV/2026-11-18",
+      "destination": {
+        "city": "\u010cilipi",
+        "region": "Croatia",
+        "airport": "DBV"
+      },
+      "price": {
+        "amount": 176,
+        "currency": "USD"
+      },
+      "flightType": "Standard",
+      "description": "Great deal to \u010cilipi",
+      "deepLink": "https://skiplagged.com/flights/IBZ/DBV/2026-11-18?utm_source=mcp&utm_medium=ai&utm_campaign=skiplagged_mcp"
+    },
+    {
+      "type": "DealCard",
+      "id": "deal_https://skiplagged.com/flights/IBZ/ATH/2026-11-18",
+      "destination": {
+        "city": "Spata-Artemida",
+        "region": "Greece",
+        "airport": "ATH"
+      },
+      "price": {
+        "amount": 179,
+        "currency": "USD"
+      },
+      "flightType": "Standard",
+      "description": "Great deal to Spata-Artemida",
+      "deepLink": "https://skiplagged.com/flights/IBZ/ATH/2026-11-18?utm_source=mcp&utm_medium=ai&utm_campaign=skiplagged_mcp"
+    },
+    {
+      "type": "DealCard",
+      "id": "deal_https://skiplagged.com/flights/IBZ/BUD/2026-11-18",
+      "destination": {
+        "city": "Budapest",
+        "region": "Hungary",
+        "airport": "BUD"
+      },
+      "price": {
+        "amount": 211,
+        "currency": "USD"
+      },
+      "flightType": "Standard",
+      "description": "Great deal to Budapest",
+      "deepLink": "https://skiplagged.com/flights/IBZ/BUD/2026-11-18?utm_source=mcp&utm_medium=ai&utm_campaign=skiplagged_mcp"
+    },
+    {
+      "type": "DealCard",
+      "id": "deal_https://skiplagged.com/flights/IBZ/OTP/2026-11-18",
+      "destination": {
+        "city": "Otopeni",
+        "region": "Romania",
+        "airport": "OTP"
+      },
+      "price": {
+        "amount": 221,
+        "currency": "USD"
+      },
+      "flightType": "Standard",
+      "description": "Great deal to Otopeni",
+      "deepLink": "https://skiplagged.com/flights/IBZ/OTP/2026-11-18?utm_source=mcp&utm_medium=ai&utm_campaign=skiplagged_mcp"
+    },
+    {
+      "type": "DealCard",
+      "id": "deal_https://skiplagged.com/flights/IBZ/LUX/2026-11-18",
+      "destination": {
+        "city": "Luxembourg",
+        "region": "Luxembourg",
+        "airport": "LUX"
+      },
+      "price": {
+        "amount": 225,
+        "currency": "USD"
+      },
+      "flightType": "Standard",
+      "description": "Great deal to Luxembourg",
+      "deepLink": "https://skiplagged.com/flights/IBZ/LUX/2026-11-18?utm_source=mcp&utm_medium=ai&utm_campaign=skiplagged_mcp"
+    },
+    {
+      "type": "DealCard",
+      "id": "deal_https://skiplagged.com/flights/IBZ/IST/2026-11-18",
+      "destination": {
+        "city": "Arnavutk\u00f6y, Istanbul",
+        "region": "Turkey",
+        "airport": "IST"
+      },
+      "price": {
+        "amount": 240,
+        "currency": "USD"
+      },
+      "flightType": "Standard",
+      "description": "Great deal to Arnavutk\u00f6y, Istanbul",
+      "deepLink": "https://skiplagged.com/flights/IBZ/IST/2026-11-18?utm_source=mcp&utm_medium=ai&utm_campaign=skiplagged_mcp"
+    },
+    {
+      "type": "DealCard",
+      "id": "deal_https://skiplagged.com/flights/IBZ/AYT/2026-11-18",
+      "destination": {
+        "city": "Antalya",
+        "region": "Turkey",
+        "airport": "AYT"
+      },
+      "price": {
+        "amount": 292,
+        "currency": "USD"
+      },
+      "flightType": "Standard",
+      "description": "Great deal to Antalya",
+      "deepLink": "https://skiplagged.com/flights/IBZ/AYT/2026-11-18?utm_source=mcp&utm_medium=ai&utm_campaign=skiplagged_mcp"
+    },
+    {
+      "type": "DealCard",
+      "id": "deal_https://skiplagged.com/flights/IBZ/NAV/2026-11-18",
+      "destination": {
+        "city": "Nev\u015fehir",
+        "region": "Turkey",
+        "airport": "NAV"
+      },
+      "price": {
+        "amount": 292,
+        "currency": "USD"
+      },
+      "flightType": "Standard",
+      "description": "Great deal to Nev\u015fehir",
+      "deepLink": "https://skiplagged.com/flights/IBZ/NAV/2026-11-18?utm_source=mcp&utm_medium=ai&utm_campaign=skiplagged_mcp"
+    },
+    {
+      "type": "DealCard",
+      "id": "deal_https://skiplagged.com/flights/IBZ/ORK/2026-11-18",
+      "destination": {
+        "city": "Cork",
+        "region": "Ireland",
+        "airport": "ORK"
+      },
+      "price": {
+        "amount": 296,
+        "currency": "USD"
+      },
+      "flightType": "Standard",
+      "description": "Great deal to Cork",
+      "deepLink": "https://skiplagged.com/flights/IBZ/ORK/2026-11-18?utm_source=mcp&utm_medium=ai&utm_campaign=skiplagged_mcp"
+    },
+    {
+      "type": "DealCard",
+      "id": "deal_https://skiplagged.com/flights/IBZ/RMO/2026-11-18",
+      "destination": {
+        "city": "Chi\u015fin\u0103u",
+        "region": "Moldova",
+        "airport": "RMO"
+      },
+      "price": {
+        "amount": 301,
+        "currency": "USD"
+      },
+      "flightType": "Standard",
+      "description": "Great deal to Chi\u015fin\u0103u",
+      "deepLink": "https://skiplagged.com/flights/IBZ/RMO/2026-11-18?utm_source=mcp&utm_medium=ai&utm_campaign=skiplagged_mcp"
+    },
+    {
+      "type": "DealCard",
+      "id": "deal_https://skiplagged.com/flights/IBZ/NAP/2026-11-18",
+      "destination": {
+        "city": "Napoli",
+        "region": "Italy",
+        "airport": "NAP"
+      },
+      "price": {
+        "amount": 317,
+        "currency": "USD"
+      },
+      "flightType": "Standard",
+      "description": "Great deal to Napoli",
+      "deepLink": "https://skiplagged.com/flights/IBZ/NAP/2026-11-18?utm_source=mcp&utm_medium=ai&utm_campaign=skiplagged_mcp"
+    },
+    {
+      "type": "DealCard",
+      "id": "deal_https://skiplagged.com/flights/IBZ/GOA/2026-11-18",
+      "destination": {
+        "city": "Genova GE",
+        "region": "Italy",
+        "airport": "GOA"
+      },
+      "price": {
+        "amount": 333,
+        "currency": "USD"
+      },
+      "flightType": "Standard",
+      "description": "Great deal to Genova GE",
+      "deepLink": "https://skiplagged.com/flights/IBZ/GOA/2026-11-18?utm_source=mcp&utm_medium=ai&utm_campaign=skiplagged_mcp"
+    },
+    {
+      "type": "DealCard",
+      "id": "deal_https://skiplagged.com/flights/IBZ/KRK/2026-11-18",
+      "destination": {
+        "city": "Balice",
+        "region": "Poland",
+        "airport": "KRK"
+      },
+      "price": {
+        "amount": 350,
+        "currency": "USD"
+      },
+      "flightType": "Standard",
+      "description": "Great deal to Balice",
+      "deepLink": "https://skiplagged.com/flights/IBZ/KRK/2026-11-18?utm_source=mcp&utm_medium=ai&utm_campaign=skiplagged_mcp"
+    }
+  ],
+  "pagination": {
+    "totalAvailable": 41,
+    "currentlyShowing": 41,
+    "offset": 0,
+    "limit": 41,
+    "hasMoreResults": false
+  }
+}

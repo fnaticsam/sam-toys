@@ -1,0 +1,60 @@
+{
+  "searchUrl": "https://skiplagged.com/flights/LHR/BKK/2026-11-18?utm_source=mcp&utm_medium=ai&utm_campaign=skiplagged_mcp",
+  "flights": [
+    {
+      "type": "FlightCard",
+      "id": "LHR-BKK-2026-11-18-trip=QR110-QR832",
+      "airlines": "Qatar Airways",
+      "departure": {
+        "airport": "LHR",
+        "dateTime": "2026-11-18T15:30:00+00:00"
+      },
+      "arrival": {
+        "airport": "BKK",
+        "dateTime": "2026-11-19T18:50:00+07:00"
+      },
+      "duration": "20h 20m",
+      "layovers": 1,
+      "price": {
+        "amount": 560,
+        "currency": "USD"
+      },
+      "deepLink": "https://skiplagged.com/flights/LHR/BKK/2026-11-18?utm_source=mcp&utm_medium=ai&utm_campaign=skiplagged_mcp#trip=QR110-QR832",
+      "attributes": [
+        "standard",
+        "one-stop"
+      ]
+    },
+    {
+      "type": "FlightCard",
+      "id": "LHR-BKK-2026-11-18-trip=QR8-QR832",
+      "airlines": "Qatar Airways",
+      "departure": {
+        "airport": "LHR",
+        "dateTime": "2026-11-18T14:55:00+00:00"
+      },
+      "arrival": {
+        "airport": "BKK",
+        "dateTime": "2026-11-19T18:50:00+07:00"
+      },
+      "duration": "20h 55m",
+      "layovers": 1,
+      "price": {
+        "amount": 560,
+        "currency": "USD"
+      },
+      "deepLink": "https://skiplagged.com/flights/LHR/BKK/2026-11-18?utm_source=mcp&utm_medium=ai&utm_campaign=skiplagged_mcp#trip=QR8-QR832",
+      "attributes": [
+        "standard",
+        "one-stop"
+      ]
+    }
+  ],
+  "pagination": {
+    "totalAvailable": 31,
+    "currentlyShowing": 2,
+    "offset": 0,
+    "limit": 2,
+    "hasMoreResults": true
+  }
+}

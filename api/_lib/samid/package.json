@@ -1,0 +1,8 @@
+{
+  "name": "sam-toys-flights-samid",
+  "version": "1.0.0",
+  "private": true,
+  "dependencies": {
+    "jose": "6.2.3"
+  }
+}

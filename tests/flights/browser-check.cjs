@@ -112,7 +112,7 @@ async function main() {
       });
       await check(`${name}: highlighted suggestion wins on Enter`, async () => {
         await dates(); await page.locator('#to').fill('Tokyo');
-        await page.locator('#to').press('ArrowDown'); await page.locator('#to').press('ArrowDown');
+        await page.locator('#to').press('ArrowDown'); await page.locator('#to').press('ArrowDown'); await page.locator('#to').press('ArrowDown');
         assert.equal(await page.locator('#to').getAttribute('aria-activedescendant'), 'suggest-NRT');
         await page.locator('#to').press('Enter'); await page.locator('.fc').first().waitFor();
         assert.equal(searchParams().get('destination'), 'NRT');
@@ -158,7 +158,7 @@ async function main() {
         assert.equal(await page.locator('.fc .line svg').count(), 4);
         assert.equal(await page.locator('[role="tab"]').count(), 4);
         assert.equal(await page.locator('[data-sort="value"]').getAttribute('aria-selected'), 'true');
-        assert.equal(searchParams().get('origin'), 'LHR,LGW,LCY,STN,LTN,SEN');
+        assert.equal(searchParams().get('origin'), 'LON');
         assert.equal(searchParams().get('earningOnly'), 'true');
         assert.equal(searchParams().get('fareClass'), 'economy');
         assert.equal(searchParams().has('returnDate'), false); await snap('results');
@@ -238,6 +238,7 @@ async function main() {
         await snap('filters'); await page.locator('#freset').click(); await openFilters();
         for(const airline of await page.locator('.fs input[type="checkbox"]').all())await airline.uncheck();
         assert.match(await page.locator('#cards').innerText(),/No flights match these filters/);
+        assert.equal(await page.locator('h1').innerText(),'No flights match these filters');
         assert.equal(await page.locator('#fcol').count(),1);assert.equal(await page.locator('[role="tab"]').count(),4);
         if(width<700)await page.locator('#fshow').click();
         await page.locator('#freset2').click();await page.locator('.fc').first().waitFor();await openFilters();
@@ -318,7 +319,23 @@ async function main() {
         assert(!cities.includes('London')); await snap('anywhere');
         await page.locator('.row').filter({hasText:'Madrid'}).first().click(); await page.locator('.fc').first().waitFor();
         assert.equal(searchParams().get('destination'),'MAD');
-        assert.equal(searchParams().get('origin'),'LHR,LGW,LCY,STN,LTN,SEN');
+        assert.equal(searchParams().get('origin'),'LON');
+      });
+      await check(`${name}: city groups work on both sides and keep city names in results`, async () => {
+        await showSearch(); await dates();
+        await page.locator('#fromBtn').click();
+        assert.match(await page.locator('#fromPop').innerText(), /New York.*all airports/s);
+        await page.locator('[data-from="NYC"]').click();
+        await page.locator('#to').fill('London');
+        assert.match(await page.locator('[data-to="LON"]').innerText(), /London.*all airports/s);
+        await page.locator('#to').press('Enter'); await page.locator('.fc').first().waitFor();
+        assert.equal(searchParams().get('origin'),'NYC');
+        assert.equal(searchParams().get('destination'),'LON');
+        assert.equal(searchParams().get('limit'),'100');
+        assert.match(await page.locator('a.back').innerText(), /New York → London/);
+        await snap('city-results');
+        await showSearch(); await page.locator('#fromBtn').click();
+        await page.locator('[data-from="LON"]').click();
       });
       await check(`${name}: same-city groups explain why go and Enter cannot search`, async () => {
         for (const [origin, target] of [['LON', 'London Heathrow'], ['NYC', 'JFK']]) {
@@ -343,7 +360,7 @@ async function main() {
         await showSearch(); await dates(); await page.locator('#cabin').selectOption({ label: 'Business' });
         await page.locator('#to').fill('Madrid'); await search();
         assert.equal(searchParams().get('fareClass'), 'business');
-        assert.equal(searchParams().get('origin'), 'LHR,LGW,LCY,STN,LTN,SEN');
+        assert.equal(searchParams().get('origin'), 'LON');
       });
       await check(`${name}: no uncaught page errors`,async()=>assert.deepEqual(pageErrors,[]));
       await context.close();

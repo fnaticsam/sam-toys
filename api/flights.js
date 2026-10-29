@@ -6,6 +6,7 @@ const { DEFAULT_ORIGINS, CARRIERS, SOURCES } = require('./_lib/flights/carriers'
 const { FX, RULES_DATE, ELIGIBLE_SPEND_FRACTION, collectionYear, goldThreshold, BONUS_SOURCE, GOLD_SOURCE } = require('./_lib/flights/earn');
 const { normalizeFlight, safeLink } = require('./_lib/flights/normalize');
 const airports = require('./_lib/flights/airports.json');
+const { CITY_GROUPS } = require('./_lib/flights/cities');
 const { rank } = require('./_lib/flights/rank');
 
 // Open API. Origin is browser defence in depth, not authentication. Vercel
@@ -124,7 +125,7 @@ function createHandler({ callTool = createClient(), now = Date.now,
         while (cursor < plan.calls.length) {
           const index = cursor++;
           const { origin, scope, name, args } = plan.calls[index];
-          const source = { origin, ...(scope ? { scope } : {}) };
+          const source = { origin, ...(scope ? { scope } : {}), ...(args.maxStops === 'none' ? { maxStops: 'none' } : {}) };
           if (controller.signal.aborted) { failures.push({ ...source, code: 'upstream-timeout' }); continue; }
           try {
             providerCalls++;
@@ -136,7 +137,7 @@ function createHandler({ callTool = createClient(), now = Date.now,
               const normalized = data.flights.map((f) => normalizeFlight(f, { ...query, origin }));
               batches[index] = normalized;
               const p = data.pagination;
-              pages.push({ ...source, offset: query.offset, limit: query.limit,
+              pages.push({ ...source, offset: args.offset, limit: args.limit,
                 totalAvailable: Number.isInteger(p?.totalAvailable) ? p.totalAvailable : null,
                 hasMoreResults: p?.hasMoreResults === true });
             } else {
@@ -149,6 +150,28 @@ function createHandler({ callTool = createClient(), now = Date.now,
         }
       }
       await Promise.all(Array.from({ length: Math.min(3, plan.calls.length) }, worker));
+      // Price ordering can fill even a 100-row page with connecting fares.
+      // Probe once for nonstops when a returned route has none. This also
+      // covers routes without a known timetable; an empty probe is harmless.
+      // Primary/union pages retain priority and the same seven-call budget.
+      if (query.action === 'search' && query.maxStops !== 'none') {
+        const origin = query.origins.find((origin) => {
+          const flights = plan.calls.flatMap((call, i) => call.origin === origin ?
+            (batches[i] || []).flatMap(item => item.flight ? [item.flight] : []) : []);
+          return flights.length > 0 && !flights.some(f => f.legs.every(l =>
+            l.units.filter(u => u.flown).reduce((n, u) => n + u.flightNumbers.length, 0) === 1));
+        });
+        if (origin) {
+          const base = plan.calls.find(call => call.origin === origin);
+          const source = { origin, ...(base.scope ? { scope: base.scope } : {}), maxStops: 'none' };
+          if (providerCalls < 7 && !controller.signal.aborted) {
+            plan.calls.push({ ...base, args: { ...base.args, maxStops: 'none', limit: 100, offset: 0 } });
+            await worker();
+          } else {
+            failures.push({ ...source, code: controller.signal.aborted ? 'upstream-timeout' : 'provider-call-cap' });
+          }
+        }
+      }
       // Merge in plan order so the eligible copy wins even when the broad
       // request completes first. Never truncate the union back to query.limit.
       const seen = new Set();
@@ -167,7 +190,7 @@ function createHandler({ callTool = createClient(), now = Date.now,
       const body = { action: query.action, results: sorted, partial: failures.length > 0,
         failures, excluded, pages, meta: {
           airports: Object.fromEntries([...new Set(results.flatMap(r => [r.origin, r.destination, r.ticketedTo,
-            ...(r.legs || []).flatMap(l => l.units.flatMap(u => [u.from, u.to]))]))].filter(c => airports[c]?.[3]).map(c => [c, airports[c][3]])),
+            ...(r.legs || []).flatMap(l => l.units.flatMap(u => [u.from, u.to]))]))].filter(c => CITY_GROUPS[c]?.name || airports[c]?.[3]).map(c => [c, CITY_GROUPS[c]?.name || airports[c][3]])),
           defaultOrigins: DEFAULT_ORIGINS, carriers: Object.values(CARRIERS), rulesAsOf: RULES_DATE,
           fx: FX, eligibleSpendFraction: ELIGIBLE_SPEND_FRACTION, memberTier: 'Gold',
           collectionYear: collectionYear(query.departureDate), goldThreshold: goldThreshold(query.departureDate),

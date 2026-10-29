@@ -37,7 +37,7 @@ function parseInput(rawUrl, now = Date.now()) {
     if (!/^\d+$/.test(text) || Number(text) < min || Number(text) > max) bad(`Invalid ${key}.`);
     return Number(text);
   };
-  const limit = integer('limit', 25, 1, 100), offset = integer('offset', 0, 0, 99);
+  const limit = integer('limit', 100, 1, 100), offset = integer('offset', 0, 0, 99);
   const maxStops = params.get('maxStops') || 'many';
   if (!['none', 'one', 'many'].includes(maxStops)) bad('Invalid maxStops.');
   const hidden = params.get('includeHiddenCity');

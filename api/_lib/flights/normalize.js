@@ -1,5 +1,6 @@
 const { checkSegment, parseFlightNumber } = require('./carriers');
 const { estimate, FX } = require('./earn');
+const { matchesAirport } = require('./cities');
 const IATA = /^[A-Z]{3}$/;
 function safeLink(value) {
   try {
@@ -21,7 +22,7 @@ function normalizeFlight(flight, query) {
   const groups = trip.get('trip').toUpperCase().split(',').map((g) => g.split('-'));
   const summaries = [flight, ...(flight.returnFlight ? [flight.returnFlight] : [])];
   const hiddenCity = summaries.some((s) => Array.isArray(s.attributes) && s.attributes.some((a) => typeof a === 'string' && /hidden.?city/i.test(a))) ||
-    !!(endpoint(flight.arrival) && flight.arrival.airport !== query.destination);
+    !!(endpoint(flight.arrival) && !matchesAirport(query.destination, flight.arrival.airport));
   // A requested return forbids hidden-city fares even if the provider omits
   // its return leg or ignores includeHiddenCity:false.
   if (hiddenCity && query.returnDate) return fail('hidden-city-return-cannot-be-assumed-flown');
@@ -45,7 +46,7 @@ function normalizeFlight(flight, query) {
     const from = i === 0 ? query.origin : query.destination;
     const to = i === 0 ? query.destination : query.origin;
     const date = i === 0 ? query.departureDate : query.returnDate;
-    if (departure.airport !== from || departure.dateTime.slice(0, 10) !== date || (!hiddenCity && arrival.airport !== to)) return fail('route-does-not-match-search');
+    if (!matchesAirport(from, departure.airport) || departure.dateTime.slice(0, 10) !== date || (!hiddenCity && !matchesAirport(to, arrival.airport))) return fail('route-does-not-match-search');
     const detailed = Array.isArray(s.segments) && s.segments.length > 0;
     if (hiddenCity && !detailed) return fail('hidden-city-flown-route-unavailable');
     if (detailed && s.segments.length !== numbers.length) return fail('incomplete-flight-numbers');
@@ -60,7 +61,7 @@ function normalizeFlight(flight, query) {
       bookingClassKnown &&= typeof segment.bookingClass === 'string' && /^[A-Z]$/.test(segment.bookingClass);
       if (detailed) {
         const a = segment.origin || segment.departure?.airport, b = segment.destination || segment.arrival?.airport;
-        if (!IATA.test(a) || !IATA.test(b) || (j === 0 ? a !== from : a !== units[j - 1].to)) return fail('disconnected-segments');
+        if (!IATA.test(a) || !IATA.test(b) || (j === 0 ? a !== departure.airport : a !== units[j - 1].to)) return fail('disconnected-segments');
         const segmentDate = segment.departure?.dateTime?.slice(0, 10) || date;
         if (!/^\d{4}-\d{2}-\d{2}$/.test(segmentDate) || segmentDate < date) return fail('invalid-segment-date');
         units.push({ from: a, to: b, date: segmentDate, flightNumbers: [parseFlightNumber(numbers[j]).flightNumber],
@@ -72,17 +73,17 @@ function normalizeFlight(flight, query) {
     }
     if (detailed) {
       if (units[units.length - 1].to !== arrival.airport) return fail('route-does-not-match-search');
-      const destinationIndex = units.findIndex((u) => u.to === to);
+      const destinationIndex = units.findIndex((u) => matchesAirport(to, u.to));
       if (destinationIndex < 0 || (!hiddenCity && destinationIndex !== units.length - 1)) return fail('destination-not-reached');
       // All booked prefixes were checked above; credit only the prefix of the
       // itinerary actually flown to the searched hidden-city destination.
       units.forEach((u, j) => { u.flown = j <= destinationIndex; });
-      if (hiddenCity) flownArrival = endpoint(s.segments[destinationIndex].arrival) || { airport: to, dateTime: null };
+      if (hiddenCity) flownArrival = endpoint(s.segments[destinationIndex].arrival) || { airport: units[destinationIndex].to, dateTime: null };
     } else {
-      units.push({ from, to, date, flightNumbers: numbers.map((n) => parseFlightNumber(n).flightNumber),
+      units.push({ from: departure.airport, to: arrival.airport, date, flightNumbers: numbers.map((n) => parseFlightNumber(n).flightNumber),
         departure, arrival, flown: true, opaque: numbers.length > 1 });
     }
-    legs.push({ from, to, date, units });
+    legs.push({ from: departure.airport, to: units.findLast((u) => u.flown).to, date, units });
   }
   const itinerary = { legs, hiddenCity };
   const earns = nonEarningReasons.size === 0;
@@ -92,7 +93,7 @@ function normalizeFlight(flight, query) {
     origin: query.origin, destination: query.destination,
     departure: endpoint(flight.departure), arrival: flownArrival,
     bookedArrival: hiddenCity ? endpoint(flight.arrival) : null,
-    ticketedTo: flight.arrival.airport, leaveAt: query.destination,
+    ticketedTo: flight.arrival.airport, leaveAt: flownArrival.airport,
     returnFlight: flight.returnFlight ? { departure: endpoint(flight.returnFlight.departure), arrival: endpoint(flight.returnFlight.arrival) } : null,
     flightNumbers: groups.flat(), price: { amount: flight.price.amount, currency: 'USD' }, priceGbp, deepLink,
     // Untrusted display text only; consumers must escape it when rendering HTML.

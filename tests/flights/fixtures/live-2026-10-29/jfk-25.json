@@ -1,0 +1,651 @@
+{
+  "recordedAt": "2026-10-29T02:43:01.161Z",
+  "name": "sk_flights_search",
+  "args": {
+    "origin": "JFK",
+    "destination": "LHR",
+    "departureDate": "2026-11-05",
+    "fareClass": "economy",
+    "adults": 1,
+    "limit": 25,
+    "offset": 0,
+    "sort": "price",
+    "preferredAirlines": [
+      "AS",
+      "AA",
+      "BA",
+      "CX",
+      "FJ",
+      "AY",
+      "IB",
+      "JL",
+      "MH",
+      "WY",
+      "QF",
+      "QR",
+      "AT",
+      "RJ",
+      "UL",
+      "EI",
+      "EA",
+      "I2",
+      "NU"
+    ],
+    "includeHiddenCity": true,
+    "includeVirtualInterlining": false,
+    "includeStandard": true,
+    "maxStops": "many"
+  },
+  "response": {
+    "searchUrl": "https://skiplagged.com/flights/JFK/LHR/2026-11-05?utm_source=mcp&utm_medium=ai&utm_campaign=skiplagged_mcp",
+    "flights": [
+      {
+        "type": "FlightCard",
+        "id": "JFK-LHR-2026-11-05-trip=AY16-AY1337",
+        "airlines": "Finnair",
+        "departure": {
+          "airport": "JFK",
+          "dateTime": "2026-11-05T22:45:00-05:00"
+        },
+        "arrival": {
+          "airport": "LHR",
+          "dateTime": "2026-11-06T17:00:00+00:00"
+        },
+        "duration": "13h 15m",
+        "layovers": 1,
+        "price": {
+          "amount": 358,
+          "currency": "USD"
+        },
+        "deepLink": "https://skiplagged.com/flights/JFK/LHR/2026-11-05?utm_source=mcp&utm_medium=ai&utm_campaign=skiplagged_mcp#trip=AY16-AY1337",
+        "attributes": [
+          "standard",
+          "one-stop"
+        ]
+      },
+      {
+        "type": "FlightCard",
+        "id": "JFK-LHR-2026-11-05-trip=EI106-EI158",
+        "airlines": "Aer Lingus",
+        "departure": {
+          "airport": "JFK",
+          "dateTime": "2026-11-05T21:15:00-05:00"
+        },
+        "arrival": {
+          "airport": "LHR",
+          "dateTime": "2026-11-06T11:25:00+00:00"
+        },
+        "duration": "9h 10m",
+        "layovers": 1,
+        "price": {
+          "amount": 371,
+          "currency": "USD"
+        },
+        "deepLink": "https://skiplagged.com/flights/JFK/LHR/2026-11-05?utm_source=mcp&utm_medium=ai&utm_campaign=skiplagged_mcp#trip=EI106-EI158",
+        "attributes": [
+          "standard",
+          "one-stop"
+        ]
+      },
+      {
+        "type": "FlightCard",
+        "id": "JFK-LHR-2026-11-05-trip=EI104-EI152",
+        "airlines": "Aer Lingus",
+        "departure": {
+          "airport": "JFK",
+          "dateTime": "2026-11-05T17:00:00-05:00"
+        },
+        "arrival": {
+          "airport": "LHR",
+          "dateTime": "2026-11-06T08:05:00+00:00"
+        },
+        "duration": "10h 5m",
+        "layovers": 1,
+        "price": {
+          "amount": 371,
+          "currency": "USD"
+        },
+        "deepLink": "https://skiplagged.com/flights/JFK/LHR/2026-11-05?utm_source=mcp&utm_medium=ai&utm_campaign=skiplagged_mcp#trip=EI104-EI152",
+        "attributes": [
+          "standard",
+          "one-stop"
+        ]
+      },
+      {
+        "type": "FlightCard",
+        "id": "JFK-LHR-2026-11-05-trip=EI108-EI156",
+        "airlines": "Aer Lingus",
+        "departure": {
+          "airport": "JFK",
+          "dateTime": "2026-11-05T19:25:00-05:00"
+        },
+        "arrival": {
+          "airport": "LHR",
+          "dateTime": "2026-11-06T10:10:00+00:00"
+        },
+        "duration": "9h 45m",
+        "layovers": 1,
+        "price": {
+          "amount": 371,
+          "currency": "USD"
+        },
+        "deepLink": "https://skiplagged.com/flights/JFK/LHR/2026-11-05?utm_source=mcp&utm_medium=ai&utm_campaign=skiplagged_mcp#trip=EI108-EI156",
+        "attributes": [
+          "standard",
+          "one-stop"
+        ]
+      },
+      {
+        "type": "FlightCard",
+        "id": "JFK-LHR-2026-11-05-trip=EI108-EI158",
+        "airlines": "Aer Lingus",
+        "departure": {
+          "airport": "JFK",
+          "dateTime": "2026-11-05T19:25:00-05:00"
+        },
+        "arrival": {
+          "airport": "LHR",
+          "dateTime": "2026-11-06T11:25:00+00:00"
+        },
+        "duration": "11h 0m",
+        "layovers": 1,
+        "price": {
+          "amount": 371,
+          "currency": "USD"
+        },
+        "deepLink": "https://skiplagged.com/flights/JFK/LHR/2026-11-05?utm_source=mcp&utm_medium=ai&utm_campaign=skiplagged_mcp#trip=EI108-EI158",
+        "attributes": [
+          "standard",
+          "one-stop"
+        ]
+      },
+      {
+        "type": "FlightCard",
+        "id": "JFK-LHR-2026-11-05-trip=AA142",
+        "airlines": "American Airlines",
+        "departure": {
+          "airport": "JFK",
+          "dateTime": "2026-11-05T10:10:00-05:00"
+        },
+        "arrival": {
+          "airport": "LHR",
+          "dateTime": "2026-11-05T22:10:00+00:00"
+        },
+        "duration": "7h 0m",
+        "layovers": 0,
+        "price": {
+          "amount": 373,
+          "currency": "USD"
+        },
+        "deepLink": "https://skiplagged.com/flights/JFK/LHR/2026-11-05?utm_source=mcp&utm_medium=ai&utm_campaign=skiplagged_mcp#trip=AA142",
+        "attributes": [
+          "standard",
+          "nonstop"
+        ]
+      },
+      {
+        "type": "FlightCard",
+        "id": "JFK-LHR-2026-11-05-trip=BA180",
+        "airlines": "British Airways",
+        "departure": {
+          "airport": "JFK",
+          "dateTime": "2026-11-05T17:50:00-05:00"
+        },
+        "arrival": {
+          "airport": "LHR",
+          "dateTime": "2026-11-06T05:50:00+00:00"
+        },
+        "duration": "7h 0m",
+        "layovers": 0,
+        "price": {
+          "amount": 373,
+          "currency": "USD"
+        },
+        "deepLink": "https://skiplagged.com/flights/JFK/LHR/2026-11-05?utm_source=mcp&utm_medium=ai&utm_campaign=skiplagged_mcp#trip=BA180",
+        "attributes": [
+          "standard",
+          "nonstop"
+        ]
+      },
+      {
+        "type": "FlightCard",
+        "id": "JFK-LHR-2026-11-05-trip=BA112",
+        "airlines": "British Airways",
+        "departure": {
+          "airport": "JFK",
+          "dateTime": "2026-11-05T18:10:00-05:00"
+        },
+        "arrival": {
+          "airport": "LHR",
+          "dateTime": "2026-11-06T06:15:00+00:00"
+        },
+        "duration": "7h 5m",
+        "layovers": 0,
+        "price": {
+          "amount": 373,
+          "currency": "USD"
+        },
+        "deepLink": "https://skiplagged.com/flights/JFK/LHR/2026-11-05?utm_source=mcp&utm_medium=ai&utm_campaign=skiplagged_mcp#trip=BA112",
+        "attributes": [
+          "standard",
+          "nonstop"
+        ]
+      },
+      {
+        "type": "FlightCard",
+        "id": "JFK-LHR-2026-11-05-trip=AA100",
+        "airlines": "American Airlines",
+        "departure": {
+          "airport": "JFK",
+          "dateTime": "2026-11-05T18:25:00-05:00"
+        },
+        "arrival": {
+          "airport": "LHR",
+          "dateTime": "2026-11-06T06:20:00+00:00"
+        },
+        "duration": "6h 55m",
+        "layovers": 0,
+        "price": {
+          "amount": 373,
+          "currency": "USD"
+        },
+        "deepLink": "https://skiplagged.com/flights/JFK/LHR/2026-11-05?utm_source=mcp&utm_medium=ai&utm_campaign=skiplagged_mcp#trip=AA100",
+        "attributes": [
+          "standard",
+          "nonstop"
+        ]
+      },
+      {
+        "type": "FlightCard",
+        "id": "JFK-LHR-2026-11-05-trip=BA174",
+        "airlines": "British Airways",
+        "departure": {
+          "airport": "JFK",
+          "dateTime": "2026-11-05T18:40:00-05:00"
+        },
+        "arrival": {
+          "airport": "LHR",
+          "dateTime": "2026-11-06T06:40:00+00:00"
+        },
+        "duration": "7h 0m",
+        "layovers": 0,
+        "price": {
+          "amount": 373,
+          "currency": "USD"
+        },
+        "deepLink": "https://skiplagged.com/flights/JFK/LHR/2026-11-05?utm_source=mcp&utm_medium=ai&utm_campaign=skiplagged_mcp#trip=BA174",
+        "attributes": [
+          "standard",
+          "nonstop"
+        ]
+      },
+      {
+        "type": "FlightCard",
+        "id": "JFK-LHR-2026-11-05-trip=BA176",
+        "airlines": "British Airways",
+        "departure": {
+          "airport": "JFK",
+          "dateTime": "2026-11-05T19:05:00-05:00"
+        },
+        "arrival": {
+          "airport": "LHR",
+          "dateTime": "2026-11-06T07:05:00+00:00"
+        },
+        "duration": "7h 0m",
+        "layovers": 0,
+        "price": {
+          "amount": 373,
+          "currency": "USD"
+        },
+        "deepLink": "https://skiplagged.com/flights/JFK/LHR/2026-11-05?utm_source=mcp&utm_medium=ai&utm_campaign=skiplagged_mcp#trip=BA176",
+        "attributes": [
+          "standard",
+          "nonstop"
+        ]
+      },
+      {
+        "type": "FlightCard",
+        "id": "JFK-LHR-2026-11-05-trip=BA172",
+        "airlines": "British Airways",
+        "departure": {
+          "airport": "JFK",
+          "dateTime": "2026-11-05T20:40:00-05:00"
+        },
+        "arrival": {
+          "airport": "LHR",
+          "dateTime": "2026-11-06T08:35:00+00:00"
+        },
+        "duration": "6h 55m",
+        "layovers": 0,
+        "price": {
+          "amount": 373,
+          "currency": "USD"
+        },
+        "deepLink": "https://skiplagged.com/flights/JFK/LHR/2026-11-05?utm_source=mcp&utm_medium=ai&utm_campaign=skiplagged_mcp#trip=BA172",
+        "attributes": [
+          "standard",
+          "nonstop"
+        ]
+      },
+      {
+        "type": "FlightCard",
+        "id": "JFK-LHR-2026-11-05-trip=AA4618-AA108",
+        "airlines": "American Airlines",
+        "departure": {
+          "airport": "JFK",
+          "dateTime": "2026-11-05T15:34:00-05:00"
+        },
+        "arrival": {
+          "airport": "LHR",
+          "dateTime": "2026-11-06T07:00:00+00:00"
+        },
+        "duration": "10h 26m",
+        "layovers": 1,
+        "price": {
+          "amount": 377,
+          "currency": "USD"
+        },
+        "deepLink": "https://skiplagged.com/flights/JFK/LHR/2026-11-05?utm_source=mcp&utm_medium=ai&utm_campaign=skiplagged_mcp#trip=AA4618-AA108",
+        "attributes": [
+          "standard",
+          "one-stop"
+        ]
+      },
+      {
+        "type": "FlightCard",
+        "id": "JFK-LHR-2026-11-05-trip=AA495-AA730",
+        "airlines": "American Airlines",
+        "departure": {
+          "airport": "JFK",
+          "dateTime": "2026-11-05T14:54:00-05:00"
+        },
+        "arrival": {
+          "airport": "LHR",
+          "dateTime": "2026-11-06T07:20:00+00:00"
+        },
+        "duration": "11h 26m",
+        "layovers": 1,
+        "price": {
+          "amount": 377,
+          "currency": "USD"
+        },
+        "deepLink": "https://skiplagged.com/flights/JFK/LHR/2026-11-05?utm_source=mcp&utm_medium=ai&utm_campaign=skiplagged_mcp#trip=AA495-AA730",
+        "attributes": [
+          "standard",
+          "one-stop"
+        ]
+      },
+      {
+        "type": "FlightCard",
+        "id": "JFK-LHR-2026-11-05-trip=AA2634-AA732",
+        "airlines": "American Airlines",
+        "departure": {
+          "airport": "JFK",
+          "dateTime": "2026-11-05T17:20:00-05:00"
+        },
+        "arrival": {
+          "airport": "LHR",
+          "dateTime": "2026-11-06T09:40:00+00:00"
+        },
+        "duration": "11h 20m",
+        "layovers": 1,
+        "price": {
+          "amount": 377,
+          "currency": "USD"
+        },
+        "deepLink": "https://skiplagged.com/flights/JFK/LHR/2026-11-05?utm_source=mcp&utm_medium=ai&utm_campaign=skiplagged_mcp#trip=AA2634-AA732",
+        "attributes": [
+          "standard",
+          "one-stop"
+        ]
+      },
+      {
+        "type": "FlightCard",
+        "id": "JFK-LHR-2026-11-05-trip=AA4501-AA174",
+        "airlines": "American Airlines",
+        "departure": {
+          "airport": "JFK",
+          "dateTime": "2026-11-05T17:29:00-05:00"
+        },
+        "arrival": {
+          "airport": "LHR",
+          "dateTime": "2026-11-06T09:20:00+00:00"
+        },
+        "duration": "10h 51m",
+        "layovers": 1,
+        "price": {
+          "amount": 377,
+          "currency": "USD"
+        },
+        "deepLink": "https://skiplagged.com/flights/JFK/LHR/2026-11-05?utm_source=mcp&utm_medium=ai&utm_campaign=skiplagged_mcp#trip=AA4501-AA174",
+        "attributes": [
+          "standard",
+          "one-stop"
+        ]
+      },
+      {
+        "type": "FlightCard",
+        "id": "JFK-LHR-2026-11-05-trip=AA3162-AA86",
+        "airlines": "American Airlines",
+        "departure": {
+          "airport": "JFK",
+          "dateTime": "2026-11-05T14:59:00-05:00"
+        },
+        "arrival": {
+          "airport": "LHR",
+          "dateTime": "2026-11-06T08:35:00+00:00"
+        },
+        "duration": "12h 36m",
+        "layovers": 1,
+        "price": {
+          "amount": 377,
+          "currency": "USD"
+        },
+        "deepLink": "https://skiplagged.com/flights/JFK/LHR/2026-11-05?utm_source=mcp&utm_medium=ai&utm_campaign=skiplagged_mcp#trip=AA3162-AA86",
+        "attributes": [
+          "standard",
+          "one-stop"
+        ]
+      },
+      {
+        "type": "FlightCard",
+        "id": "JFK-LHR-2026-11-05-trip=AA2680-AA730",
+        "airlines": "American Airlines",
+        "departure": {
+          "airport": "JFK",
+          "dateTime": "2026-11-05T12:30:00-05:00"
+        },
+        "arrival": {
+          "airport": "LHR",
+          "dateTime": "2026-11-06T07:20:00+00:00"
+        },
+        "duration": "13h 50m",
+        "layovers": 1,
+        "price": {
+          "amount": 377,
+          "currency": "USD"
+        },
+        "deepLink": "https://skiplagged.com/flights/JFK/LHR/2026-11-05?utm_source=mcp&utm_medium=ai&utm_campaign=skiplagged_mcp#trip=AA2680-AA730",
+        "attributes": [
+          "standard",
+          "one-stop"
+        ]
+      },
+      {
+        "type": "FlightCard",
+        "id": "JFK-LHR-2026-11-05-trip=AA495-AA732",
+        "airlines": "American Airlines",
+        "departure": {
+          "airport": "JFK",
+          "dateTime": "2026-11-05T14:54:00-05:00"
+        },
+        "arrival": {
+          "airport": "LHR",
+          "dateTime": "2026-11-06T09:40:00+00:00"
+        },
+        "duration": "13h 46m",
+        "layovers": 1,
+        "price": {
+          "amount": 377,
+          "currency": "USD"
+        },
+        "deepLink": "https://skiplagged.com/flights/JFK/LHR/2026-11-05?utm_source=mcp&utm_medium=ai&utm_campaign=skiplagged_mcp#trip=AA495-AA732",
+        "attributes": [
+          "standard",
+          "one-stop"
+        ]
+      },
+      {
+        "type": "FlightCard",
+        "id": "JFK-LHR-2026-11-05-trip=AA3162-AA90",
+        "airlines": "American Airlines",
+        "departure": {
+          "airport": "JFK",
+          "dateTime": "2026-11-05T14:59:00-05:00"
+        },
+        "arrival": {
+          "airport": "LHR",
+          "dateTime": "2026-11-06T10:25:00+00:00"
+        },
+        "duration": "14h 26m",
+        "layovers": 1,
+        "price": {
+          "amount": 377,
+          "currency": "USD"
+        },
+        "deepLink": "https://skiplagged.com/flights/JFK/LHR/2026-11-05?utm_source=mcp&utm_medium=ai&utm_campaign=skiplagged_mcp#trip=AA3162-AA90",
+        "attributes": [
+          "standard",
+          "one-stop"
+        ]
+      },
+      {
+        "type": "FlightCard",
+        "id": "JFK-LHR-2026-11-05-trip=AA2634-AA734",
+        "airlines": "American Airlines",
+        "departure": {
+          "airport": "JFK",
+          "dateTime": "2026-11-05T17:20:00-05:00"
+        },
+        "arrival": {
+          "airport": "LHR",
+          "dateTime": "2026-11-06T12:00:00+00:00"
+        },
+        "duration": "13h 40m",
+        "layovers": 1,
+        "price": {
+          "amount": 377,
+          "currency": "USD"
+        },
+        "deepLink": "https://skiplagged.com/flights/JFK/LHR/2026-11-05?utm_source=mcp&utm_medium=ai&utm_campaign=skiplagged_mcp#trip=AA2634-AA734",
+        "attributes": [
+          "standard",
+          "one-stop"
+        ]
+      },
+      {
+        "type": "FlightCard",
+        "id": "JFK-LHR-2026-11-05-trip=AA4707-AA108",
+        "airlines": "American Airlines",
+        "departure": {
+          "airport": "JFK",
+          "dateTime": "2026-11-05T10:55:00-05:00"
+        },
+        "arrival": {
+          "airport": "LHR",
+          "dateTime": "2026-11-06T07:00:00+00:00"
+        },
+        "duration": "15h 5m",
+        "layovers": 1,
+        "price": {
+          "amount": 377,
+          "currency": "USD"
+        },
+        "deepLink": "https://skiplagged.com/flights/JFK/LHR/2026-11-05?utm_source=mcp&utm_medium=ai&utm_campaign=skiplagged_mcp#trip=AA4707-AA108",
+        "attributes": [
+          "standard",
+          "one-stop"
+        ]
+      },
+      {
+        "type": "FlightCard",
+        "id": "JFK-LHR-2026-11-05-trip=AA2680-AA732",
+        "airlines": "American Airlines",
+        "departure": {
+          "airport": "JFK",
+          "dateTime": "2026-11-05T12:30:00-05:00"
+        },
+        "arrival": {
+          "airport": "LHR",
+          "dateTime": "2026-11-06T09:40:00+00:00"
+        },
+        "duration": "16h 10m",
+        "layovers": 1,
+        "price": {
+          "amount": 377,
+          "currency": "USD"
+        },
+        "deepLink": "https://skiplagged.com/flights/JFK/LHR/2026-11-05?utm_source=mcp&utm_medium=ai&utm_campaign=skiplagged_mcp#trip=AA2680-AA732",
+        "attributes": [
+          "standard",
+          "one-stop"
+        ]
+      },
+      {
+        "type": "FlightCard",
+        "id": "JFK-LHR-2026-11-05-trip=AA495-AA734",
+        "airlines": "American Airlines",
+        "departure": {
+          "airport": "JFK",
+          "dateTime": "2026-11-05T14:54:00-05:00"
+        },
+        "arrival": {
+          "airport": "LHR",
+          "dateTime": "2026-11-06T12:00:00+00:00"
+        },
+        "duration": "16h 6m",
+        "layovers": 1,
+        "price": {
+          "amount": 377,
+          "currency": "USD"
+        },
+        "deepLink": "https://skiplagged.com/flights/JFK/LHR/2026-11-05?utm_source=mcp&utm_medium=ai&utm_campaign=skiplagged_mcp#trip=AA495-AA734",
+        "attributes": [
+          "standard",
+          "one-stop"
+        ]
+      },
+      {
+        "type": "FlightCard",
+        "id": "JFK-LHR-2026-11-05-trip=AA4397-BA238",
+        "airlines": "American Airlines, British Airways",
+        "departure": {
+          "airport": "JFK",
+          "dateTime": "2026-11-05T22:30:00-05:00"
+        },
+        "arrival": {
+          "airport": "LHR",
+          "dateTime": "2026-11-06T19:00:00+00:00"
+        },
+        "duration": "15h 30m",
+        "layovers": 1,
+        "price": {
+          "amount": 377,
+          "currency": "USD"
+        },
+        "deepLink": "https://skiplagged.com/flights/JFK/LHR/2026-11-05?utm_source=mcp&utm_medium=ai&utm_campaign=skiplagged_mcp#trip=AA4397-BA238",
+        "attributes": [
+          "standard",
+          "one-stop"
+        ]
+      }
+    ],
+    "pagination": {
+      "totalAvailable": 42,
+      "currentlyShowing": 25,
+      "offset": 0,
+      "limit": 25,
+      "hasMoreResults": true
+    }
+  }
+}

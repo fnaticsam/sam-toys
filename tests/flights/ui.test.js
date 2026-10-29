@@ -41,6 +41,7 @@ function page({ saved, liveSaved, earningOnly, storageFailure = false, fetch } =
     setTimeout: () => 1, clearTimeout() {},
     fetch: fetch || (() => { throw new Error('Live network forbidden in flights UI tests'); }),
   });
+  vm.runInContext(fs.readFileSync(path.join(__dirname,'../../flights/cities.js'),'utf8'), context, { filename:'flights/cities.js' });
   vm.runInContext(script, context, { filename: 'flights/index.html' });
   return {
     run: code => vm.runInContext(code, context),
@@ -81,13 +82,14 @@ function searchControls(p, value) {
     enter: () => input.onkeydown({ key: 'Enter', preventDefault() {} }) };
 }
 
-test('UI API parameters use explicit London airports, cabin filters and real return dates', () => {
+test('UI API parameters use city codes once with the maximum provider limit, cabin filters and real return dates', () => {
   const p = page(); query(p);
   const params = action => new URLSearchParams(p.run(`params('${action}',S).toString()`));
-  assert.equal(params('search').get('origin'), 'LHR,LGW,LCY,STN,LTN,SEN');
+  assert.equal(params('search').get('origin'), 'LON');
+  assert.equal(params('search').get('limit'), '100');
   assert.equal(params('search').has('returnDate'), false);
   p.run("S.to='LHR'");
-  assert.equal(params('search').get('origin'), 'LGW,LCY,STN,LTN,SEN');
+  assert.equal(params('search').get('origin'), 'LON');
   for (const [label, value] of [['Economy','economy'],['Premium economy','premium'],['Business','business'],['First','first']]) {
     p.put('label', label); p.run('S.cabin=label');
     assert.equal(params('search').get('fareClass'), value);
@@ -96,9 +98,11 @@ test('UI API parameters use explicit London airports, cabin filters and real ret
   assert.equal(params('anywhere').get('origin'), 'IBZ');
   assert.equal(params('anywhere').has('destination'), false);
   assert.equal(params('anywhere').get('returnDate'), '2026-11-21');
+  assert.equal(params('anywhere').has('limit'), false);
   p.run("S.to='MAD'");
   assert.equal(params('search').get('returnDate'), '2026-11-21');
   assert.equal(params('flex').has('fareClass'), false);
+  assert.equal(params('flex').has('limit'), false);
 });
 
 test('calendar taps select one way, later return, earlier replacement, and clear dates', () => {
@@ -511,7 +515,7 @@ test('opaque connected itinerary counts stops and labels the connection without 
 
 test('go and Enter resolve typed city names and IATA codes without choosing a suggestion', async () => {
   for (const method of ['submit', 'enter']) {
-    for (const [value, from, expected] of [['London Heathrow', 'IBZ', 'LHR'], [' madrid ', 'LON', 'MAD'], ['jfk', 'LON', 'JFK'], ['New York', 'LON', 'JFK'], ['NYC', 'LON', 'JFK'], ['Anywhere', 'LON', 'ANY']]) {
+    for (const [value, from, expected] of [['London Heathrow', 'IBZ', 'LHR'], [' madrid ', 'LON', 'MAD'], ['jfk', 'LON', 'JFK'], ['New York', 'LON', 'NYC'], ['NYC', 'LON', 'NYC'], ['London', 'IBZ', 'LON'], ['Anywhere', 'LON', 'ANY']]) {
       const pending = deferredFetch(), p = page({ fetch: pending.fetch }); query(p, { from });
       const controls = searchControls(p, value);
       // The real input event must discard the previously selected destination.
@@ -539,7 +543,7 @@ test('Enter uses the keyboard-highlighted suggestion; go resolves the typed text
     for (let n = 0; n < 2; n++) controls.input.onkeydown({ key: 'ArrowDown', preventDefault() {} });
     assert.equal(controls.input.attributes.get('aria-activedescendant'), 'suggest-NRT');
     const completion = controls[method]();
-    assert.equal(new URL(pending.calls[0].url, 'https://sam.toys').searchParams.get('destination'), method === 'enter' ? 'NRT' : 'HND');
+    assert.equal(new URL(pending.calls[0].url, 'https://sam.toys').searchParams.get('destination'), method === 'enter' ? 'NRT' : 'TYO');
     p.run("go('#/gold')"); pending.calls[0].resolve(ok([])); await completion;
   }
 });
@@ -651,7 +655,7 @@ test('empty searches stand alone and All airlines retries the same route without
   assert.equal(pending.calls.length,1);
   const params=new URL(pending.calls[0].url,'https://sam.toys').searchParams;
   assert.equal(params.get('earningOnly'),'false');assert.equal(params.get('destination'),'MAD');
-  assert.equal(params.get('origin'),'LHR,LGW,LCY,STN,LTN,SEN');
+  assert.equal(params.get('origin'),'LON');
   pending.calls[0].resolve(ok([]));await completion;
   assert.doesNotMatch(p.run('vResults()'),/id="allAirlines"|id="fcol"/);
 });
@@ -697,4 +701,64 @@ test('phone filter sheet closes through Show, icon, Escape and backdrop and rest
     p.events.click({target:{closest:()=>p.elements['#fcol']}});assert.equal(isOpen(),true);
     close();assert.equal(isOpen(),false);assert.equal(focused,true);
   }
+});
+
+test('every supported city group appears on both sides and resolves to its city code', () => {
+  const { CITY_GROUPS } = require('../../flights/cities');
+  const p=page();
+  const from=p.run('fromPop()');
+  for(const [code,group] of Object.entries(CITY_GROUPS)) {
+    assert(from.includes(`data-from="${code}"`),`${code} in From menu`);
+    assert(from.includes(`${group.name} <span class="s">(all airports)</span>`),`${code} label`);
+    p.put('typed',group.name);
+    const suggestions=p.run('sugPop(typed)');
+    assert(suggestions.includes(`data-to="${code}"`),`${code} in destination suggestions`);
+    for(const value of [group.name,code]) {
+      p.put('typed',value);p.run("S.to='';draft=typed;resolveDestination()");
+      assert.equal(p.run('S.to'),code,value);
+    }
+    assert.equal(p.run(`placeName('${code}')`),group.name);
+  }
+  query(p,{from:'NYC',to:'LON'});
+  assert.match(p.run('backPill()'),/New York → London/);
+});
+
+test('new searches clear airline, stop and time filters while keeping the oneworld choice', async () => {
+  for(const earningOnly of [true,false]) {
+    const pending=deferredFetch(),p=page({fetch:pending.fetch});query(p,{earningOnly});
+    p.run("F.stops='0';F.dep=[8,11];F.arr=[13,16];F.air=new Set(['EI']);SORT='cheap'");
+    const completion=p.run('search()');
+    assert.deepEqual(p.json('F'),{stops:'any',dep:[0,24],arr:[0,24],air:null});
+    assert.equal(p.run('S.earningOnly'),earningOnly);
+    const request=new URL(pending.calls[0].url,'https://sam.toys').searchParams;
+    assert.equal(request.get('earningOnly'),String(earningOnly));
+    assert.equal(request.get('fareClass'),'economy');
+    assert.equal(request.get('limit'),'100');
+    p.run("go('#/gold')");pending.calls[0].resolve(ok([]));await completion;
+  }
+});
+
+test('results heading follows the first visible sorted flight and explicitly names an empty filtered list', async () => {
+  const data=await backend('/api/flights?origin=LHR&destination=MAD&departureDate=2026-11-18',searchFixture({origin:'LHR',destination:'MAD',departureDate:'2026-11-18'}));
+  const other=structuredClone(data.results[0]);
+  other.id='fixture-visible-AA';other.flightNumbers=['AA100'];other.priceGbp=300;other.estimate.tierPoints=200;
+  for(const leg of other.legs)for(const unit of leg.units)unit.flightNumbers=['AA100'];
+  data.results[0].priceGbp=100;data.results[0].estimate.tierPoints=100;
+  data.results=[data.results[0],other];
+  const p=page();query(p);p.put('data',data);p.run('response=data');
+  const first=p.json('visibleFares()[0]');
+  p.put('hiddenCarrier',first.flightNumbers[0].slice(0,2));
+  p.run('F.air=new Set(fares().map(carrierOf).filter(c=>c!==hiddenCarrier))');
+  assert(p.run('visibleFares().length')>0,'fixture has another carrier');
+  const next=p.run('flightNumber(flightGroups(visibleFares()[0])[0][0])');
+  assert(p.run('resultsTitle()').startsWith(next));
+  assert(!p.run('resultsTitle()').startsWith(p.run('flightNumber(data.results.find(f=>carrierOf(f)===hiddenCarrier).flightNumbers[0])')));
+  for(const id of ['#cards','#rcount','#fopen','#fshow','#app h1'])p.elements[id]={};
+  p.run("F.air=new Set();refreshResults()");
+  assert.equal(p.elements['#app h1'].innerHTML,'No flights match these filters');
+  assert.match(p.run('vResults()'),/<h1>No flights match these filters<\/h1>/);
+  assert.match(p.elements['#cards'].innerHTML,/Reset filters/);
+  p.run("resetFilters();SORT='cheap';refreshResults()");
+  assert.equal(p.elements['#app h1'].innerHTML,p.run('resultsTitle()'));
+  assert(p.run('resultsTitle()').startsWith(p.run('flightNumber(flightGroups(visibleFares()[0])[0][0])')));
 });

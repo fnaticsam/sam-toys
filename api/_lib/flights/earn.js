@@ -17,6 +17,9 @@ const GOLD_SOURCE = 'https://www.britishairways.com/content/the-british-airways-
 // Unknown booking class uses the lowest published eligible rate in its cabin;
 // an unlisted *known* class earns zero. Unsupported cabins remain unestimated.
 const ROWS = {
+  // EI rechecked against SOURCES.tierPoints on 2026-10-29: transatlantic
+  // economy also earns 4/7/15%, never the business 25% mileage rate. With
+  // an unknown economy booking class JFK–LHR is ~137 TP, not ~860 TP.
   EI: [['economy','AGOZ',4,25],['economy','QNF SVLMK'.replace(/ /g,''),7,50],['economy','YBH',15,100],['business','RI',25,150],['business','D',50,150],['business','JC',50,250]],
   AS: [['economy','QOGX',2,25],['economy','KMLVSN',3.5,50],['economy','YBH',7.5,100],['business','I',12.5,125],['business','JCD',25,125]],
   CX: [['economy','KLMNQSV',2,25],['economy','YBH',7.5,100],['premium','RE',6,100],['premium','W',12.5,110],['business','IP',12.5,125],['business','JCD',25,125],['first','A',20,150],['first','F',30,150]],

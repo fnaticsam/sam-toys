@@ -32,10 +32,17 @@ Search parameters:
 | --- | --- |
 | `destination` | Required IATA code. |
 | `fareClass` | `basic-economy`, `economy` (default), `premium`, `business`, `first`. A search filter, not proof of the ticket cabin. |
-| `limit`, `offset` | Per-origin provider page: 1–100 (default 25), 0–99 (default 0). |
+| `limit`, `offset` | Per-origin provider page: 1–100 (default 100), 0–99 (default 0). |
 | `maxStops` | Provider enum `none`, `one`, `many` (default). |
 | `includeHiddenCity` | Literal `true` or `false` (default true for one-way; always false when `returnDate` is set). |
 | `airlines` | Optional comma-separated subset of eligible marketing codes. Sent as `preferredAirlines: string[]`, exactly as tools/list specifies; final eligibility is still checked locally. With `earningOnly=false`, no default airline preference is sent; an explicit subset still applies. |
+
+City codes in the shared `flights/cities.js` catalogue (re-exported by
+`api/_lib/flights/cities.js`) are queried once, without expanding airports into
+provider calls. Both endpoints and return legs accept group members; individual
+airport codes stay exact. Actual airport endpoints drive mileage and hidden-city
+checks. Response `origin`/`destination` preserve the searched group and
+`meta.airports` supplies its city name.
 
 Search always asks the provider for price order, one adult, standard flights,
 and no virtual interlining. It ranks the returned candidates by unrounded
@@ -60,11 +67,22 @@ omits `preferredAirlines`. All other search arguments match between queries.
 There are at most **7 provider calls per request**, with at most **3 in flight**.
 Every origin's eligible query takes priority, then remaining capacity goes to
 unfiltered queries in origin order. An uncached all-airline search therefore
-uses `min(2 × origin count, 7)` calls, unless aborted before dispatch. Skipped
+uses `min(2 × origin count, 7)` initial calls, unless aborted before dispatch. Skipped
 unfiltered queries produce `partial:true` and a `provider-call-cap` failure;
 such responses are not cached. Union `pages` and failures identify `scope` as
 `eligible` or `all`; pagination totals describe each provider query, not a
-deduplicated combined total. `meta.providerCalls` records calls actually made
+deduplicated combined total. After the initial pages, if an origin has accepted fares but no itinerary
+with one flown sector on every leg, search makes at most **one** supplemental
+`maxStops=none`, `limit=100`, `offset=0` query for the first such origin. This
+bounded probe also covers routes whose nonstop timetable is unknown. Existing
+airline preferences and return/hidden-city safeguards are retained. It uses
+only remaining capacity within the same **7 total calls / 3 concurrent** caps;
+explicit nonstop requests are never probed again. Its deduplicated fares join
+the initial results, and its page/failure is marked `maxStops:"none"`. A failed
+or cap-skipped probe leaves the initial fares visible with `partial:true`,
+and the response is not cached. Empty initial results are not probed.
+
+`meta.providerCalls` records calls actually made
 to build the response (a cached response makes zero new calls).
 
 Anywhere accepts `fareClass` but no destination, airline or calendar options.
@@ -82,7 +100,7 @@ Successful envelope:
   "partial": false,
   "failures": [],
   "excluded": {},
-  "pages": [{"origin":"LHR","offset":0,"limit":25,"totalAvailable":14,"hasMoreResults":true}],
+  "pages": [{"origin":"LHR","offset":0,"limit":100,"totalAvailable":14,"hasMoreResults":true}],
   "meta": {
     "defaultOrigins": ["LHR","LGW","LCY","STN","LTN","SEN","IBZ"],
     "carriers": [],
@@ -315,8 +333,11 @@ payloads are logged and no automatic retries or discovery fan-out are added.
 from the same origin without a password or proxy. Vercel rewrites `/flights`
 and `/flights/` to the static page and gives the API 25 seconds.
 
-The page sends the six London airports explicitly (excluding the destination),
-or a selected airport. A first calendar tap selects one way; a later second tap
+The page sends the selected city code once (London defaults to `LON`),
+or a selected airport. City groups are available in both pickers. New searches
+reset stop/time/airline filters while keeping the persisted oneworld toggle;
+the results heading follows the first visible sorted fare, or explicitly says
+that no flights match the filters. A first calendar tap selects one way; a later second tap
 adds a return. It displays API totals and ranks positive earning estimates by
 GBP/TP without multiplying a return. Unavailable or zero estimates are excluded
 from the earning list. Turning off the persisted `oneworld only` filter includes
@@ -368,3 +389,39 @@ fixtures and labelled synthetic route/date/hidden-city mutations. It has an
 explicit static-file allowlist and never contacts Skiplagged. It requires a
 runtime permitted to bind loopback sockets and launch Chromium. The Node UI
 tests use the shipping inline script and real handler without either permission.
+
+## City/coverage regression evidence (29 October 2026)
+
+Four live `sk_flights_search` calls only, recorded with timestamps, exact
+arguments and response/error under `tests/flights/fixtures/live-2026-10-29/`:
+
+| Route (5 Nov 2026, economy) | Limit / stops | Provider rows | Nonstop rows | Accepted earning rows |
+| --- | --- | ---: | ---: | ---: |
+| NYC–LHR | 100 / many | 100 | 12 | 99 |
+| JFK–LHR | 25 / many | 25 | 7 | 25 |
+| JFK–LHR | 100 / many | 42 | 12 | 41 |
+| JFK–LHR | 100 / none | timeout (6 s) | unavailable | unavailable |
+
+The single NYC query returned JFK, EWR and LGA departures, confirming city-code
+querying without airport fan-out. A Condor-marketed DE/BA connection is excluded
+from each larger page. BA112, BA178 and AA100 appear in the 100-limit JFK page.
+The reported all-connections 25-row slice was not reproduced in this snapshot: it
+already had seven directs. Supplemental query success/union/caps are tested
+with synthetic selections of recorded rows; its live success remains unverified
+because call four timed out and the four-call research budget was not exceeded.
+The provider reports NYC `totalAvailable:107` but `hasMoreResults:false` for
+100 returned rows, so that upstream pagination is not evidence of completeness.
+All tests inject fixtures; none calls the live provider.
+
+BA's Aer Lingus/Emerald economy chart was rechecked on 29 October: **4%** of
+miles for A/G/O/Z, **7%** for Q/N/F/S/V/L/M/K and **15%** for Y/B/H. The existing
+chart is correct and unknown economy booking class keeps the 4% assumption,
+with an explicit warning that some actual classes may earn zero. JFK–LHR's
+3,442-mile direct-distance floor gives **137 TP**, or **136 TP** for synthetic
+JFK–SNN–LHR detailed sectors rounded down separately. **860 TP** matches the
+25% business assumption exactly; it is not a valid unknown-class economy
+estimate. UI economy parameters, request snapshots, cancellation and cabin cache
+separation are covered by tests; the original screen's cause cannot be established
+without its original request/result. At the £3,440 price implied by 860 × £4,
+137 TP would cost about **£25.11/TP**. No speculative chart-rate change was made.
+See the sourced BA chart above and `tests/flights/aer-lingus.test.js`.

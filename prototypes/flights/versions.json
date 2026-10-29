@@ -39,7 +39,8 @@
         "Design system is the light inverse of flick.fan (flicfix main 27229dd): same Geist type scale, 68px pill search with a round go button, label-left filter rows, 28px glass panels, pill controls; paper page, ink text and ink primary buttons, one warm accent used only for tier points.",
         "Results follow Sam's Skiplagged references (take-off/landing histograms with two-handle sliders, flight cards, Stops radios with from-prices): sort tabs Best value, Cheapest, Fastest, Most tier points; each card shows price and +TP together, then £/TP and Avios; filters sit in a side column on desktop and behind one Filters button on phone.",
         "Anywhere from London no longer lists London; city names are in English (Florence, Frankfurt, Munich, Lisbon).",
-        "Plane logo is now an ink glyph beside a flick-style 'flights.' wordmark; favicon matches."
+        "Plane logo is now an ink glyph beside a flick-style 'flights.' wordmark; favicon matches.",
+        "fix: search any route. Go and Enter always search: a typed city or code is used even when no suggestion was picked, the calendar closes, and anything that can't search says why. Routes without hand-made samples (New York → Heathrow, London → Tokyo, Ibiza → Heathrow) get generated oneworld and BA-partner fares."
       ],
       "fixed": []
     }

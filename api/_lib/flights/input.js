@@ -63,4 +63,20 @@ function toolInput(query, origin) {
     limit: q.limit, offset: q.offset, sort: 'price', ...(q.airlines.length ? { preferredAirlines: q.airlines } : {}),
     includeHiddenCity: !q.returnDate && q.includeHiddenCity, includeVirtualInterlining: false, includeStandard: true, maxStops: q.maxStops } };
 }
-module.exports = { InputError, validDate, parseInput, toolInput };
+function providerPlan(query) {
+  // Reserve one eligible search for every origin before adding broad searches.
+  // Discovery tools have no airline filter, so their query is already identical
+  // for either toggle value; do not spend calls repeating it.
+  const broaden = query.action === 'search' && !query.earningOnly;
+  const calls = query.origins.map((origin) => ({ origin,
+    ...(broaden ? { scope: 'eligible' } : {}),
+    ...toolInput(broaden ? { ...query, airlines: query.airlines.length ? query.airlines : ELIGIBLE_CODES } : query, origin),
+  }));
+  if (broaden) calls.push(...query.origins.map((origin) => ({ origin, scope: 'all',
+    ...toolInput({ ...query, airlines: [] }, origin),
+  })));
+  // Preserve the original maximum of seven provider calls per HTTP request.
+  return { calls: calls.slice(0, 7), skipped: calls.slice(7).map(({ origin, scope }) =>
+    ({ origin, scope, code: 'provider-call-cap' })) };
+}
+module.exports = { InputError, validDate, parseInput, toolInput, providerPlan };

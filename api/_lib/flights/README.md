@@ -51,6 +51,22 @@ failures instead produce `earns:false`, `eligibility:"non-earning"`, zero TP,
 null Avios and an empty earning breakdown. Structural checks, hidden-city
 safeguards and virtual-interlining exclusion still apply to all fares.
 
+All-airline search merges an eligible-carrier page and an unfiltered page for
+each origin, then deduplicates by normalized trip `id` before ranking. The
+eligible copy wins a duplicate regardless of completion order; the union is not
+truncated to `limit` (that limit applies separately to each upstream page).
+Explicit `airlines` selections constrain the eligible query; the broad query
+omits `preferredAirlines`. All other search arguments match between queries.
+There are at most **7 provider calls per request**, with at most **3 in flight**.
+Every origin's eligible query takes priority, then remaining capacity goes to
+unfiltered queries in origin order. An uncached all-airline search therefore
+uses `min(2 × origin count, 7)` calls, unless aborted before dispatch. Skipped
+unfiltered queries produce `partial:true` and a `provider-call-cap` failure;
+such responses are not cached. Union `pages` and failures identify `scope` as
+`eligible` or `all`; pagination totals describe each provider query, not a
+deduplicated combined total. `meta.providerCalls` records calls actually made
+to build the response (a cached response makes zero new calls).
+
 Anywhere accepts `fareClass` but no destination, airline or calendar options.
 Flex accepts `destination`, `mode=depart|return` (default depart), and
 `sort=date|price` (default date). `mode=return` requires `returnDate`. The provider
@@ -128,6 +144,9 @@ Both are **unfiltered discovery prices**, can include non-earning airlines, and
 have `meta.discoveryOnly:true` and `meta.ranking:null`. They cannot be used to
 claim a status bargain until the caller runs search for that route/date. There
 is no automatic discovery-to-search fan-out against the public MCP.
+Neither discovery tool accepts an airline filter in its provider schema, so
+both toggle values use the same single query per origin; duplicating it would
+not add earning candidates. Cache entries still distinguish `earningOnly`.
 
 Errors are `{ "error": "generic message" }`: 400 bad input, 403 cross-origin,
 405 method, 429 local throttle/concurrency, 502 provider/schema failure,

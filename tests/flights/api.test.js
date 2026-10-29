@@ -3,6 +3,7 @@ const assert = require('node:assert/strict');
 const { createHandler } = require('../../api/flights');
 const { UpstreamError } = require('../../api/_lib/flights/mcp');
 const fixtures = {search:require('./fixtures/search.json'),anywhere:require('./fixtures/anywhere.json'),flex:require('./fixtures/flex.json')};
+const allAirlines = require('./fixtures/all-airlines.cjs');
 global.fetch = () => { throw new Error('Live network forbidden in flights tests'); };
 const NOW=Date.parse('2026-10-28T12:00:00Z');
 const URL='/api/flights?origin=LHR&destination=MAD&departureDate=2026-11-18&returnDate=2026-11-21';
@@ -100,9 +101,10 @@ test('earningOnly separates cached responses, permits non-earners and never fabr
   assert.equal(earning.body.excluded['non-earning-or-unknown-flight-number'],1);
   await s.call(URL+'&earningOnly=true');assert.equal(calls.length,1);
   const all=await s.call(URL+'&earningOnly=false');
-  assert.equal(calls.length,2);
+  assert.equal(calls.length,3);
   assert.equal(all.statusCode,200);assert.equal(all.body.meta.earningOnly,false);
-  assert.equal(Object.hasOwn(calls[1].args,'preferredAirlines'),false);
+  assert.deepEqual(calls[1].args.preferredAirlines,calls[0].args.preferredAirlines);
+  assert.equal(Object.hasOwn(calls[2].args,'preferredAirlines'),false);
   assert(Array.isArray(calls[0].args.preferredAirlines));
   assert.equal(all.body.results.length,earning.body.results.length+1);
   const row=all.body.results.at(-1);
@@ -110,26 +112,135 @@ test('earningOnly separates cached responses, permits non-earners and never fabr
   assert.equal(row.airlines,'Ryanair');
   assert.equal(row.estimate.tierPoints,0);assert.equal(row.gbpPerTierPoint,null);
   assert.deepEqual(all.body.excluded,{});
-  await s.call(URL+'&earningOnly=false');assert.equal(calls.length,2);
-  await s.call();assert.equal(calls.length,2);
+  await s.call(URL+'&earningOnly=false');assert.equal(calls.length,3);
+  await s.call();assert.equal(calls.length,3);
+});
+
+const ALL_URL='/api/flights?origin=LHR&destination=JFK&departureDate=2026-11-18';
+test('all airlines unions disjoint top-N pages into a strict earning superset without truncation',async()=>{
+  const calls=[];
+  const s=setup({callTool:async(name,args)=>{
+    calls.push({name,args});return args.preferredAirlines ? allAirlines.eligible : allAirlines.all;
+  }});
+  const earning=(await s.call(ALL_URL)).body;
+  const all=(await s.call(ALL_URL+'&earningOnly=false')).body;
+  assert.equal(earning.results.length,25);
+  assert.equal(all.results.length,42);
+  assert.equal(all.partial,false);assert.equal(all.meta.providerCalls,2);
+  assert.deepEqual(all.results.filter(f=>f.earns),earning.results);
+  assert(all.results.slice(0,25).every(f=>f.earns===true));
+  assert(all.results.slice(25).every(f=>f.earns===false && f.estimate.tierPoints===0 && f.gbpPerTierPoint===null));
+  assert.deepEqual(all.pages.map(p=>p.scope).sort(),['all','eligible']);
+  assert.equal(calls.length,3);
+  assert.deepEqual(calls[1].args,calls[0].args);
+  const {preferredAirlines,...unfiltered}=calls[1].args;
+  assert.deepEqual(calls[2].args,unfiltered);
+});
+
+test('trip ids dedupe within and across queries; eligible copy wins regardless of completion order',async()=>{
+  const duplicate=structuredClone(allAirlines.eligible.flights[0]);
+  duplicate.price.amount=999;
+  let release, broadCompleted=false;
+  const pending=new Promise(resolve=>{release=resolve;});
+  const s=setup({callTool:async(_name,args)=>{
+    if(args.preferredAirlines) {
+      await pending;assert(broadCompleted);
+      return {flights:[...allAirlines.eligible.flights,allAirlines.eligible.flights[0]]};
+    }
+    broadCompleted=true;release();
+    return {flights:[duplicate,...allAirlines.all.flights,allAirlines.all.flights[0]]};
+  }});
+  const r=await s.call(ALL_URL+'&earningOnly=false');
+  assert.equal(r.body.results.length,42);
+  assert.equal(new Set(r.body.results.map(f=>f.id)).size,42);
+  assert.equal(r.body.results.find(f=>f.id===duplicate.id).price.amount,500);
+});
+
+test('all-airline planning preserves explicit eligible filters and all other provider arguments',async()=>{
+  const s=setup();
+  await s.call(URL+'&earningOnly=false&airlines=BA&offset=3&limit=10&fareClass=business&maxStops=one');
+  assert.equal(s.calls.length,2);
+  const [eligible,all]=s.calls.map(c=>c[1]);
+  assert.deepEqual(eligible.preferredAirlines,['BA']);
+  const {preferredAirlines,...rest}=eligible;
+  assert.deepEqual(all,rest);
+  assert.equal(all.offset,3);assert.equal(all.limit,10);assert.equal(all.fareClass,'business');assert.equal(all.maxStops,'one');
+});
+
+test('all-airline searches cap at seven calls, reserve eligible queries for every origin, and mark skipped broad queries partial',async()=>{
+  const origins=['LHR','LGW','LCY','STN','LTN','SEN','IBZ'];
+  for(let n=1;n<=7;n++) {
+    let active=0,peak=0;const calls=[];
+    const s=setup({callTool:async(_name,args)=>{
+      calls.push(args);active++;peak=Math.max(peak,active);
+      await new Promise(resolve=>setImmediate(resolve));active--;
+      const data=structuredClone(args.preferredAirlines?allAirlines.eligible:allAirlines.all);
+      for(const flight of data.flights) {
+        flight.departure.airport=args.origin;
+        flight.id=flight.id.replace('LHR',args.origin);
+        flight.deepLink=flight.deepLink.replace('LHR',args.origin);
+      }
+      return data;
+    }});
+    const url=ALL_URL.replace('origin=LHR',`origin=${origins.slice(0,n).join(',')}`)+'&earningOnly=false';
+    const r=await s.call(url);
+    assert.equal(r.statusCode,200);
+    assert.equal(calls.length,Math.min(2*n,7));assert.equal(r.body.meta.providerCalls,calls.length);
+    assert.equal(peak,Math.min(2*n,3));
+    assert.deepEqual(calls.slice(0,n).map(c=>c.origin),origins.slice(0,n));
+    assert(calls.slice(0,n).every(c=>Array.isArray(c.preferredAirlines)));
+    assert(calls.slice(n).every(c=>!Object.hasOwn(c,'preferredAirlines')));
+    assert.equal(r.body.partial,n>=4);
+    assert.equal(r.body.results.filter(f=>f.earns).length,25*n);
+    assert.equal(r.body.results.filter(f=>!f.earns).length,17*Math.min(n,7-n));
+    for(const origin of origins.slice(0,n)) {
+      assert.deepEqual(r.body.results.filter(f=>f.earns && f.origin===origin).map(f=>f.id).sort(),
+        allAirlines.eligible.flights.map(f=>f.id.replace('LHR',origin)).sort());
+    }
+    assert.deepEqual(r.body.failures,origins.slice(7-n,n).map(origin=>({origin,scope:'all',code:'provider-call-cap'})));
+    await s.call(url);
+    assert.equal(calls.length,n>=4 ? 14 : 2*n,'cap-limited responses must not be cached');
+  }
+});
+
+test('either half of a failed union remains visible as partial and is retried without caching',async()=>{
+  for(const failing of ['eligible','all']) {
+    let calls=0;
+    const s=setup({callTool:async(_name,args)=>{
+      calls++;const scope=args.preferredAirlines?'eligible':'all';
+      if(scope===failing) throw new UpstreamError('upstream-throttled');
+      return allAirlines[scope];
+    }});
+    const r=await s.call(ALL_URL+'&earningOnly=false');
+    assert.equal(r.statusCode,200);assert.equal(r.body.partial,true);
+    assert.equal(r.body.results.length,failing==='eligible'?17:25);
+    assert.deepEqual(r.body.failures,[{origin:'LHR',scope:failing,code:'upstream-throttled'}]);
+    await s.call(ALL_URL+'&earningOnly=false');assert.equal(calls,4);
+  }
 });
 
 test('discovery accepts earningOnly and keys both values without claiming itinerary earning',async()=>{
   for(const [url,kind] of [
     ['/api/flights?action=anywhere&origin=IBZ&departureDate=2026-11-18','anywhere'],
     ['/api/flights?action=flex&origin=LHR&destination=MAD&departureDate=2026-11-18','flex'],
+    ['/api/flights?action=flex&mode=return&origin=LHR&destination=MAD&departureDate=2026-11-18&returnDate=2026-11-21','flex'],
   ]) {
-    let calls=0;
-    const s=setup({throttleOptions:{max:20},callTool:async()=>{calls++;return fixtures[kind];}});
+    const calls=[];
+    const s=setup({throttleOptions:{max:20},callTool:async(name,args)=>{calls.push({name,args});return fixtures[kind];}});
     for (const suffix of ['','&earningOnly=true','&earningOnly=false','&earningOnly=false']) {
       const r=await s.call(url+suffix);assert.equal(r.statusCode,200);
       assert.equal(r.body.meta.earningOnly,suffix!=='&earningOnly=false');
+      assert.equal(r.body.meta.providerCalls,1);
       for(const row of r.body.results) {
         assert.equal(row.eligibility,'unverified');assert.equal(row.estimate,null);
         assert.equal(Object.hasOwn(row,'earns'),false);
       }
     }
-    assert.equal(calls,2);
+    assert.equal(calls.length,2);
+    assert.deepEqual(calls[0],calls[1]);
+    const schema=require('./fixtures/schemas.json').find(s=>s.name===calls[0].name).inputSchema;
+    assert.equal(Object.hasOwn(schema.properties,'preferredAirlines'),false);
+    for(const key of Object.keys(calls[0].args)) assert(Object.hasOwn(schema.properties,key));
   }
 });
 

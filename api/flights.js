@@ -1,7 +1,7 @@
 const { createHash } = require('node:crypto');
 const { isIP } = require('node:net');
 const { createClient, UpstreamError } = require('./_lib/flights/mcp');
-const { InputError, parseInput, toolInput, validDate } = require('./_lib/flights/input');
+const { InputError, parseInput, providerPlan, validDate } = require('./_lib/flights/input');
 const { DEFAULT_ORIGINS, CARRIERS, SOURCES } = require('./_lib/flights/carriers');
 const { FX, RULES_DATE, ELIGIBLE_SPEND_FRACTION, collectionYear, goldThreshold, BONUS_SOURCE, GOLD_SOURCE } = require('./_lib/flights/earn');
 const { normalizeFlight, safeLink } = require('./_lib/flights/normalize');
@@ -115,27 +115,28 @@ function createHandler({ callTool = createClient(), now = Date.now,
     req.once?.('aborted', onAborted);
     try {
       let cursor = 0;
-      const results = [], failures = [], pages = [], excluded = {};
-      // At most 7 origins, 3 calls in flight, 6 s per call and 18 s overall.
+      const plan = providerPlan(query), batches = [];
+      const results = [], failures = [...plan.skipped], pages = [], excluded = {};
+      let providerCalls = 0;
+      // At most 7 calls, 3 calls in flight, 6 s per call and 18 s overall.
       // No retries and no discovery → search cascade against the public MCP.
       async function worker() {
-        while (cursor < query.origins.length) {
-          const origin = query.origins[cursor++];
-          if (controller.signal.aborted) { failures.push({ origin, code: 'upstream-timeout' }); continue; }
+        while (cursor < plan.calls.length) {
+          const index = cursor++;
+          const { origin, scope, name, args } = plan.calls[index];
+          const source = { origin, ...(scope ? { scope } : {}) };
+          if (controller.signal.aborted) { failures.push({ ...source, code: 'upstream-timeout' }); continue; }
           try {
-            const { name, args } = toolInput(query, origin);
+            providerCalls++;
             const data = await callTool(name, args, controller.signal);
             if (query.action === 'search') {
               if (!Array.isArray(data?.flights) || data.flights.length > 100) throw new UpstreamError('invalid-upstream-response');
               // Process in isolation before publishing results, so a malformed
               // origin cannot leave half-normalized fares in a partial response.
               const normalized = data.flights.map((f) => normalizeFlight(f, { ...query, origin }));
-              for (const item of normalized) {
-                if (item.flight) results.push(item.flight);
-                else excluded[item.excluded] = (excluded[item.excluded] || 0) + 1;
-              }
+              batches[index] = normalized;
               const p = data.pagination;
-              pages.push({ origin, offset: query.offset, limit: query.limit,
+              pages.push({ ...source, offset: query.offset, limit: query.limit,
                 totalAvailable: Number.isInteger(p?.totalAvailable) ? p.totalAvailable : null,
                 hasMoreResults: p?.hasMoreResults === true });
             } else {
@@ -143,11 +144,19 @@ function createHandler({ callTool = createClient(), now = Date.now,
               results.push(...items); pages.push({ origin });
             }
           } catch (error) {
-            failures.push({ origin, code: error instanceof UpstreamError ? error.code : 'invalid-upstream-response' });
+            failures.push({ ...source, code: error instanceof UpstreamError ? error.code : 'invalid-upstream-response' });
           }
         }
       }
-      await Promise.all(Array.from({ length: Math.min(3, query.origins.length) }, worker));
+      await Promise.all(Array.from({ length: Math.min(3, plan.calls.length) }, worker));
+      // Merge in plan order so the eligible copy wins even when the broad
+      // request completes first. Never truncate the union back to query.limit.
+      const seen = new Set();
+      for (const batch of batches) for (const item of batch || []) {
+        if (item.flight) {
+          if (!seen.has(item.flight.id)) { seen.add(item.flight.id); results.push(item.flight); }
+        } else excluded[item.excluded] = (excluded[item.excluded] || 0) + 1;
+      }
       if (!pages.length) {
         const timedOut = failures.some((f) => f.code === 'upstream-timeout');
         return send(res, timedOut ? 504 : 502, { error: timedOut ? 'Flight provider timed out.' : 'Flight provider unavailable.' });
@@ -165,6 +174,7 @@ function createHandler({ callTool = createClient(), now = Date.now,
           sources: { ...SOURCES, gold: GOLD_SOURCE, extraTierPoints: BONUS_SOURCE },
           ranking: query.action === 'search' ? 'GBP-per-estimated-tier-point-then-price' : null,
           discoveryOnly: query.action !== 'search', earningOnly: query.earningOnly,
+          providerCalls,
           notice: query.action === 'search' ? 'Estimates only; verify booking class, operator and earning with BA before buying. Search covers returned fares, not every fare available.' :
             'Unfiltered discovery prices may be on non-earning airlines. Run search for each destination/date before comparing tier-point value.',
         } };

@@ -456,7 +456,7 @@ test('deselecting every airline shows no fares, while reset restores all carrier
   const data = await backend('/api/flights?origin=LHR&destination=MAD&departureDate=2026-11-18&earningOnly=false',searchFixture(args));
   const p = page(); query(p,{earningOnly:false});p.put('data',data);p.run('response=data;F.air=new Set()');
   assert.equal(p.run('fares().filter(f=>passes(f)).length'),0);
-  assert.match(p.run('cardsHTML()'),/No flights match these filters/);
+  assert.match(p.run('cardsHTML()'),/Reset filters/);assert.doesNotMatch(p.run('cardsHTML()'),/No flights match these filters/);
   p.run('resetFilters()');
   assert.equal(p.run('fares().filter(f=>passes(f)).length'),p.run('fares().length'));
 });
@@ -707,9 +707,10 @@ test('every supported city group appears on both sides and resolves to its city 
   const { CITY_GROUPS } = require('../../flights/cities');
   const p=page();
   const from=p.run('fromPop()');
+  for(const code of ['LON','NYC']) assert(from.includes(`${CITY_GROUPS[code].name} <span class="s">all airports</span>`),`${code} in resting From menu`);
+  assert(from.includes('data-from="IBZ"'),'Ibiza in resting From menu');
+  assert(!from.includes('data-from="PAR"'),'other groups only appear when typed');
   for(const [code,group] of Object.entries(CITY_GROUPS)) {
-    assert(from.includes(`data-from="${code}"`),`${code} in From menu`);
-    assert(from.includes(`${group.name} <span class="s">(all airports)</span>`),`${code} label`);
     p.put('typed',group.name);
     const suggestions=p.run('sugPop(typed)');
     assert(suggestions.includes(`data-to="${code}"`),`${code} in destination suggestions`);

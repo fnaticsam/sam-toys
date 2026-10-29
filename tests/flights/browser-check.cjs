@@ -237,7 +237,7 @@ async function main() {
         await ib.uncheck(); assert((await page.locator('.fc').allTextContents()).every(t=>/No TP/.test(t)));
         await snap('filters'); await page.locator('#freset').click(); await openFilters();
         for(const airline of await page.locator('.fs input[type="checkbox"]').all())await airline.uncheck();
-        assert.match(await page.locator('#cards').innerText(),/No flights match these filters/);
+        assert.match(await page.locator('#cards').innerText(),/Reset filters/);
         assert.equal(await page.locator('h1').innerText(),'No flights match these filters');
         assert.equal(await page.locator('#fcol').count(),1);assert.equal(await page.locator('[role="tab"]').count(),4);
         if(width<700)await page.locator('#fshow').click();

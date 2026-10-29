@@ -384,7 +384,7 @@ h1 .soft{color:var(--faint)}
 <script>
 // ---- Prototype only: sample data stands in for /api/flights (no network). ----
 (function(){
-  try{if(!localStorage.getItem('flights.gold.v2'))localStorage.setItem('flights.gold.v2',JSON.stringify({tp:12480,target:20000,ends:'2027-03-31'}))}catch{}
+  try{if(!localStorage.getItem('flights.proto.gold'))localStorage.setItem('flights.proto.gold',JSON.stringify({tp:12480,target:20000,ends:'2027-03-31'}))}catch{}
   const TZ={LHR:'+00:00',LGW:'+00:00',LCY:'+00:00',STN:'+00:00',LTN:'+00:00',SEN:'+00:00',DUB:'+00:00',LIS:'+00:00',
     MAD:'+01:00',BCN:'+01:00',VLC:'+01:00',IBZ:'+01:00',FRA:'+01:00',MUC:'+01:00',FLR:'+01:00',FCO:'+01:00',MXP:'+01:00',CDG:'+01:00',
     JFK:'-05:00',BOS:'-05:00',PHL:'-05:00',CLT:'-05:00',HEL:'+02:00',DOH:'+03:00',AMM:'+03:00'};
@@ -574,8 +574,8 @@ function defaultGold(){const y=+TODAY.slice(0,4)+(TODAY.slice(5)>='04-01'?1:0);r
 function goldData(value){
   const fallback=defaultGold();
   try{
-    if(value){localStorage.setItem('flights.gold.v2',JSON.stringify(value));return{...value}}
-    const saved=JSON.parse(localStorage.getItem('flights.gold.v2')||'null');
+    if(value){localStorage.setItem('flights.proto.gold',JSON.stringify(value));return{...value}}
+    const saved=JSON.parse(localStorage.getItem('flights.proto.gold')||'null');
     if(!saved||!Number.isSafeInteger(saved.tp)||saved.tp<0||!realDate(saved.ends))return fallback;
     return{tp:saved.tp,target:Number.isSafeInteger(saved.target)&&saved.target>0?saved.target:20000,ends:saved.ends};
   }catch{return value?null:fallback}

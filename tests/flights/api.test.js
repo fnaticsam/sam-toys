@@ -74,6 +74,7 @@ test('recorded return search produces ranked estimates and passes eligible airli
   const s=setup(),r=await s.call();
   assert.equal(r.statusCode,200);assert.equal(r.body.partial,false);
   assert.equal(r.body.results.length,6);
+  assert(r.body.results.every(row=>row.earns===true));
   assert.equal(r.body.results.find(f=>f.flightNumbers[0]==='IB714').estimate.tierPoints,66);
   assert(r.body.results.every((f,i,all)=>i===0 || f.gbpPerTierPoint>=all[i-1].gbpPerTierPoint));
   assert.equal(r.body.meta.goldThreshold,20000);
@@ -83,6 +84,53 @@ test('recorded return search produces ranked estimates and passes eligible airli
   assert.equal(args.includeHiddenCity,false);assert.equal(args.includeVirtualInterlining,false);
   assert.equal(args.adults,1);assert.equal(args.returnDate,'2026-11-21');
   assert.equal(r.body.pages[0].hasMoreResults,true);
+});
+
+test('earningOnly separates cached responses, permits non-earners and never fabricates their TP or ratio',async()=>{
+  const data=structuredClone(fixtures.search);
+  const non=structuredClone(data.flights[0]);
+  non.id='synthetic-non-earning';non.price.amount=1;non.airlines='Ryanair';
+  non.deepLink=non.deepLink.replace('IB725','FR725');
+  data.flights.push(non);
+  const calls=[];
+  const s=setup({throttleOptions:{max:20},callTool:async(name,args)=>{calls.push({name,args});return data;}});
+  const earning=await s.call();
+  assert.equal(earning.body.meta.earningOnly,true);
+  assert(earning.body.results.every(row=>row.earns===true));
+  assert.equal(earning.body.excluded['non-earning-or-unknown-flight-number'],1);
+  await s.call(URL+'&earningOnly=true');assert.equal(calls.length,1);
+  const all=await s.call(URL+'&earningOnly=false');
+  assert.equal(calls.length,2);
+  assert.equal(all.statusCode,200);assert.equal(all.body.meta.earningOnly,false);
+  assert.equal(Object.hasOwn(calls[1].args,'preferredAirlines'),false);
+  assert(Array.isArray(calls[0].args.preferredAirlines));
+  assert.equal(all.body.results.length,earning.body.results.length+1);
+  const row=all.body.results.at(-1);
+  assert.equal(row.id,'synthetic-non-earning');assert.equal(row.earns,false);
+  assert.equal(row.airlines,'Ryanair');
+  assert.equal(row.estimate.tierPoints,0);assert.equal(row.gbpPerTierPoint,null);
+  assert.deepEqual(all.body.excluded,{});
+  await s.call(URL+'&earningOnly=false');assert.equal(calls.length,2);
+  await s.call();assert.equal(calls.length,2);
+});
+
+test('discovery accepts earningOnly and keys both values without claiming itinerary earning',async()=>{
+  for(const [url,kind] of [
+    ['/api/flights?action=anywhere&origin=IBZ&departureDate=2026-11-18','anywhere'],
+    ['/api/flights?action=flex&origin=LHR&destination=MAD&departureDate=2026-11-18','flex'],
+  ]) {
+    let calls=0;
+    const s=setup({throttleOptions:{max:20},callTool:async()=>{calls++;return fixtures[kind];}});
+    for (const suffix of ['','&earningOnly=true','&earningOnly=false','&earningOnly=false']) {
+      const r=await s.call(url+suffix);assert.equal(r.statusCode,200);
+      assert.equal(r.body.meta.earningOnly,suffix!=='&earningOnly=false');
+      for(const row of r.body.results) {
+        assert.equal(row.eligibility,'unverified');assert.equal(row.estimate,null);
+        assert.equal(Object.hasOwn(row,'earns'),false);
+      }
+    }
+    assert.equal(calls,2);
+  }
 });
 
 test('all seven default origins fan out with at most three calls in flight',async()=>{

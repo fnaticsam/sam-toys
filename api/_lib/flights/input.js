@@ -13,7 +13,7 @@ function parseInput(rawUrl, now = Date.now()) {
   try { params = new URL(rawUrl, 'https://sam.toys').searchParams; } catch { bad('Invalid request URL.'); }
   const action = params.get('action') || 'search';
   if (!['search', 'anywhere', 'flex'].includes(action)) bad('action must be search, anywhere or flex.');
-  const shared = ['action','origin','departureDate','returnDate'];
+  const shared = ['action','origin','departureDate','returnDate','earningOnly'];
   const allowed = new Set([...shared, ...(action === 'search' ? ['destination','fareClass','limit','offset','maxStops','includeHiddenCity','airlines'] :
     action === 'anywhere' ? ['fareClass'] : ['destination','mode','sort'])]);
   for (const key of params.keys()) {
@@ -42,13 +42,16 @@ function parseInput(rawUrl, now = Date.now()) {
   if (!['none', 'one', 'many'].includes(maxStops)) bad('Invalid maxStops.');
   const hidden = params.get('includeHiddenCity');
   if (hidden !== null && !['true','false'].includes(hidden)) bad('includeHiddenCity must be true or false.');
-  const airlines = params.has('airlines') ? [...new Set(params.get('airlines').toUpperCase().split(','))] : [...ELIGIBLE_CODES];
-  if (!airlines.length || airlines.some((code) => !ELIGIBLE_CODES.includes(code))) bad('airlines must contain eligible carrier codes.');
+  const earning = params.get('earningOnly');
+  if (earning !== null && !['true','false'].includes(earning)) bad('earningOnly must be true or false.');
+  const earningOnly = earning !== 'false';
+  const airlines = params.has('airlines') ? [...new Set(params.get('airlines').toUpperCase().split(','))] : earningOnly ? [...ELIGIBLE_CODES] : [];
+  if (params.has('airlines') && (!airlines.length || airlines.some((code) => !ELIGIBLE_CODES.includes(code)))) bad('airlines must contain eligible carrier codes.');
   const mode = params.get('mode') || 'depart', sort = params.get('sort') || 'date';
   if (!['depart','return'].includes(mode) || !['date','price'].includes(sort)) bad('Invalid calendar mode or sort.');
   if (action === 'flex' && mode === 'return' && !returnDate) bad('returnDate is required for a return calendar.');
   return { action, origins, destination, departureDate, returnDate, fareClass, limit, offset,
-    maxStops, includeHiddenCity: !returnDate && hidden !== 'false', airlines, mode, sort };
+    maxStops, includeHiddenCity: !returnDate && hidden !== 'false', earningOnly, airlines, mode, sort };
 }
 function toolInput(query, origin) {
   const q = query;
@@ -57,7 +60,7 @@ function toolInput(query, origin) {
   const dates = { origin, destination: q.destination, departureDate: q.departureDate, ...(q.returnDate ? { returnDate: q.returnDate } : {}) };
   if (q.action === 'flex') return { name: q.mode === 'return' ? 'sk_flex_return_calendar' : 'sk_flex_departure_calendar', args: { ...dates, sort: q.sort, adults: 1 } };
   return { name: 'sk_flights_search', args: { ...dates, fareClass: q.fareClass, adults: 1,
-    limit: q.limit, offset: q.offset, sort: 'price', preferredAirlines: q.airlines,
+    limit: q.limit, offset: q.offset, sort: 'price', ...(q.airlines.length ? { preferredAirlines: q.airlines } : {}),
     includeHiddenCity: !q.returnDate && q.includeHiddenCity, includeVirtualInterlining: false, includeStandard: true, maxStops: q.maxStops } };
 }
 module.exports = { InputError, validDate, parseInput, toolInput };

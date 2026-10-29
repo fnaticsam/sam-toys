@@ -49,11 +49,23 @@ function searchFixture(args) {
     ];
     out.flights.push(f);
   }
+  // Synthetic ordinary Ryanair fare exercises the opt-in all-airline path.
+  // Its distinct times ensure the UI does not collapse it with an earning fare.
+  const nonEarning = structuredClone(out.flights[0]);
+  nonEarning.id = `fixture-${args.origin}-${args.destination}-${args.departureDate}-trip=FR9755${args.returnDate ? ',FR9756' : ''}`;
+  nonEarning.airlines = 'Ryanair';
+  nonEarning.departure.dateTime = args.departureDate + 'T07:00:00+00:00';
+  nonEarning.arrival.dateTime = args.departureDate + 'T10:00:00+01:00';
+  nonEarning.duration = '2h 0m';
+  nonEarning.price.amount = 45;
+  nonEarning.deepLink = `https://skiplagged.com/flights/${args.origin}/${args.destination}/${args.departureDate}${args.returnDate ? '/' + args.returnDate : ''}?utm_source=mcp#trip=FR9755${args.returnDate ? ',FR9756' : ''}`;
+  if (nonEarning.returnFlight) nonEarning.returnFlight.airlines = 'Ryanair';
+  out.flights.push(nonEarning);
   out.pagination = { totalAvailable: out.flights.length, hasMoreResults: false };
   return out;
 }
 
-async function createFixtureServer({ port = 0, approvedPath = '/tmp/flights-approved-v2.html' } = {}) {
+async function createFixtureServer({ port = 0, approvedPath = path.join(ROOT, 'prototypes/flights/proto-v3.html') } = {}) {
   let mode = 'normal', handler;
   const requests = [], toolCalls = [], waiting = new Set();
   const allowed = new Set(['normal', 'empty', 'error', 'throttled', 'partial', 'loading']);
@@ -91,6 +103,10 @@ async function createFixtureServer({ port = 0, approvedPath = '/tmp/flights-appr
       }
       // Explicit allowlist: never expose .env, private API pages or repo files.
       const file = ['/flights', '/flights/', '/flights/index.html'].includes(url.pathname) ? path.join(ROOT, 'flights/index.html') : url.pathname === '/approved' ? approvedPath : null;
+      if (/^\/flights\/fonts\/[a-zA-Z0-9._-]+\.woff2$/.test(url.pathname)) {
+        res.setHeader('content-type', 'font/woff2');
+        return res.end(await fs.readFile(path.join(ROOT, url.pathname)));
+      }
       if (!file) { res.statusCode = 404; return res.end('Not found'); }
       res.setHeader('content-type', 'text/html; charset=utf-8');
       res.setHeader('x-robots-tag', 'noindex, nofollow');

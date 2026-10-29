@@ -28,6 +28,20 @@
         "One layout; the A/B switch and chart are gone. New plane logo and favicon."
       ],
       "fixed": []
+    },
+    {
+      "n": 3,
+      "file": "proto-v3.html",
+      "date": "2026-10-29",
+      "title": "flick.fan inverse, Skiplagged-style results",
+      "notes": [
+        "Built on the live sam.toys/flights page (sam-toys main 59c8580) with sample data in place of /api/flights; every live screen and behaviour is kept.",
+        "Design system is the light inverse of flick.fan (flicfix main 27229dd): same Geist type scale, 68px pill search with a round go button, label-left filter rows, 28px glass panels, pill controls; paper page, ink text and ink primary buttons, one warm accent used only for tier points.",
+        "Results follow Sam's Skiplagged references (take-off/landing histograms with two-handle sliders, flight cards, Stops radios with from-prices): sort tabs Best value, Cheapest, Fastest, Most tier points; each card shows price and +TP together, then £/TP and Avios; filters sit in a side column on desktop and behind one Filters button on phone.",
+        "Anywhere from London no longer lists London; city names are in English (Florence, Frankfurt, Munich, Lisbon).",
+        "Plane logo is now an ink glyph beside a flick-style 'flights.' wordmark; favicon matches."
+      ],
+      "fixed": []
     }
   ]
 }

@@ -391,7 +391,7 @@ h1 .soft{color:var(--faint)}
   const NAMES={LHR:'London Heathrow',LGW:'London Gatwick',LCY:'London City',MAD:'Madrid',VLC:'Valencia',BCN:'Barcelona',JFK:'New York JFK',BOS:'Boston',
     PHL:'Philadelphia',CLT:'Charlotte',DUB:'Dublin',DOH:'Doha',AMM:'Amman',IBZ:'Ibiza',HEL:'Helsinki'};
   const CARRIERS=[{code:'BA',name:'British Airways'},{code:'IB',name:'Iberia'},{code:'AA',name:'American Airlines'},{code:'EI',name:'Aer Lingus'},
-    {code:'QR',name:'Qatar Airways'},{code:'RJ',name:'Royal Jordanian'},{code:'AY',name:'Finnair'}];
+    {code:'QR',name:'Qatar Airways'},{code:'RJ',name:'Royal Jordanian'},{code:'AY',name:'Finnair'},{code:'JL',name:'Japan Airlines'},{code:'CX',name:'Cathay Pacific'},{code:'QF',name:'Qantas'}];
   // [flight, from, dep, to, arr, +days]; h = index of the first unflown (hidden-city) segment
   const T={
     JFK:{ex:9,out:[
@@ -409,7 +409,7 @@ h1 .soft{color:var(--faint)}
       {s:[['EI 171','LHR','15:05','DUB','16:25'],['EI 109','DUB','18:15','JFK','20:40']],gbp:262,tp:150,av:1350},
       {s:[['BA 213','LHR','09:30','BOS','12:00'],['AA 2190','BOS','13:30','JFK','14:50']],gbp:305,tp:240,av:2160},
       {s:[['EI 159','LHR','07:40','DUB','09:00'],['AA 291','DUB','11:00','PHL','13:25'],['AA 4440','PHL','15:30','JFK','16:40']],gbp:249,tp:150,av:1350}],
-      back:{BA:[['BA 178','JFK','19:30','LHR','07:35',1]],AA:[['AA 100','JFK','18:25','LHR','06:30',1]],EI:[['EI 104','JFK','18:30','DUB','05:55',1],['EI 154','DUB','07:30','LHR','08:50',1]]}},
+      back:{BA:[['BA 178','JFK','19:30','LHR','07:35',1]],AA:[['AA 100','JFK','18:25','LHR','06:30',1]],EI:[['EI 104','JFK','18:30','DUB','05:55',1],['EI 154','DUB','07:30','LHR','08:50',1,1]]}},
     MAD:{ex:13,out:[
       {s:[['BA 458','LHR','06:40','MAD','09:55']],gbp:68,tp:52,av:470},
       {s:[['BA 460','LHR','11:30','MAD','14:45']],gbp:92,tp:78,av:700},
@@ -437,18 +437,77 @@ h1 .soft{color:var(--faint)}
       {s:[['IB 5809','IBZ','09:40','BCN','10:35'],['IB 5820','BCN','12:15','LGW','13:40']],op:'Vueling',gbp:86,tp:45,av:400}],
       back:{IB:[['IB 3167','LHR','07:15','MAD','10:35'],['IB 1705','MAD','12:20','IBZ','13:35']],BA:[['BA 458','LHR','06:40','MAD','09:55'],['IB 1703','MAD','11:30','IBZ','12:45']]}}
   };
+
+  /* Any other route: plausible earning fares from the oneworld + BA-partner network.
+     Directs where a carrier has a hub at either end, one-stops through partner hubs,
+     one hidden-city fare when the destination is a hub. Sample data only. */
+  const GEO={LHR:[51.47,-0.45,0],LGW:[51.15,-0.18,0],LCY:[51.5,0.05,0],STN:[51.89,0.26,0],LTN:[51.87,-0.37,0],SEN:[51.57,0.69,0],DUB:[53.42,-6.27,0],LIS:[38.77,-9.13,0],
+    IBZ:[38.87,1.37,1],MAD:[40.47,-3.56,1],BCN:[41.3,2.08,1],VLC:[39.49,-0.48,1],PMI:[39.55,2.73,1],SVQ:[37.42,-5.9,1],CDG:[49.01,2.55,1],FRA:[50.03,8.57,1],MUC:[48.35,11.79,1],
+    FCO:[41.8,12.25,1],FLR:[43.81,11.2,1],MXP:[45.63,8.72,1],PRG:[50.1,14.26,1],VIE:[48.11,16.57,1],HEL:[60.32,24.96,2],AMM:[31.72,35.99,3],DOH:[25.27,51.61,3],DXB:[25.25,55.36,4],
+    BKK:[13.69,100.75,7],SIN:[1.36,103.99,8],HKG:[22.31,113.91,8],HND:[35.55,139.78,9],NRT:[35.77,140.39,9],SYD:[-33.94,151.18,11],
+    JFK:[40.64,-73.78,-5],NYC:[40.64,-73.78,-5],BOS:[42.36,-71.01,-5],PHL:[39.87,-75.24,-5],CLT:[35.21,-80.94,-5],MIA:[25.79,-80.29,-5],ORD:[41.97,-87.9,-6],DFW:[32.9,-97.04,-6],LAX:[33.94,-118.41,-8]};
+  const HUBS={BA:['LHR'],AA:['JFK','PHL','CLT','DFW','MIA','ORD','LAX','BOS'],IB:['MAD'],AY:['HEL'],QR:['DOH'],EI:['DUB'],JL:['HND','NRT'],CX:['HKG'],QF:['SYD'],RJ:['AMM']};
+  const LONDON_SET=['LON','LHR','LGW','LCY','STN','LTN','SEN'];
+  const geo=c=>GEO[c==='LON'?'LHR':c==='NYC'?'JFK':c];
+  const km=(a,b)=>{const A=geo(a),B=geo(b);if(!A||!B)return 1800;const r=Math.PI/180,h=Math.sin((B[0]-A[0])*r/2)**2+Math.cos(A[0]*r)*Math.cos(B[0]*r)*Math.sin((B[1]-A[1])*r/2)**2;return 12742*Math.asin(Math.sqrt(h))};
+  const tz=c=>(geo(c)||[0,0,0])[2];
+  const hubOf=(car,c)=>HUBS[car].includes(c==='LON'?'LHR':c==='NYC'?'JFK':c);
+  const seed=s=>{let h=2166136261;for(const ch of s)h=Math.imul(h^ch.charCodeAt(0),16777619);return()=>((h=Math.imul(h^(h>>>15),2246822507)^Math.imul(h^(h>>>13),3266489909))>>>0)/4294967296};
+  const pad=n=>String(n).padStart(2,'0');
+  const fly=d=>Math.round((35+d/820*60)/5)*5;
+  // path: [[carrier,from,to],...]; startMin: local departure minutes of the first segment
+  function segsFor(path,startMin,rnd){
+    const out=[];let t=startMin; // minutes since local midnight of day 0, in the departure city's clock
+    let dayUtc=t-tz(path[0][1])*60;
+    path.forEach(([car,a,b],i)=>{
+      if(i){dayUtc+=70+Math.round(rnd()*9)*10}
+      const depLocal=dayUtc+tz(a)*60,arrUtc=dayUtc+fly(km(a,b)),arrLocal=arrUtc+tz(b)*60;
+      const fn=car+' '+(car==='BA'?100+Math.floor(rnd()*800):car==='AA'?10+Math.floor(rnd()*300):1000+Math.floor(rnd()*7000));
+      const hm=m=>pad(Math.floor(((m%1440)+1440)%1440/60))+':'+pad(((m%1440)+1440)%1440%60);
+      out.push([fn,a,hm(depLocal),b,hm(arrLocal),Math.floor(arrLocal/1440),Math.floor(depLocal/1440)]);
+      dayUtc=arrUtc;
+    });
+    return out;
+  }
+  function routeFor(O,Dst,cabin){
+    const o=O==='LON'?'LHR':O==='NYC'?'JFK':O,d=Dst==='NYC'?'JFK':Dst;
+    if(o===d||(LONDON_SET.includes(o)&&LONDON_SET.includes(d)))return{ex:0,out:[]};
+    const rnd=seed(o+d),dist=km(o,d),mult={economy:1,premium:1.8,business:3.9,first:6.5}[cabin]||1,paths=[];
+    for(const car of Object.keys(HUBS)){
+      if(hubOf(car,o)||hubOf(car,d)){const n=car==='BA'||car==='AA'?3:2;for(let i=0;i<n;i++)paths.push({p:[[car,o,d]],c:car})}
+    }
+    for(const car of ['IB','AY','EI','QR','BA','AA','RJ','JL','CX']){
+      for(const h of HUBS[car]){if(h===o||h===d)continue;const ratio=(km(o,h)+km(h,d))/Math.max(dist,1);
+        if(ratio<1.3&&km(o,h)>250&&km(h,d)>250){paths.push({p:[[car,o,h],[car,h,d]],c:car});break}}
+    }
+    if(!paths.length)paths.push({p:[['BA',o,'LHR'],['BA','LHR',d]],c:'BA'},{p:[['IB',o,'MAD'],['IB','MAD',d]],c:'IB'});
+    const fares=paths.slice(0,12).map((x,i)=>{
+      const start=(6*60)+Math.floor(rnd()*15)*60+(rnd()<.5?0:30)+5*Math.floor(rnd()*6);
+      const s=segsFor(x.p,start,rnd),stops=x.p.length-1,len=x.p.reduce((a,[_,f,t])=>a+km(f,t),0);
+      const gbp=Math.round((38+len*.058)*(0.85+rnd()*.4)*(stops?.86:1)*mult);
+      const tp=Math.max(10,Math.round(gbp*(stops?.5+rnd()*.18:.6+rnd()*.24)));
+      const back=x.p.slice().reverse().map(([c,a,b])=>[c,b,a]);
+      return{s,gbp,tp,av:Math.round(tp*9/5)*5,b:segsFor(back,(9*60)+Math.floor(rnd()*11)*60,rnd)};
+    });
+    // one hidden-city fare when a carrier flies o→d direct and d is its hub
+    const hc=Object.keys(HUBS).find(car=>hubOf(car,d)&&!hubOf(car,o));
+    if(hc){const beyond=Object.keys(GEO).find(z=>z!==o&&z!==d&&!LONDON_SET.includes(z)&&km(d,z)>500&&km(d,z)<2500&&(km(o,z)>km(o,d)));
+      if(beyond){const s=segsFor([[hc,o,d],[hc,d,beyond]],12*60+35,rnd),f0=fares.find(f=>f.s[0][0].startsWith(hc))||fares[0];
+        fares.push({s,h:1,gbp:Math.round(f0.gbp*.8),tp:Math.round(f0.tp*.9),av:Math.round(f0.tp*.9*9/5)*5,b:f0.b})}}
+    return{ex:4+Math.floor(rnd()*9),out:fares,back:{}};
+  }
   function generic(dest){const p=(dest.charCodeAt(0)+dest.charCodeAt(2))%40;return{ex:7,out:[
     {s:[['BA '+(300+p),'LHR','08:40',dest,'11:55']],gbp:96+p,tp:70+p,av:620},
     {s:[['IB '+(3400+p),'LHR','13:10',dest,'16:20']],gbp:78+p,tp:48+p,av:430},
     {s:[['BA '+(320+p),'LGW','18:25',dest,'21:35']],gbp:88+p,tp:60+p,av:540}],
     back:{BA:[['BA '+(301+p),dest,'12:50','LHR','14:05']],IB:[['IB '+(3401+p),dest,'17:15','LHR','18:30']]}}}
   const addDays=(k,n)=>new Date(Date.parse(k+'T12:00:00Z')+n*864e5).toISOString().slice(0,10);
-  const dt=(date,hhmm,ap,plus=0)=>`${addDays(date,plus)}T${hhmm}:00${TZ[ap]||'+01:00'}`;
-  const unit=(seg,date,flown)=>({flown,flightNumbers:[seg[0]],from:seg[1],to:seg[3],departure:{airport:seg[1],dateTime:dt(date,seg[2],seg[1])},arrival:{airport:seg[3],dateTime:dt(date,seg[4],seg[3],seg[5]||0)}});
+  const dt=(date,hhmm,ap,plus=0)=>{const z=TZ[ap]||(()=>{const h=tz(ap);return(h<0?'-':'+')+String(Math.abs(h)).padStart(2,'0')+':00'})();return `${addDays(date,plus)}T${hhmm}:00${z}`};
+  const unit=(seg,date,flown)=>({flown,flightNumbers:[seg[0]],from:seg[1],to:seg[3],departure:{airport:seg[1],dateTime:dt(date,seg[2],seg[1],seg[6]||0)},arrival:{airport:seg[3],dateTime:dt(date,seg[4],seg[3],seg[5]||0)}});
   function fare(t,out,back,origin){
     const outUnits=t.s.map((g,i)=>unit(g,out,t.h==null||i<t.h)),flown=outUnits.filter(u=>u.flown),c=t.s[0][0].slice(0,2);
     const legs=[{units:outUnits}];let returnFlight=null;
-    if(back){const segs=(T.cur.back[c]||Object.values(T.cur.back)[0]);const bu=segs.map(g=>unit(g,back,true));legs.push({units:bu});returnFlight={departure:bu[0].departure,arrival:bu.at(-1).arrival}}
+    if(back){const segs=t.b||(T.cur.back[c]||Object.values(T.cur.back)[0]);const bu=segs.map(g=>unit(g,back,true));legs.push({units:bu});returnFlight={departure:bu[0].departure,arrival:bu.at(-1).arrival}}
     const k=back?1.85:1,tp=t.tp*(back?2:1),gbp=Math.round(t.gbp*k*100)/100,fns=t.s.map(g=>g[0]);
     return{id:fns.join('-').replace(/ /g,'')+'_'+out+(back?'_'+back:''),priceGbp:gbp,price:{amount:(gbp/0.79).toFixed(2),currency:'USD'},
       estimate:{tierPoints:tp,avios:t.av*(back?2:1),breakdown:[{date:out,tierPoints:t.tp},...(back?[{date:back,tierPoints:t.tp}]:[])]},
@@ -468,7 +527,8 @@ h1 .soft{color:var(--faint)}
       src.forEach(r=>meta.airports[r[0]]=r[1]);
       return{action,results:src.map(r=>({destination:r[0],city:r[1],priceGbp:r[2]*(back?1.8:1),origin:r[3]})),meta}}
     const fromIbz=origin==='IBZ';
-    T.cur=fromIbz&&/^(LHR|LGW|LCY|STN|LTN|SEN)$/.test(dest)?T.IBZLON:T[dest]||generic(dest);
+    const fromLon=/^(LHR|LGW|LCY|STN|LTN|SEN)(,|$)/.test(origin);
+    T.cur=fromIbz&&/^(LHR|LGW|LCY|STN|LTN|SEN)$/.test(dest)?T.IBZLON:fromLon&&T[dest]?T[dest]:routeFor(origin.split(',')[0],dest,sp.get('fareClass'));
     const res=T.cur.out.map(t=>fare(t,out,back,origin));
     return{action,results:res,meta,excluded:{nonEarning:T.cur.ex},pages:[{hasMoreResults:false}]};
   }
@@ -772,7 +832,7 @@ function vResults(){
   if(!response)return vSearch();if(response.action==='anywhere')return vAnywhere();
   const list=fares();if(!list.length)return vEmpty();
   const b=list[0];document.title=`${placeName(resultQuery.from)} → ${placeName(resultQuery.to)} · Flights`;
-  return `${backPill()}<h1>${esc(flightGroups(b)[0][0])} <span class="soft">earns ~${fmt(b.estimate.tierPoints)}&nbsp;TP at/span> ${ppt(b)} <span class="soft">each</span></h1>
+  return `${backPill()}<h1>${esc(flightGroups(b)[0][0])} <span class="soft">earns ~${fmt(b.estimate.tierPoints)}&nbsp;TP at</span> ${ppt(b)} <span class="soft">each</span></h1>
   <p class="est">${resultNote()}</p>${partialNote()}
   <div class="rgrid">${filtersHTML()}<div class="rcol">
     <div class="tabs" role="tablist" aria-label="Sort">${Object.entries(SORTS).map(([k,[l,s]])=>`<button type="button" role="tab" aria-selected="${SORT===k}" data-sort="${k}"><span class="lg2">${l}</span><span class="sm2">${s}</span></button>`).join('')}</div>
@@ -810,8 +870,34 @@ function render(){
   document.body.classList.toggle('wide',p[0]==='results'&&response?.action==='search'&&fares().length>0);
   paintIndex();
 }
+/* fix: go and Enter always search. Typed text resolves to an airport, the calendar closes,
+   and anything that can't search says why on screen. */
+function sameCity(from,to){return from===to||(from==='LON'&&(to==='LON'||LONDON.includes(to)))||(to==='LON'&&LONDON.includes(from))||(['NYC','JFK'].includes(from)&&['NYC','JFK'].includes(to))}
+function resolveDraft(){
+  if(S.to)return true;const q=(draft||$('#to')?.value||'').trim();if(!q)return false;
+  if(/^anywhere$/i.test(q)){S.to='ANY';return true}
+  const lq=q.toLowerCase(),exact=AIRPORTS.find(a=>a[0].toLowerCase()===lq||a[1].toLowerCase()===lq),list=matches(q),pick=exact||list[0];
+  if(pick){S.to=pick[0];draft='';return true}return false;
+}
+function submitSearch(){
+  sugOpen=false;selection=-1;const typed=(draft||'').trim();
+  if(!resolveDraft()){hint=typed?`No airport matches “${typed}”.`:'Choose where to, or Anywhere.';calOpen=false;go('#/search');$('#to')?.focus();return}
+  if(!S.out){hint='Pick a date.';S.view=calendarMonth();calOpen=true;go('#/search/when');$('#whenBar')?.classList.add('shake');return}
+  if(S.to!=='ANY'&&sameCity(S.from,S.to)){hint='Choose a different destination.';calOpen=false;go('#/search');return}
+  hint='';calOpen=false;search();
+}
 function bind(){
   bindLive();
+  const sf=$('#sf');
+  if(sf){
+    sf.onsubmit=e=>{e.preventDefault();submitSearch()};
+    const to=$('#to'),liveKey=to.onkeydown;
+    to.onkeydown=e=>{
+      if(e.key==='Enter'){e.preventDefault();const opts=[...document.querySelectorAll('.pop [data-to]')];
+        if(sugOpen&&selection>=0&&opts[selection]){S.to=opts[selection].dataset.to;draft=''}
+        submitSearch();return}
+      liveKey&&liveKey(e)};
+  }
   const any=$('#anyPill');if(any)any.onclick=()=>chooseDestination('ANY');
   if($('#cards'))bindResults(false);
 }

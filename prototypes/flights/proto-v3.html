@@ -1,0 +1,853 @@
+<!doctype html><html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><script>try{var p=window.parent!==window&&window.parent.claude;if(p)window.__kitClaude=p}catch(e){}</script><meta name="kit:version" content="3">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<meta name="referrer" content="no-referrer">
+<meta name="theme-color" content="#fafaf9">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='16' fill='%23fafaf9'/%3E%3Cpath transform='translate(4 4) rotate(45 12 12)' fill='%230b0b0c' d='M21 16v-2l-8-5V3.5c0-.83-.67-1.5-1.5-1.5S10 2.67 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z'/%3E%3C/svg%3E">
+<title>Flights</title>
+<style>
+/* ==========================================================================
+   Flights tokens: the inverse of flick.fan (flicfix origin/main 27229dd,
+   apps/web/styles/tokens.css). Same type, radii, spacing, components and
+   motion; light and dark swapped. Left: this token. Right: flick's original.
+   ========================================================================== */
+:root{
+  /* palette */
+  --paper:#fafaf9;                        /* --ink #060607 (page) */
+  --surface:#f1eff3;                      /* --surface #0f0d11 */
+  --surface-search:#efeff1;               /* --surface-search #101012 */
+  --ink:#0b0b0c;                          /* --white #f5f5f4 (text, primary fill) */
+  --body:#232325;                         /* --body #dcdcda */
+  --soft:rgba(11,11,12,.74);              /* --soft rgba(245,245,244,.78) */
+  --soft-home:rgba(11,11,12,.6);          /* --soft-home .66 */
+  --faint:rgba(11,11,12,.46);             /* --faint .5 */
+  --grey:#5c5c62;                         /* --grey #a3a3a8 */
+  --dim:#55555b;                          /* --dim #b0b0b6 */
+  --dim-home:#727278;                     /* --dim-home #8e8e94 */
+  --icon:rgba(0,0,0,.66);                 /* --icon rgba(255,255,255,.72) */
+  --warm:#b9622e;                         /* --warm rgba(255,212,174,.8): the one accent */
+  --hair:rgba(0,0,0,.08);                 /* rgba(255,255,255,.08–.13) hairlines */
+  --hover:rgba(0,0,0,.05);                /* #ffffff1a hover wash */
+  /* glass */
+  --glass-gradient:linear-gradient(175deg,rgba(255,255,255,.92),rgba(255,255,255,.55) 50%);   /* white .08→.02 */
+  --glass-fill:rgba(244,243,247,.56);     /* rgba(15,13,17,.54) */
+  --glass-blur:blur(28px) saturate(105%);
+  --glass-blur-home:blur(28px) saturate(90%);
+  --glass-shadow:inset 0 1px 0 rgba(255,255,255,.95),inset 0 0 0 1px rgba(0,0,0,.05),0 30px 80px rgba(28,22,34,.13);
+  --glass-shadow-home:inset 0 1px 0 rgba(255,255,255,.95),inset 0 0 0 1px rgba(0,0,0,.045),0 30px 80px rgba(28,22,34,.12);
+  --menu:rgba(253,252,254,.97);           /* rgba(21,20,23,.96) */
+  --menu-shadow:0 22px 44px rgba(28,22,34,.14);  /* 0 22px 44px #0006 */
+  /* radii */
+  --radius-poster:10px; --radius-thumb:6px; --radius-panel:28px; --radius-control:999px;
+  --radius-input:34px; --radius-input-compact:29px; --radius-menu:16px; --radius-suggest:18px;
+  /* type: Geist where installed; system sans otherwise (the file loads no fonts) */
+  --font:"Geist","GeistSans",-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Arial,sans-serif;
+  --mono:"Geist Mono","GeistMono",ui-monospace,"SF Mono",Menlo,monospace;
+  --text-xs:12.5px; --text-sm:13px; --text-base:14px; --text-control:14.5px; --text-meta:15px;
+  --text-input:17px; --text-score:23px; --text-wordmark:22px; --text-state:26px; --text-display:48px; --text-title:52px;
+  --leading-base:1.4;
+  /* motion */
+  --ease:cubic-bezier(.2,.7,.2,1);
+  /* aliases the live script's ring() uses */
+  --line:var(--hair); --text:var(--ink);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{background:var(--paper);-webkit-text-size-adjust:100%;text-size-adjust:100%}
+body{min-height:100vh;background:var(--paper);color:var(--ink);font-family:var(--font);font-size:var(--text-base);font-weight:400;
+  line-height:var(--leading-base);-webkit-font-smoothing:antialiased;font-feature-settings:"tnum";font-variant-numeric:tabular-nums;overflow-x:hidden}
+button,input,select{font:inherit;color:inherit}
+button{cursor:pointer}
+button:disabled{cursor:default;opacity:.45}
+a{color:inherit;text-decoration:none}
+svg{flex-shrink:0}
+:focus-visible{outline:1.5px solid rgba(0,0,0,.7);outline-offset:4px}
+
+/* backdrop: flick's blurred mosaic, inverted into a light dawn wash */
+.sky{position:fixed;inset:0;z-index:-1;pointer-events:none;overflow:hidden;background:var(--paper)}
+.sky i{position:absolute;border-radius:50%;filter:blur(90px);opacity:.34}
+.sky i:nth-child(1){width:46vw;height:30vw;left:-8vw;top:-10vw;background:#f2b48e}
+.sky i:nth-child(2){width:40vw;height:28vw;right:-6vw;top:-6vw;background:#b9c6f2}
+.sky i:nth-child(3){width:36vw;height:24vw;left:30vw;top:26vw;background:#e7c6e4;opacity:.22}
+.sky::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,transparent 0,rgba(250,250,249,.55) 55%,var(--paper) 85%)}
+
+/* header (flick: wordmark fixed left 44/36, account right 44) */
+.top{position:absolute;left:0;right:0;top:0;display:flex;align-items:center;justify-content:space-between;padding:31px 44px 0;z-index:5}
+.logo{display:inline-flex;align-items:center;gap:9px;font-size:var(--text-wordmark);font-weight:500;letter-spacing:-.05em;line-height:1;color:var(--ink);height:34px}
+.logo .mk{display:grid;place-items:center;width:22px;height:22px}
+.logo svg{width:19px;height:19px;transform:rotate(45deg)}
+.logo .dot{color:var(--warm)}
+.ring{display:inline-flex;align-items:center;gap:9px;min-height:34px;padding:0 13px;border-radius:var(--radius-control);color:var(--soft);font-size:13.5px;
+  transition:color .2s}
+.ring:hover{color:var(--ink)}
+.ring .mini{width:40px;height:1px;background:rgba(0,0,0,.14);overflow:hidden}
+.ring .mini i{display:block;height:1px;background:var(--warm)}
+@media (max-width:640px){.top{padding:34px 24px 0}.ring{padding:0 0 0 13px}}
+
+.wrap{width:min(680px,calc(100vw - 48px));margin:0 auto;padding:128px 0 96px}
+@media (max-width:640px){.wrap{padding-top:112px}}
+
+/* glass (flick .glassPanel) */
+.glass{background:var(--glass-gradient),var(--glass-fill);-webkit-backdrop-filter:var(--glass-blur);backdrop-filter:var(--glass-blur);box-shadow:var(--glass-shadow)}
+.press{transition:transform .2s var(--ease),color .2s}
+.press:hover{transform:scale(1.03)}
+
+/* home hero */
+section.hero{display:flex;flex-direction:column;align-items:center;padding-top:56px}
+section.hero h1{margin:0 0 36px;font-size:var(--text-display);font-weight:500;line-height:1.05;letter-spacing:-.05em;text-align:center;text-wrap:balance}
+.search{width:100%;position:relative;z-index:10}
+.searchBox{display:flex;align-items:center;gap:12px;height:68px;padding:0 10px 0 30px;border-radius:var(--radius-input);position:relative;
+  background:var(--glass-gradient),var(--glass-fill);box-shadow:var(--glass-shadow-home);-webkit-backdrop-filter:var(--glass-blur-home);backdrop-filter:var(--glass-blur-home)}
+.searchBox:focus-within{outline:1.5px solid rgba(0,0,0,.7);outline-offset:3px}
+.where{background:transparent;border:0;outline:0;color:var(--ink);flex:1;min-width:0;font-size:var(--text-input);letter-spacing:-.01em;text-overflow:ellipsis}
+.where::placeholder{color:var(--soft-home);opacity:1}
+.goC{flex:none;display:grid;place-items:center;width:48px;height:48px;border:0;border-radius:50%;background:var(--ink);color:var(--paper);transition:transform .2s var(--ease)}
+.goC:hover{transform:scale(1.04)}
+/* filter rows (flick FilterRow: label left, control right, 680 wide) */
+.rows{width:100%;margin-top:22px}
+.frow{display:flex;align-items:center;justify-content:space-between;gap:16px;min-height:40px;position:relative}
+.frow+.frow,.cal+.frow,.frow+.cal{margin-top:8px}
+.fl{flex:none;color:var(--soft-home);font-size:var(--text-sm)}
+.fv{display:inline-flex;align-items:center;gap:6px;border:0;background:transparent;color:var(--ink);font-size:var(--text-sm);font-weight:500;height:30px;padding:0 10px;margin-right:-10px;border-radius:var(--radius-control);transition:background .2s}
+.fv:hover,.fv[aria-expanded=true]{background:var(--hover)}
+.fv.ph{color:var(--soft-home);font-weight:400}
+.fv svg{color:var(--faint)}
+select.fv{appearance:none;-webkit-appearance:none;text-align:right;padding-right:28px;margin-right:-10px;cursor:pointer;
+  background:transparent url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 10 10'%3E%3Cpath d='M2 3.5 5 6.5 8 3.5' fill='none' stroke='%23000' stroke-opacity='.46' stroke-width='1.3'/%3E%3C/svg%3E") no-repeat right 10px center}
+select.fv:hover{background-color:var(--hover)}
+.hintline{min-height:20px;margin-top:10px;color:var(--soft);font-size:var(--text-sm);text-align:center}
+.hintline.err{color:var(--ink)}
+.actionPill{display:inline-flex;align-items:center;gap:7px;min-height:44px;padding:0 16px;margin-top:14px;border:0;border-radius:var(--radius-control);
+  background:rgba(0,0,0,.04);box-shadow:inset 0 0 0 1px rgba(0,0,0,.1);color:var(--soft);font-size:13.5px;transition:color .2s,transform .2s var(--ease)}
+.actionPill:hover{color:var(--ink);transform:scale(1.03)}
+.shake{animation:shake .32s}
+@keyframes shake{20%{transform:translateX(-5px)}50%{transform:translateX(4px)}80%{transform:translateX(-2px)}}
+@media (max-width:640px){
+  section.hero{padding-top:44px}
+  section.hero h1{font-size:40px;line-height:1.06;margin-bottom:28px}
+  .searchBox{height:58px;padding:0 8px 0 22px;border-radius:var(--radius-input-compact)}
+  .where{font-size:16px}
+  .goC{width:42px;height:42px}
+}
+
+/* menus and suggestions (flick .suggestions / .partnerMenu) */
+.pop{position:absolute;z-index:6;left:14px;right:14px;top:100%;margin-top:8px;padding:6px;border:1px solid var(--hair);border-radius:var(--radius-suggest);
+  background:var(--menu);box-shadow:var(--menu-shadow);animation:pop .18s var(--ease)}
+@keyframes pop{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
+.fromwrap .pop{left:auto;right:-10px;width:260px;border-radius:var(--radius-menu);padding:5px}
+.opt{display:flex;width:100%;align-items:center;justify-content:space-between;gap:12px;padding:9px 12px;border:0;border-radius:12px;background:transparent;color:var(--ink);text-align:left;font-size:var(--text-base)}
+.fromwrap .opt{border-radius:10px;padding:9px 13px}
+.opt:hover,.opt.on,.opt:focus-visible{background:var(--hover);outline:none}
+.opt .s{color:var(--faint);font-size:var(--text-sm)}
+.opt .c{color:var(--faint);font-family:var(--mono);font-size:12px}
+.opt .tick{color:var(--ink)}
+div.opt{color:var(--faint)}
+.popsep{height:1px;background:var(--hair);margin:4px 8px}
+.popin{width:100%;margin:4px 0 2px;padding:9px 13px;border:0;border-radius:10px;background:rgba(0,0,0,.05);outline:0;color:var(--ink)}
+.popin::placeholder{color:var(--faint)}
+
+/* calendar: a glass panel in the rows column */
+.cal{border-radius:var(--radius-panel);padding:18px 18px 12px;background:var(--glass-gradient),var(--glass-fill);-webkit-backdrop-filter:var(--glass-blur);backdrop-filter:var(--glass-blur);box-shadow:var(--glass-shadow)}
+.calhd{display:flex;align-items:center;justify-content:space-between;padding:0 4px 12px}
+.calhd b{font-weight:500;font-size:var(--text-meta);letter-spacing:-.01em}
+.nav{display:flex;align-items:center;gap:6px}
+.nav button{display:grid;place-items:center;min-width:30px;height:30px;padding:0 10px;border:0;border-radius:var(--radius-control);background:transparent;color:var(--soft);font-size:var(--text-sm);transition:background .2s,color .2s}
+.nav button:hover:not(:disabled){background:var(--hover);color:var(--ink)}
+.chipg[aria-pressed=true]{background:var(--ink)!important;color:var(--paper)!important;font-weight:500}
+.grid{display:grid;grid-template-columns:repeat(7,1fr);row-gap:2px}
+.dow{text-align:center;color:var(--faint);font-size:var(--text-xs);padding:0 0 6px}
+.d{position:relative;height:44px;border:0;background:none;display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--ink);font-size:var(--text-base)}
+.d span{position:relative;z-index:1;display:grid;place-items:center;width:38px;height:38px;border-radius:50%;transition:background .2s,color .2s}
+.d:hover:not(.past) span{background:var(--hover)}
+.d.past{color:rgba(0,0,0,.22);opacity:1}
+.d.today span{box-shadow:inset 0 0 0 1px rgba(0,0,0,.18)}
+.d.in::before,.d.pv::before{content:"";position:absolute;left:0;right:0;top:4px;bottom:4px;background:rgba(0,0,0,.055)}
+.d.pv::before{background:rgba(0,0,0,.03)}
+.d.s::before{left:50%}.d.e::before{right:50%}.d.s.e::before{display:none}
+.d.s span,.d.e span{background:var(--ink);color:var(--paper);font-weight:500}
+.d.pr span{height:30px;width:30px;margin-top:-10px}
+.d i{position:absolute;bottom:2px;z-index:1;font-style:normal;font-size:9.5px;line-height:1;color:var(--faint)}
+.d.best i{color:var(--warm);font-weight:500}
+.calft{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:10px;padding:12px 4px 2px;border-top:1px solid var(--hair);color:var(--soft);font-size:var(--text-sm)}
+.calft b{color:var(--ink);font-weight:500}
+.calnote{padding:6px 4px 0;color:var(--faint);font-size:var(--text-xs)}
+.txtb{border:0;background:transparent;padding:0;color:var(--soft);font-size:var(--text-sm);transition:color .2s}
+.txtb:hover{color:var(--ink)}
+.txtb.dark{color:var(--ink);text-decoration:underline;text-underline-offset:3px;text-decoration-color:rgba(0,0,0,.25)}
+@media (max-width:640px){.cal{padding:14px 8px 10px;border-radius:24px}.d{height:42px}.d span{width:36px;height:36px}}
+
+/* results (flick ResultsScreen: centred 26px title, quiet note, then the list) */
+.back{display:inline-flex;align-items:center;gap:8px;min-height:34px;padding:0 14px 0 11px;border-radius:var(--radius-control);color:var(--soft);font-size:13.5px;max-width:100%;
+  background:rgba(0,0,0,.04);box-shadow:inset 0 0 0 1px rgba(0,0,0,.1)}
+.back.glass{background:rgba(0,0,0,.04);-webkit-backdrop-filter:none;backdrop-filter:none;box-shadow:inset 0 0 0 1px rgba(0,0,0,.1)}
+.back:hover{color:var(--ink)}
+.back .ar{color:var(--faint)}
+.back .t{overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+#app>.fade>h1,.state h1{margin:36px 0 0;font-size:var(--text-state);font-weight:500;letter-spacing:-.04em;line-height:1.15;text-wrap:balance}
+h1 .soft{color:var(--faint)}
+.est{margin-top:10px;color:var(--faint);font-size:var(--text-xs);max-width:60ch}
+.list{margin-top:30px;border-top:1px solid var(--hair)}
+.row{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:baseline;gap:6px 20px;padding:18px 0;border-bottom:1px solid var(--hair);transition:background .35s var(--ease)}
+.row:hover{background:linear-gradient(90deg,transparent,rgba(0,0,0,.025) 12%,rgba(0,0,0,.025) 88%,transparent)}
+.row .tm{font-size:var(--text-input);font-weight:500;letter-spacing:-.01em}
+.row .tm sup{font-size:11px;color:var(--faint);font-weight:400;margin-left:2px}
+.row .v{font-size:var(--text-score);font-weight:500;letter-spacing:-.03em;line-height:1;text-align:right}
+.row .v small{font-size:13px;font-weight:400;color:var(--dim);letter-spacing:0;margin-left:1px}
+.list:not(.discovery) .row:first-child .v{color:var(--warm)}
+.row .m{color:var(--dim-home);font-size:var(--text-xs);min-width:0}
+.row .fn{font-family:var(--mono);font-size:12px;color:var(--body)}
+.row .p{text-align:right;color:var(--grey);font-size:var(--text-sm)}
+.discovery .row{grid-template-columns:minmax(0,1fr) auto}
+.discovery .row .v{font-size:var(--text-input);letter-spacing:-.01em}
+.hc{display:inline-flex;align-items:center;min-height:20px;margin-left:6px;padding:0 8px;border-radius:var(--radius-control);box-shadow:inset 0 0 0 1px rgba(0,0,0,.12);color:var(--body);font-size:12px;white-space:nowrap}
+.avios{white-space:nowrap}
+.left{margin-top:16px;color:var(--faint);font-size:var(--text-xs)}
+
+/* fare detail */
+.fade>div.hero .big{font-size:var(--text-title);font-weight:500;letter-spacing:-.05em;line-height:1}
+.fade>div.hero{display:block;padding:0;margin-top:36px}
+.fade>div.hero .line{margin-top:12px;color:var(--soft);font-size:var(--text-meta)}
+.fade>div.hero .line b{font-weight:500}
+.acc{color:var(--warm)}
+.who{margin-top:28px;color:var(--dim-home);font-size:var(--text-sm)}
+.legs{display:grid;gap:26px;margin-top:20px}
+.legh{color:var(--faint);font-size:var(--text-xs);margin-bottom:10px}
+.tl{position:relative;padding-left:22px}
+.tl::before{content:"";position:absolute;left:4px;top:10px;bottom:10px;width:1px;background:rgba(0,0,0,.14)}
+.st{position:relative;padding:2px 0}
+.st::before{content:"";position:absolute;left:-22px;top:7px;width:9px;height:9px;border-radius:50%;background:var(--paper);box-shadow:inset 0 0 0 1.5px var(--ink)}
+.st .t1{font-size:var(--text-meta);font-weight:500}
+.st .t1 .ap{color:var(--dim-home);font-weight:400}
+.lg{padding:8px 0;color:var(--dim-home);font-size:var(--text-xs)}
+.lg .fn{font-family:var(--mono);font-size:12px;color:var(--body)}
+.leave{padding:8px 0;color:var(--body);font-size:var(--text-sm)}
+.ghost{opacity:.4}.st.ghost::before{box-shadow:inset 0 0 0 1.5px var(--faint)}
+.gold1{display:flex;align-items:center;gap:14px;margin-top:32px;padding-top:18px;border-top:1px solid var(--hair);color:var(--dim-home);font-size:var(--text-sm)}
+.gold1 b{color:var(--ink);font-weight:500}
+.gbar{position:relative;flex:1;max-width:180px;height:1px;background:rgba(0,0,0,.14)}
+.gbar i{position:absolute;inset:0 auto 0 0;background:var(--ink)}
+.gbar u{position:absolute;top:-1px;bottom:-1px;background:var(--warm);animation:grow .6s var(--ease) both;transform-origin:left}
+@keyframes grow{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+.dock{position:sticky;bottom:18px;z-index:4;display:flex;justify-content:center;margin-top:32px}
+/* primary = flick .button_primary, inverted */
+.go,.go.glass,.book,.book.glass{display:inline-flex;align-items:center;justify-content:center;gap:9px;height:46px;padding:0 22px 0 20px;border:0;border-radius:23px;
+  background:var(--ink);color:var(--paper);font-size:var(--text-control);font-weight:500;letter-spacing:-.01em;white-space:nowrap;
+  -webkit-backdrop-filter:none;backdrop-filter:none;box-shadow:0 18px 40px -18px rgba(0,0,0,.45);transition:transform .2s var(--ease)}
+.go:hover,.book:hover{transform:scale(1.03)}
+.go .arr,.book .arr{color:rgba(250,250,249,.7)}
+
+/* gold */
+.gwrap{display:flex;flex-direction:column;align-items:center;text-align:center;margin-top:24px}
+.gring{position:relative;width:180px;height:180px;margin:8px 0 14px}
+.gring svg{width:100%;height:100%;transform:rotate(-90deg)}
+.gring svg circle:last-child{stroke:var(--warm)}
+.gring svg circle:only-child{stroke:var(--hair)}
+.gring .n{position:absolute;inset:0;display:grid;place-content:center;font-size:var(--text-display);font-weight:500;letter-spacing:-.05em;line-height:1}
+.gring .n small{display:block;margin-top:8px;color:var(--dim-home);font-size:var(--text-xs);font-weight:400;letter-spacing:0}
+.gwrap>p{color:var(--soft)!important;font-size:var(--text-sm)}
+.gform{width:100%;max-width:400px;margin-top:24px;padding:6px 22px;border-radius:var(--radius-panel);text-align:left}
+.gform label{display:flex;align-items:center;justify-content:space-between;gap:16px;min-height:52px;color:var(--soft-home);font-size:var(--text-sm)}
+.gform label+label{border-top:1px solid var(--hair)}
+.gform input{width:55%;border:0;background:transparent;outline:0;text-align:right;color:var(--ink);font-size:var(--text-meta);font-weight:500}
+.save{margin-top:14px}
+
+/* states */
+.state{text-align:center;padding-top:20px}
+.state p{margin:10px auto 0;color:var(--faint);max-width:390px}
+.acts{display:flex;align-items:center;justify-content:center;gap:22px;margin-top:24px;flex-wrap:wrap}
+.sk{display:flex;align-items:center;justify-content:space-between;gap:20px;height:76px;border-bottom:1px solid var(--hair)}
+.sk i{display:block;height:11px;border-radius:6px;background:linear-gradient(90deg,rgba(0,0,0,.05),rgba(0,0,0,.09),rgba(0,0,0,.05));background-size:200% 100%;animation:sh 1.3s linear infinite}
+@keyframes sh{from{background-position:200% 0}to{background-position:-200% 0}}
+.spin{display:inline-block;width:11px;height:11px;margin-right:8px;vertical-align:-1px;border-radius:50%;border:1.5px solid rgba(0,0,0,.12);border-top-color:var(--ink);animation:rot .8s linear infinite}
+@keyframes rot{to{transform:rotate(360deg)}}
+
+
+/* ---------- results v3: Skiplagged structure, flick-inverse skin ---------- */
+.wide .wrap{width:min(1080px,calc(100vw - 48px))}
+.rgrid{display:grid;grid-template-columns:288px minmax(0,1fr);gap:28px;align-items:start;margin-top:30px}
+.rcol{min-width:0}
+.tabs{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;padding:4px;border-radius:var(--radius-control);background:rgba(0,0,0,.04);box-shadow:inset 0 0 0 1px rgba(0,0,0,.08)}
+.tabs button{height:38px;border:0;border-radius:var(--radius-control);background:transparent;color:var(--soft);font-size:var(--text-sm);transition:background .2s,color .2s}
+.tabs button:hover{color:var(--ink)}
+.tabs button[aria-selected=true]{background:var(--ink);color:var(--paper);font-weight:500}
+.tabs .sm2{display:none}
+.rbar{display:flex;align-items:center;justify-content:space-between;min-height:40px;margin:10px 0 6px;color:var(--faint);font-size:var(--text-xs)}
+.fopen{display:none;border:0;min-height:34px;padding:0 13px;border-radius:var(--radius-control);background:rgba(0,0,0,.04);box-shadow:inset 0 0 0 1px rgba(0,0,0,.1);color:var(--ink);font-size:13.5px}
+#cards{display:grid;gap:12px}
+/* card */
+.fc{display:grid;grid-template-columns:minmax(0,1fr) 196px;border-radius:var(--radius-panel);overflow:hidden}
+.cl{padding:20px 24px 18px;min-width:0;display:flex;flex-direction:column;gap:14px}
+.cr{display:flex;flex-direction:column;align-items:stretch;justify-content:center;gap:6px;padding:20px 22px;border-left:1px solid var(--hair);text-align:left}
+.tag{align-self:flex-start;display:inline-flex;align-items:center;min-height:22px;padding:0 9px;border-radius:var(--radius-control);background:var(--ink);color:var(--paper);font-size:12px;font-weight:500}
+.lrow{display:grid;grid-template-columns:auto minmax(48px,1fr) auto;column-gap:14px;align-items:start}
+.ep{display:flex;flex-direction:column}
+.ep b{font-size:var(--text-score);font-weight:500;letter-spacing:-.03em;line-height:28px;white-space:nowrap}
+.ep sup{font-size:11px;font-weight:500;color:var(--warm);margin-left:2px;letter-spacing:0;vertical-align:10px}
+.ep span{font-size:var(--text-sm);color:var(--dim);line-height:20px;letter-spacing:.02em}
+.mid{display:grid;grid-template-rows:28px 20px auto;min-width:0}
+.durs{display:flex;justify-content:space-around;align-items:flex-end;color:var(--faint);font-size:var(--text-xs);line-height:1;padding-bottom:4px}
+.line{display:flex;align-items:center;gap:6px;color:var(--dim)}
+.line i{flex:1;height:1px;background:rgba(0,0,0,.22)}
+.line svg{width:14px;height:14px;transform:rotate(90deg)}
+.via{text-align:center;color:var(--dim);font-size:var(--text-xs);letter-spacing:.02em;line-height:18px}
+.air{color:var(--dim-home);font-size:var(--text-sm);display:flex;flex-wrap:wrap;align-items:center;gap:4px 0}
+.air .hc{margin-left:10px}
+.stp{display:flex;align-items:baseline;justify-content:space-between;gap:8px}
+.stp b{font-size:var(--text-sm);font-weight:500}
+.stp span{color:var(--dim-home);font-size:var(--text-sm)}
+.money{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin-top:6px}
+.prc{font-size:var(--text-score);font-weight:500;letter-spacing:-.03em;line-height:1}
+.tpv{font-size:var(--text-score);font-weight:500;letter-spacing:-.03em;line-height:1;color:var(--warm);white-space:nowrap}
+.pt{color:var(--dim-home);font-size:var(--text-xs)}
+.sel{display:flex;align-items:center;justify-content:center;height:42px;margin-top:10px;border-radius:21px;background:var(--ink);color:var(--paper);font-size:var(--text-control);font-weight:500;transition:transform .2s var(--ease)}
+.sel:hover{transform:scale(1.03)}
+/* filters */
+.fcol{position:sticky;top:20px}
+.fpanel{border-radius:var(--radius-panel);padding:18px 22px 20px}
+.fhd{display:flex;align-items:center;justify-content:space-between;min-height:30px}
+.fhd b{font-size:var(--text-meta);font-weight:500}
+.fs{padding:18px 0 4px;border-top:1px solid var(--hair);margin-top:14px}
+.fs:first-of-type{margin-top:10px}
+.fsh{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin-bottom:8px}
+.fs h3{font-size:var(--text-base);font-weight:500}
+.rv{color:var(--dim-home);font-size:var(--text-xs)}
+.radio{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:48px;cursor:pointer;position:relative}
+.radio span{display:flex;flex-direction:column}
+.radio b{font-weight:400;font-size:var(--text-base)}
+.radio small{color:var(--dim-home);font-size:var(--text-xs)}
+.radio input{position:absolute;opacity:0;width:1px;height:1px}
+.radio i{flex:none;width:20px;height:20px;border-radius:50%;box-shadow:inset 0 0 0 1.5px rgba(0,0,0,.32);transition:box-shadow .2s,background .2s}
+.radio i.sq{border-radius:6px}
+.radio input:checked+i{background:var(--ink);box-shadow:inset 0 0 0 6px var(--ink),inset 0 0 0 20px var(--paper)}
+.radio input:checked+i.sq{box-shadow:none;background:var(--ink) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cpath d='M5.5 10.5l3 3 6-7' fill='none' stroke='%23fafaf9' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/20px}
+.radio input:focus-visible+i{outline:1.5px solid rgba(0,0,0,.7);outline-offset:3px}
+.hist{display:flex;align-items:flex-end;gap:2px;height:56px;padding:0 9px}
+.hist i{flex:1;background:var(--ink);opacity:.62;border-radius:2px 2px 0 0;transition:opacity .2s,height .3s var(--ease)}
+.hist i.off{opacity:.12}
+.rng{position:relative;height:22px;margin:0}
+.rng::before{content:"";position:absolute;left:9px;right:9px;top:10px;height:1.5px;background:rgba(0,0,0,.14)}
+.rng u{position:absolute;top:10px;height:1.5px;background:var(--ink);margin:0 9px}
+.rng input{position:absolute;inset:0;width:100%;margin:0;background:none;-webkit-appearance:none;appearance:none;pointer-events:none;height:22px}
+.rng input::-webkit-slider-thumb{-webkit-appearance:none;pointer-events:auto;width:18px;height:18px;border-radius:50%;background:var(--paper);box-shadow:inset 0 0 0 1.5px var(--ink),0 2px 6px rgba(0,0,0,.15);cursor:grab}
+.rng input::-moz-range-thumb{pointer-events:auto;width:18px;height:18px;border-radius:50%;background:var(--paper);border:1.5px solid var(--ink);cursor:grab}
+.rng input::-webkit-slider-runnable-track{background:none}
+.rends{display:flex;justify-content:space-between;color:var(--dim-home);font-size:var(--text-xs);padding:2px 0 6px}
+.fshow{display:none!important}
+@media (max-width:900px){
+  .rgrid{grid-template-columns:1fr}
+  .fcol{display:none}
+  .fopen{display:inline-flex;align-items:center}
+  body.sheet{overflow:hidden}
+  body.sheet::after{content:"";position:fixed;inset:0;z-index:39;background:rgba(10,8,14,.18)}
+  body.sheet .fcol{display:block;position:fixed;left:0;right:0;bottom:0;top:auto;z-index:40;animation:up .28s var(--ease)}
+  body.sheet .fpanel{border-radius:28px 28px 0 0;max-height:86vh;overflow:auto;padding:16px 24px calc(16px + env(safe-area-inset-bottom));background:var(--menu)}
+  body.sheet .fshow{display:flex!important;width:100%;margin-top:14px;position:sticky;bottom:0}
+}
+@keyframes up{from{transform:translateY(24px);opacity:0}to{transform:none;opacity:1}}
+@media (max-width:640px){
+  .tabs .lg2{display:none}.tabs .sm2{display:inline}
+  .fc{grid-template-columns:1fr}
+  .cl{padding:18px 18px 14px;gap:12px}
+  .cr{display:grid;grid-template-columns:1fr auto;grid-template-areas:"stp sel" "money sel" "pt sel";align-items:center;column-gap:16px;row-gap:4px;border-left:0;border-top:1px solid var(--hair);padding:14px 18px 16px}
+  .stp{grid-area:stp;justify-content:flex-start}.money{grid-area:money;justify-content:flex-start;margin-top:2px}.pt{grid-area:pt}
+  .sel{grid-area:sel;margin:0;padding:0 24px;height:46px;border-radius:23px}
+  .lrow{column-gap:10px}
+}
+
+/* toast + prototype chrome */
+.toast{position:fixed;left:50%;bottom:24px;z-index:20;transform:translate(-50%,14px);opacity:0;padding:8px 16px;border-radius:16px;color:var(--ink);font-size:var(--text-sm);pointer-events:none;transition:opacity .2s,transform .2s var(--ease)}
+.toast.on{opacity:1;transform:translate(-50%,0)}
+.sr{clip:rect(0,0,0,0);clip-path:inset(50%);height:1px;overflow:hidden;position:absolute;white-space:nowrap;width:1px}
+.fade{animation:fd .3s var(--ease)}
+@keyframes fd{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+.idx{position:fixed;right:12px;bottom:12px;z-index:30;font-size:var(--text-xs)}
+.idx>button{border:0;border-radius:var(--radius-control);padding:6px 12px;background:var(--menu);box-shadow:inset 0 0 0 1px var(--hair),var(--menu-shadow);color:var(--soft)}
+.idx nav{display:none;position:absolute;right:0;bottom:38px;min-width:220px;max-height:72vh;overflow:auto;padding:5px;border:1px solid var(--hair);border-radius:var(--radius-menu);background:var(--menu);box-shadow:var(--menu-shadow)}
+.idx.open nav{display:block}
+.idx nav a{display:block;padding:7px 12px;border-radius:10px;color:var(--soft)}
+.idx nav a:hover{background:var(--hover);color:var(--ink)}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div class="sky" aria-hidden="true"><i></i><i></i><i></i></div>
+<header class="top">
+  <a class="logo" href="#/search" aria-label="Flights home"><span class="mk"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M21 16v-2l-8-5V3.5c0-.83-.67-1.5-1.5-1.5S10 2.67 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z"/></svg></span><span>flights<span class="dot">.</span></span></a>
+  <a class="ring" id="ring" href="#/gold"></a>
+</header>
+<div class="wrap">
+  <main id="app"></main>
+</div>
+<div class="toast glass" id="toast" role="status"></div>
+<div class="idx" id="idx"><button aria-expanded="false">Screens</button><nav></nav></div>
+<script>
+// ---- Prototype only: sample data stands in for /api/flights (no network). ----
+(function(){
+  try{if(!localStorage.getItem('flights.gold.v2'))localStorage.setItem('flights.gold.v2',JSON.stringify({tp:12480,target:20000,ends:'2027-03-31'}))}catch{}
+  const TZ={LHR:'+00:00',LGW:'+00:00',LCY:'+00:00',STN:'+00:00',LTN:'+00:00',SEN:'+00:00',DUB:'+00:00',LIS:'+00:00',
+    MAD:'+01:00',BCN:'+01:00',VLC:'+01:00',IBZ:'+01:00',FRA:'+01:00',MUC:'+01:00',FLR:'+01:00',FCO:'+01:00',MXP:'+01:00',CDG:'+01:00',
+    JFK:'-05:00',BOS:'-05:00',PHL:'-05:00',CLT:'-05:00',HEL:'+02:00',DOH:'+03:00',AMM:'+03:00'};
+  const NAMES={LHR:'London Heathrow',LGW:'London Gatwick',LCY:'London City',MAD:'Madrid',VLC:'Valencia',BCN:'Barcelona',JFK:'New York JFK',BOS:'Boston',
+    PHL:'Philadelphia',CLT:'Charlotte',DUB:'Dublin',DOH:'Doha',AMM:'Amman',IBZ:'Ibiza',HEL:'Helsinki'};
+  const CARRIERS=[{code:'BA',name:'British Airways'},{code:'IB',name:'Iberia'},{code:'AA',name:'American Airlines'},{code:'EI',name:'Aer Lingus'},
+    {code:'QR',name:'Qatar Airways'},{code:'RJ',name:'Royal Jordanian'},{code:'AY',name:'Finnair'}];
+  // [flight, from, dep, to, arr, +days]; h = index of the first unflown (hidden-city) segment
+  const T={
+    JFK:{ex:9,out:[
+      {s:[['BA 117','LHR','08:15','JFK','11:15']],gbp:356,tp:260,av:2340},
+      {s:[['BA 175','LHR','10:20','JFK','13:25']],gbp:392,tp:290,av:2610},
+      {s:[['BA 173','LHR','14:15','JFK','17:20']],gbp:402,tp:300,av:2700},
+      {s:[['BA 177','LHR','16:40','JFK','19:45']],gbp:368,tp:270,av:2430},
+      {s:[['BA 115','LHR','17:55','JFK','20:55']],gbp:421,tp:310,av:2790},
+      {s:[['AA 101','LHR','08:25','JFK','11:20']],gbp:318,tp:210,av:1890},
+      {s:[['AA 107','LHR','12:40','JFK','15:40']],gbp:334,tp:220,av:1980},
+      {s:[['AA 143','LHR','19:10','JFK','22:05']],gbp:299,tp:195,av:1755},
+      {s:[['AA 105','LHR','10:05','JFK','13:05'],['AA 1832','JFK','15:10','CLT','17:25']],h:1,gbp:289,tp:190,av:1710},
+      {s:[['EI 155','LHR','06:30','DUB','07:50'],['EI 105','DUB','10:50','JFK','13:15']],gbp:274,tp:160,av:1440},
+      {s:[['EI 163','LHR','09:10','DUB','10:30'],['EI 107','DUB','13:25','JFK','15:45']],gbp:281,tp:165,av:1485},
+      {s:[['EI 171','LHR','15:05','DUB','16:25'],['EI 109','DUB','18:15','JFK','20:40']],gbp:262,tp:150,av:1350},
+      {s:[['BA 213','LHR','09:30','BOS','12:00'],['AA 2190','BOS','13:30','JFK','14:50']],gbp:305,tp:240,av:2160},
+      {s:[['EI 159','LHR','07:40','DUB','09:00'],['AA 291','DUB','11:00','PHL','13:25'],['AA 4440','PHL','15:30','JFK','16:40']],gbp:249,tp:150,av:1350}],
+      back:{BA:[['BA 178','JFK','19:30','LHR','07:35',1]],AA:[['AA 100','JFK','18:25','LHR','06:30',1]],EI:[['EI 104','JFK','18:30','DUB','05:55',1],['EI 154','DUB','07:30','LHR','08:50',1]]}},
+    MAD:{ex:13,out:[
+      {s:[['BA 458','LHR','06:40','MAD','09:55']],gbp:68,tp:52,av:470},
+      {s:[['BA 460','LHR','11:30','MAD','14:45']],gbp:92,tp:78,av:700},
+      {s:[['BA 462','LHR','15:05','MAD','18:20']],gbp:84,tp:64,av:575},
+      {s:[['BA 466','LHR','18:55','MAD','22:10']],gbp:74,tp:56,av:505},
+      {s:[['BA 2700','LCY','08:10','MAD','11:30']],gbp:81,tp:60,av:540},
+      {s:[['IB 3167','LHR','07:15','MAD','10:35']],gbp:54,tp:40,av:360},
+      {s:[['IB 3171','LHR','12:05','MAD','15:25']],gbp:61,tp:44,av:395},
+      {s:[['IB 3175','LHR','17:20','MAD','20:40']],gbp:58,tp:42,av:380},
+      {s:[['IB 3173','LHR','15:55','MAD','19:15'],['IB 8962','MAD','20:40','VLC','21:35']],h:1,gbp:49,tp:35,av:315},
+      {s:[['IB 5401','LGW','06:05','MAD','09:20']],op:'Vueling',gbp:39,tp:20,av:180},
+      {s:[['IB 5405','LGW','19:40','MAD','22:55']],op:'Vueling',gbp:45,tp:24,av:215},
+      {s:[['IB 5011','LGW','07:00','BCN','10:10'],['IB 5022','BCN','11:40','MAD','12:55']],op:'Vueling',gbp:44,tp:26,av:235}],
+      back:{BA:[['BA 459','MAD','11:05','LHR','12:30']],IB:[['IB 3166','MAD','11:20','LHR','12:45']]}},
+    DOH:{ex:6,out:[
+      {s:[['BA 125','LHR','15:20','DOH','00:55',1]],gbp:455,tp:330,av:2970},
+      {s:[['QR 4','LHR','08:00','DOH','17:40']],gbp:412,tp:280,av:2520},
+      {s:[['QR 16','LHR','20:15','DOH','06:10',1]],gbp:389,tp:250,av:2250},
+      {s:[['RJ 112','LHR','12:45','AMM','19:35'],['RJ 610','AMM','22:10','DOH','00:55',1]],gbp:301,tp:170,av:1530}],
+      back:{BA:[['BA 124','DOH','02:20','LHR','07:05']],QR:[['QR 3','DOH','07:40','LHR','12:35']],RJ:[['RJ 611','DOH','02:10','AMM','04:40'],['RJ 111','AMM','08:00','LHR','11:30']]}},
+    IBZLON:{ex:5,out:[
+      {s:[['IB 1702','IBZ','08:05','MAD','09:20'],['BA 459','MAD','11:05','LHR','12:30']],gbp:131,tp:95,av:850},
+      {s:[['IB 1704','IBZ','07:30','MAD','08:45'],['IB 3166','MAD','11:20','LHR','12:45']],gbp:118,tp:80,av:720},
+      {s:[['IB 1710','IBZ','12:10','MAD','13:25'],['IB 3170','MAD','15:00','LHR','16:25'],['EI 163','LHR','18:10','DUB','19:30']],h:2,gbp:97,tp:60,av:540},
+      {s:[['IB 5809','IBZ','09:40','BCN','10:35'],['IB 5820','BCN','12:15','LGW','13:40']],op:'Vueling',gbp:86,tp:45,av:400}],
+      back:{IB:[['IB 3167','LHR','07:15','MAD','10:35'],['IB 1705','MAD','12:20','IBZ','13:35']],BA:[['BA 458','LHR','06:40','MAD','09:55'],['IB 1703','MAD','11:30','IBZ','12:45']]}}
+  };
+  function generic(dest){const p=(dest.charCodeAt(0)+dest.charCodeAt(2))%40;return{ex:7,out:[
+    {s:[['BA '+(300+p),'LHR','08:40',dest,'11:55']],gbp:96+p,tp:70+p,av:620},
+    {s:[['IB '+(3400+p),'LHR','13:10',dest,'16:20']],gbp:78+p,tp:48+p,av:430},
+    {s:[['BA '+(320+p),'LGW','18:25',dest,'21:35']],gbp:88+p,tp:60+p,av:540}],
+    back:{BA:[['BA '+(301+p),dest,'12:50','LHR','14:05']],IB:[['IB '+(3401+p),dest,'17:15','LHR','18:30']]}}}
+  const addDays=(k,n)=>new Date(Date.parse(k+'T12:00:00Z')+n*864e5).toISOString().slice(0,10);
+  const dt=(date,hhmm,ap,plus=0)=>`${addDays(date,plus)}T${hhmm}:00${TZ[ap]||'+01:00'}`;
+  const unit=(seg,date,flown)=>({flown,flightNumbers:[seg[0]],from:seg[1],to:seg[3],departure:{airport:seg[1],dateTime:dt(date,seg[2],seg[1])},arrival:{airport:seg[3],dateTime:dt(date,seg[4],seg[3],seg[5]||0)}});
+  function fare(t,out,back,origin){
+    const outUnits=t.s.map((g,i)=>unit(g,out,t.h==null||i<t.h)),flown=outUnits.filter(u=>u.flown),c=t.s[0][0].slice(0,2);
+    const legs=[{units:outUnits}];let returnFlight=null;
+    if(back){const segs=(T.cur.back[c]||Object.values(T.cur.back)[0]);const bu=segs.map(g=>unit(g,back,true));legs.push({units:bu});returnFlight={departure:bu[0].departure,arrival:bu.at(-1).arrival}}
+    const k=back?1.85:1,tp=t.tp*(back?2:1),gbp=Math.round(t.gbp*k*100)/100,fns=t.s.map(g=>g[0]);
+    return{id:fns.join('-').replace(/ /g,'')+'_'+out+(back?'_'+back:''),priceGbp:gbp,price:{amount:(gbp/0.79).toFixed(2),currency:'USD'},
+      estimate:{tierPoints:tp,avios:t.av*(back?2:1),breakdown:[{date:out,tierPoints:t.tp},...(back?[{date:back,tierPoints:t.tp}]:[])]},
+      departure:flown[0].departure,arrival:flown.at(-1).arrival,flightNumbers:fns,legs,returnFlight,operatedBy:t.op||'',
+      hiddenCity:t.h!=null,ticketedTo:t.h!=null?t.s.at(-1)[3]:undefined,leaveAt:t.h!=null?t.s[t.h][1]:undefined,
+      departureAirportGroup:origin,deepLink:`https://skiplagged.com/flights/${t.s[0][1]}/${t.s.at(-1)[3]}/${out}${back?'/'+back:''}#trip=${fns.join('-').replace(/ /g,'')}`}
+  }
+  const ANYWHERE={LON:[['LGW','London',29,'LCY'],['LHR','London, GB',34,'LGW'],['FLR','Firenze FI',62,'LGW'],['FRA','Frankfurt am Main',48,'LHR'],['MUC','München',57,'LHR'],
+    ['LIS','Lisboa',44,'LGW'],['FCO','Roma',51,'LHR'],['MXP','Milano',39,'LGW'],['PRG','Praha',41,'STN'],['VIE','Wien',63,'LHR'],['SVQ','Sevilla',55,'LGW'],
+    ['MAD','Madrid',54,'LHR'],['DUB','Dublin',37,'LHR'],['HEL','Helsinki',118,'LHR'],['JFK','New York',262,'LHR'],['DOH','Doha',301,'LHR']],
+    IBZ:[['IBZ','Ibiza',0,'IBZ'],['MAD','Madrid',42,'IBZ'],['BCN','Barcelona',31,'IBZ'],['LGW','London',86,'IBZ'],['LHR','London',97,'IBZ'],['VLC','València',38,'IBZ'],['PMI','Palma de Mallorca',29,'IBZ']]};
+  function build(sp){
+    const action=sp.get('action'),origin=sp.get('origin')||'',out=sp.get('departureDate'),back=sp.get('returnDate')||'',dest=sp.get('destination')||'';
+    const meta={airports:{...NAMES},carriers:CARRIERS,fx:{usdToGbp:0.79}};
+    if(action==='flex'){const rows=[];const end=addDays(out.slice(0,7)+'-01',40).slice(0,7);for(let k=out;k.slice(0,7)<end&&k.slice(0,7)===out.slice(0,7);k=addDays(k,1)){const d=+k.slice(8);rows.push({departureDate:k,priceGbp:Math.round(({MAD:52,JFK:262,DOH:301}[dest]||70)*(1+((d*37)%23)/45))})}return{action,results:rows,meta}}
+    if(action==='anywhere'){const src=ANYWHERE[origin.includes('IBZ')?'IBZ':'LON'];
+      src.forEach(r=>meta.airports[r[0]]=r[1]);
+      return{action,results:src.map(r=>({destination:r[0],city:r[1],priceGbp:r[2]*(back?1.8:1),origin:r[3]})),meta}}
+    const fromIbz=origin==='IBZ';
+    T.cur=fromIbz&&/^(LHR|LGW|LCY|STN|LTN|SEN)$/.test(dest)?T.IBZLON:T[dest]||generic(dest);
+    const res=T.cur.out.map(t=>fare(t,out,back,origin));
+    return{action,results:res,meta,excluded:{nonEarning:T.cur.ex},pages:[{hasMoreResults:false}]};
+  }
+  window.MOCK={mode:'ok',delay:700};
+  window.fetch=(url,opts={})=>new Promise((resolve,reject)=>{
+    const sp=new URL(url,'https://sam.toys').searchParams;
+    const t=setTimeout(()=>{
+      const m=MOCK.mode,body=build(sp);
+      if(m==='error'&&sp.get('action')!=='flex')return resolve({ok:false,status:502,headers:{get:()=>null},json:async()=>({})});
+      if(m==='throttled'&&sp.get('action')!=='flex')return resolve({ok:false,status:429,headers:{get:h=>h==='Retry-After'?'25':null},json:async()=>({})});
+      if(m==='empty'&&sp.get('action')==='search')body.results=[];
+      if(m==='partial'&&sp.get('action')!=='flex'){body.partial=true;body.failures=[{origin:'LCY'},{origin:'SEN'}];body.results=body.results.filter(r=>!/LCY|SEN/.test(r.departure?.airport||r.origin||''))}
+      resolve({ok:true,status:200,headers:{get:()=>null},json:async()=>body});
+    },sp.get('action')==='flex'?Math.min(MOCK.delay,500):MOCK.delay);
+    opts.signal?.addEventListener('abort',()=>{clearTimeout(t);reject(new DOMException('Aborted','AbortError'))});
+  });
+})();
+</script>
+<script>
+'use strict';
+const AIRPORTS=[['LON','London','all airports'],['LHR','London Heathrow',''],['LGW','London Gatwick',''],['LCY','London City',''],['STN','London Stansted',''],['LTN','London Luton',''],['SEN','London Southend',''],['IBZ','Ibiza',''],['MAD','Madrid',''],['BCN','Barcelona',''],['JFK','New York','JFK'],['DOH','Doha',''],['DUB','Dublin',''],['HEL','Helsinki',''],['AMM','Amman',''],['HND','Tokyo','Haneda'],['VLC','Valencia',''],['SYD','Sydney',''],['LIS','Lisbon',''],['MXP','Milan','Malpensa'],['BKK','Bangkok',''],['LAX','Los Angeles',''],['SIN','Singapore',''],['HKG','Hong Kong',''],['CDG','Paris',''],['NRT','Tokyo Narita',''],['DXB','Dubai','']];
+const CITY=Object.fromEntries(AIRPORTS.map(a=>[a[0],a[1]]));
+const LONDON=['LHR','LGW','LCY','STN','LTN','SEN'];
+const CABINS={'Economy':'economy','Premium economy':'premium','Business':'business','First':'first'};
+const TODAY=new Date().toISOString().slice(0,10), LATEST=new Date(Date.now()+366*864e5).toISOString().slice(0,10);
+const S={from:'LON',to:'',out:'',back:'',cabin:'Economy',view:TODAY.slice(0,7),prices:false,hover:''};
+let calOpen=false,sugOpen=false,fromOpen=false,hint='',draft='',selection=-1;
+let response=null,resultQuery=null,searchController=null,searchSerial=0,searchState='idle',retryAt=0,retryTimer;
+let flexController=null,flexSerial=0,flexState='',flexRows=[],flexKey='';
+const verified=new Map(), $=s=>document.querySelector(s);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const fmt=n=>Math.round(n).toLocaleString('en-GB'), money=(n,pence=false)=>'£'+Number(n).toLocaleString('en-GB',{minimumFractionDigits:pence?2:0,maximumFractionDigits:pence?2:0});
+const ppt=f=>'£'+(f.priceGbp/f.estimate.tierPoints).toFixed(2);
+const D=k=>new Date(k+'T12:00:00Z');
+const key=d=>d.toISOString().slice(0,10);
+const dShort=k=>D(k).toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short',timeZone:'UTC'});
+const nights=(a,b)=>Math.round((D(b)-D(a))/864e5);
+const cityName=c=>response?.meta?.airports?.[c]||CITY[c]||c;
+const placeName=c=>c==='ANY'?'Anywhere':CITY[c]||response?.meta?.airports?.[c]||c;
+const realDate=v=>/^\d{4}-\d{2}-\d{2}$/.test(v||'')&&Number.isFinite(D(v).getTime())&&key(D(v))===v;
+function defaultGold(){const y=+TODAY.slice(0,4)+(TODAY.slice(5)>='04-01'?1:0);return{tp:0,target:20000,ends:y+'-03-31'}}
+// This is the only balance data boundary: replace it with the signed-in BA adapter later.
+function goldData(value){
+  const fallback=defaultGold();
+  try{
+    if(value){localStorage.setItem('flights.gold.v2',JSON.stringify(value));return{...value}}
+    const saved=JSON.parse(localStorage.getItem('flights.gold.v2')||'null');
+    if(!saved||!Number.isSafeInteger(saved.tp)||saved.tp<0||!realDate(saved.ends))return fallback;
+    return{tp:saved.tp,target:Number.isSafeInteger(saved.target)&&saved.target>0?saved.target:20000,ends:saved.ends};
+  }catch{return value?null:fallback}
+}
+let gold=goldData();
+function whenText(q=S){
+  if(!q.out)return '';
+  if(!q.back)return dShort(q.out);
+  const a=D(q.out),b=D(q.back),sameM=a.getUTCMonth()===b.getUTCMonth()&&a.getUTCFullYear()===b.getUTCFullYear();
+  return a.toLocaleDateString('en-GB',{weekday:'short',day:'numeric',...(sameM?{}:{month:'short'}),timeZone:'UTC'})+' – '+dShort(q.back);
+}
+function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('on');clearTimeout(toast.h);toast.h=setTimeout(()=>t.classList.remove('on'),2200)}
+function ring(size,stroke,pct){const r=(size-stroke)/2,c=2*Math.PI*r;return `<svg viewBox="0 0 ${size} ${size}" aria-hidden="true"><circle cx="${size/2}" cy="${size/2}" r="${r}" fill="none" stroke="var(--line)" stroke-width="${stroke}"/>${pct>0?`<circle cx="${size/2}" cy="${size/2}" r="${r}" fill="none" stroke="var(--text)" stroke-width="${stroke}" stroke-linecap="round" stroke-dasharray="${c*pct} ${c}"/>`: ""}</svg>`}
+function renderRing(){const pct=Math.min(1,gold.tp/gold.target),el=$('#ring');el.innerHTML=`<span>Gold</span><span class="mini"><i style="width:${pct*100}%"></i></span>`;el.setAttribute('aria-label',`Gold: ${fmt(gold.tp)} of ${fmt(gold.target)} tier points`);el.title=`${fmt(Math.max(0,gold.target-gold.tp))} tier points to Gold`}
+function origins(q){return q.from==='LON'?LONDON.filter(c=>c!==q.to).join(','):q.from}
+function params(action,q){const p=new URLSearchParams({action,origin:origins(q),departureDate:q.out});if(q.back)p.set('returnDate',q.back);if(action!=='anywhere')p.set('destination',q.to);if(action!=='flex')p.set('fareClass',CABINS[q.cabin]);else{p.set('mode','depart');p.set('sort','date')}return p}
+async function request(action,q,signal){
+  const r=await fetch('/api/flights?'+params(action,q),{signal,cache:'no-store',headers:{Accept:'application/json'}});
+  if(!r.ok){const e=new Error('Flight search failed');e.status=r.status;e.retryAfter=Math.min(3600,Math.max(1,Number(r.headers.get('Retry-After'))||60));throw e}
+  const data=await r.json();if(!Array.isArray(data.results))throw new Error('Invalid response');return data;
+}
+function cacheKey(q){return JSON.stringify([q.from,q.to,q.out,q.back,q.cabin])}
+function calendarQuote(k){const q={...S,out:k,back:S.back?key(new Date(D(k).getTime()+nights(S.out,S.back)*864e5)):''},v=verified.get(cacheKey(q));if(v)return{value:(v.priceGbp/v.estimate.tierPoints).toFixed(2),verified:true};const p=flexRows.filter(r=>r.departureDate===k).sort((a,b)=>a.priceGbp-b.priceGbp)[0];return p?{value:money(p.priceGbp),verified:false}:null}
+function calendarMonth(today=TODAY,selected=S.out){
+  if(selected)return selected.slice(0,7);
+  const d=D(today),end=new Date(Date.UTC(d.getUTCFullYear(),d.getUTCMonth()+1,0));
+  return end.getUTCDate()-d.getUTCDate()+1<7?key(new Date(Date.UTC(d.getUTCFullYear(),d.getUTCMonth()+1,1))).slice(0,7):today.slice(0,7);
+}
+function calHTML(){
+  const [y,m]=S.view.split('-').map(Number),first=new Date(Date.UTC(y,m-1,1)),n=new Date(Date.UTC(y,m,0)).getUTCDate(),lead=(first.getUTCDay()+6)%7;
+  const hasRoute=S.to&&S.to!=='ANY',showP=S.prices&&hasRoute;let cells='';
+  for(let i=0;i<lead;i++)cells+='<span></span>';
+  for(let d=1;d<=n;d++){
+    const k=key(new Date(Date.UTC(y,m-1,d))),past=k<TODAY||k>LATEST,isS=k===S.out,isE=S.back?k===S.back:isS,inR=S.out&&S.back&&k>S.out&&k<S.back;
+    const quote=showP&&!past?calendarQuote(k):null;
+    const cls=['d',past&&'past',k===TODAY&&'today',isS&&'s',isE&&'e',(inR||(S.back&&(isS||isE)))&&'in',showP&&!past&&'pr',quote?.verified&&'best'].filter(Boolean);
+    cells+=`<button type="button" class="${cls.join(' ')}" data-k="${k}" ${past?'disabled':''} aria-label="${dShort(k)}${isS?', outbound':''}${S.back&&isE?', return':''}${quote?', '+esc(quote.value)+(quote.verified?' per estimated tier point':' unverified discovery price'):''}" aria-pressed="${!!(isS||(S.back&&isE))}"><span>${d}</span>${showP&&!past?`<i>${quote?quote.value:'—'}</i>`:''}</button>`;
+  }
+  const foot=!S.out?'<span>Tap a date. Tap a second date for a return.</span>':`<span><b>${whenText()}</b> · ${S.back?nights(S.out,S.back)+' nights':'one way'}</span><button type="button" class="txtb" id="clr">Clear</button>`;
+  return `<div class="cal" id="cal"><div class="calhd"><b>${first.toLocaleDateString('en-GB',{month:'long',year:'numeric',timeZone:'UTC'})}</b><div class="nav">${hasRoute?`<button type="button" class="chipg" id="pt" aria-label="Calendar price per tier point" aria-pressed="${S.prices}">£/TP</button>`:''}<button type="button" id="pm" aria-label="Previous month" ${S.view<=TODAY.slice(0,7)?'disabled':''}>‹</button><button type="button" id="nm" aria-label="Next month" ${S.view>=LATEST.slice(0,7)?'disabled':''}>›</button></div></div><div class="grid">${['M','T','W','T','F','S','S'].map(x=>`<span class="dow">${x}</span>`).join('')}${cells}</div><div class="calft">${foot}</div>${showP?`<div class="calnote" role="status">${flexState==='loading'?'Loading dates…':flexState==='throttled'?'Too many requests. Try dates again shortly.':flexState==='error'?'Dates unavailable. Toggle £/TP to try again.':'£ discovery prices · £/TP after search'}</div>`:''}</div>`;
+}
+function tapDay(k){if(!S.out)S.out=k;else if(!S.back){if(k===S.out)S.out='';else if(k<S.out)S.out=k;else S.back=k}else{if(k===S.back)S.back='';else{S.out=k;S.back=''}}S.hover='';hint=''}
+function vSearch(){
+  document.title='Flights';return `<div class="fromwrap"><button class="from" id="fromBtn" aria-haspopup="true" aria-expanded="${fromOpen}">From <b>${esc(placeName(S.from))}</b></button>${fromOpen?fromPop():''}</div><form class="card glass" id="sf" novalidate autocomplete="off"><label class="bar" for="to"><span class="k">To</span><input class="where" id="to" placeholder="Where to?" value="${esc(S.to?placeName(S.to):draft)}" aria-label="Where to" aria-autocomplete="list" aria-expanded="${sugOpen}" aria-controls="destinations" role="combobox">${sugOpen?sugPop(draft):''}</label><div class="bar" id="whenBar"><span class="k">When</span><button type="button" class="when ${S.out?'':'ph'}" id="whenBtn" aria-label="When" aria-expanded="${calOpen}">${S.out?whenText()+(S.back?'':'<small>one way</small>'):'Add a date'}</button></div>${calOpen?calHTML():''}</form><div class="under acts"><label><span class="sr">Cabin</span><select class="cabin" id="cabin">${Object.keys(CABINS).map(c=>`<option ${S.cabin===c?'selected':''}>${c}</option>`).join('')}</select></label><button class="go glass press" id="go" form="sf" type="submit">Search <span class="arr">→</span></button></div><div class="hintline ${hint?'err':''}" role="status">${esc(hint)}</div>`;
+}
+function matches(q,origin=false){q=q.trim().toLowerCase();let list=AIRPORTS.filter(a=>(origin||a[0]!=='LON')&&(a[0].toLowerCase().startsWith(q)||a[1].toLowerCase().includes(q))).slice(0,6);if(/^[a-z]{3}$/.test(q)&&(origin||q!=='lon')&&!list.some(a=>a[0]===q.toUpperCase()))list.push([q.toUpperCase(),q.toUpperCase(),'airport']);return list}
+function sugPop(q){q=(q||'').trim().toLowerCase();const list=q?matches(q):AIRPORTS.filter(a=>['MAD','JFK','DOH'].includes(a[0]));const any=!q||'anywhere'.startsWith(q);return `<div class="pop glass" id="destinations" role="listbox" aria-label="Destinations">${any?`<button type="button" class="opt" role="option" aria-selected="false" data-to="ANY" id="suggest-ANY"><span>Anywhere</span><span class="s">explore destinations</span></button>${list.length?'<div class="popsep"></div>':''}`:''}${list.map(a=>`<button type="button" class="opt" role="option" aria-selected="false" data-to="${a[0]}" id="suggest-${a[0]}"><span>${a[1]}${a[2]?` <span class="s">${a[2]}</span>`:''}</span><span class="c">${a[0]}</span></button>`).join('')}${!list.length&&!any?'<div class="opt s">Enter a city or three-letter airport code</div>':''}</div>`}
+function fromPop(){const o=(c,l,s)=>`<button type="button" class="opt ${S.from===c?'on':''}" data-from="${c}"><span>${esc(l)}${s?` <span class="s">${esc(s)}</span>`:''}</span>${S.from===c?'<span class="tick">✓</span>':''}</button>`;return `<div class="pop glass" id="fromPop">${o('LON','London','all airports')}${o('IBZ','Ibiza','')}${!['LON','IBZ'].includes(S.from)?o(S.from,placeName(S.from),S.from):''}<input class="popin" id="fromQ" placeholder="Other airport" aria-label="Other airport"><div id="fromRes"></div></div>`}
+function backPill(){const q=resultQuery||S;return `<a class="back glass press" href="#/search"><span class="ar">←</span><span class="t">${esc(placeName(q.from))} → ${esc(placeName(q.to))}${q.out?' · '+whenText(q):''}</span></a>`}
+function earning(f){return Number.isFinite(f.estimate?.tierPoints)&&f.estimate.tierPoints>0&&Number.isFinite(f.priceGbp)&&f.priceGbp>0}
+function allFares(){return(response?.results||[]).filter(earning).sort((a,b)=>a.priceGbp/a.estimate.tierPoints-b.priceGbp/b.estimate.tierPoints||a.priceGbp-b.priceGbp)}
+function fares(){const seen=new Set();return allFares().filter(f=>{const k=JSON.stringify([flightGroups(f),f.departure?.dateTime,f.arrival?.dateTime,f.returnFlight?.departure?.dateTime,f.returnFlight?.arrival?.dateTime,f.hiddenCity,f.ticketedTo]);if(seen.has(k))return false;seen.add(k);return true})}
+function time(p){return typeof p?.dateTime==='string'&&/T\d{2}:\d{2}/.test(p.dateTime)?p.dateTime.slice(11,16):'Time unavailable'}
+function duration(f){const m=Math.round((new Date(f.arrival?.dateTime)-new Date(f.departure?.dateTime))/60000);return Number.isFinite(m)&&m>=0?Math.floor(m/60)+'h'+(m%60?String(m%60).padStart(2,'0'):''):''}
+function plusDays(f){return f.arrival?.dateTime&&f.departure?.dateTime?Math.max(0,nights(f.departure.dateTime.slice(0,10),f.arrival.dateTime.slice(0,10))):0}
+function flightGroups(f){if(f.legs?.length)return f.legs.map(l=>l.units.filter(u=>u.flown).flatMap(u=>u.flightNumbers));try{return new URLSearchParams(new URL(f.deepLink).hash.slice(1)).get('trip').split(',').map(g=>g.split('-'))}catch{return[f.flightNumbers||[]]}}
+function resultNote(){return 'Tier points and Avios are estimates; verify fare class, operator and earning before booking.'}
+function partialNote(){if(!response?.partial)return '';const codes=[...new Set((response.failures||[]).map(f=>f.origin))];return `<p class="left" role="status">${codes.length?esc(codes.length>1?codes.slice(0,-1).join(', ')+' and '+codes.at(-1):codes[0]):'Some airports'} didn't answer</p>`}
+function coverage(){const excluded=Object.values(response?.excluded||{}).reduce((a,b)=>a+b,0);return [excluded?`${fmt(excluded)} fares without verified earning routes are left out.`:'',response?.pages?.some(p=>p.hasMoreResults)?'More fares may be available on Skiplagged.':''].filter(Boolean).join(' ')}
+function vResults(){
+  if(!response)return vSearch();if(response.action==='anywhere')return vAnywhere();const list=fares();if(!list.length)return vEmpty();const b=list[0];document.title=`${placeName(resultQuery.from)} → ${placeName(resultQuery.to)} · Flights`;
+  return `${backPill()}<h1>${esc(flightGroups(b)[0][0])} <span class="soft">at</span> ${ppt(b)} <span class="soft">per tier point</span></h1><p class="est">${resultNote()}</p>${partialNote()}<div class="list">${list.map(f=>`<a class="row" href="#/fare/${encodeURIComponent(f.id)}"><span class="tm">${time(f.departure)} → ${time(f.arrival)}${plusDays(f)?`<sup>+${plusDays(f)}</sup>`:''}</span><span class="v">${ppt(f)}<small>/TP</small></span><span class="m">${esc(f.departure.airport)} · <span class="fn">${esc(flightGroups(f).flat().join(' · '))}</span> · ${flightGroups(f)[0].length>1?'connecting':'direct'}${duration(f)?' · '+duration(f):''} · <span class="avios">~${fmt(f.estimate.avios)} Avios</span>${f.hiddenCity?`<span class="hc">ticketed to ${esc(f.ticketedTo)}, leave at ${esc(f.leaveAt)}</span>`:''}${f.returnFlight?' · return':''}</span><span class="p">${money(f.priceGbp)}</span></a>`).join('')}</div>${coverage()?`<p class="left">${coverage()}</p>`:''}`;
+}
+function discoveries(){const seen=new Set();return response.results.slice().sort((a,b)=>a.priceGbp-b.priceGbp).filter(r=>{const city=response.meta?.airports?.[r.destination]||r.city||cityName(r.destination);if(seen.has(city))return false;seen.add(city);return true})}
+function vAnywhere(){
+  const list=discoveries();document.title='Anywhere · Flights';
+  if(!list.length)return `${backPill()}<div class="state"><h1>No destinations found</h1><p>Try another date or origin.</p>${partialNote()}<div class="acts"><a class="go glass press" href="#/search/when">Other dates <span class="arr">→</span></a></div></div>`;
+  return `${backPill()}<h1>Where to?</h1><p class="est">Discovery prices; choose a destination to check earning fares and £/TP.</p>${partialNote()}<div class="list discovery">${list.map((r,i)=>`<a class="row" href="#/results" data-discover="${i}"><span class="tm">${esc((response.meta?.airports?.[r.destination]||r.city||cityName(r.destination)).split(',')[0].trim())}</span><span class="v">${money(r.priceGbp)}</span><span class="m">from ${esc(r.origin)}${resultQuery.back?' · return':''}</span></a>`).join('')}</div>`;
+}
+function goldForFare(f){const y=+gold.ends.slice(0,4)-(gold.ends.slice(5)<'04-01'?1:0),start=y+'-04-01';return(f.estimate.breakdown||[]).filter(s=>s.date>=start&&s.date<=gold.ends&&Number.isFinite(s.tierPoints)).reduce((a,s)=>a+s.tierPoints,0)}
+function vFare(id){
+  const f=allFares().find(f=>f.id===id);if(!f)return vSearch();document.title=flightGroups(f).flat().join(' · ')+' · Flights';const groups=flightGroups(f);
+  const leg=(dep,arr,numbers,label)=>`<div><div class="legh">${label} · ${dShort(dep.dateTime.slice(0,10))}</div><div class="tl"><div class="st"><div class="t1">${time(dep)} <span class="ap">${esc(AIRPORTS.some(a=>a[0]===dep.airport)?placeName(dep.airport):cityName(dep.airport))} · ${esc(dep.airport)}</span></div></div><div class="lg"><span class="fn">${esc(numbers.join(' · '))}</span>${numbers.length>1?' · connecting':''}${duration({departure:dep,arrival:arr})?' · '+duration({departure:dep,arrival:arr}):''}</div><div class="st"><div class="t1">${time(arr)} <span class="ap">${esc(AIRPORTS.some(a=>a[0]===arr.airport)?placeName(arr.airport):cityName(arr.airport))} · ${esc(arr.airport)}</span></div></div>${f.hiddenCity&&label==='One way'?`<div class="leave">You leave at ${esc(cityName(f.leaveAt))}. Skipping a sector can invalidate the ticket and credit.</div>${(f.legs?.[0].units||[]).filter(u=>!u.flown).map(u=>`<div class="lg ghost"><span class="fn">${esc(u.flightNumbers.join(' · '))}</span>${duration(u)?' · '+duration(u):''}</div><div class="st ghost"><div class="t1">${time(u.arrival)} <span class="ap">${esc(cityName(u.to))} · ${esc(u.to)}</span></div></div>`).join('')}`:''}</div></div>`;
+  const credit=goldForFare(f),after=gold.tp+credit,pct=Math.min(1,gold.tp/gold.target),add=Math.min(1-pct,credit/gold.target);
+  const booking=safeBooking(f.deepLink),carrier=response.meta?.carriers?.find(c=>c.code===f.flightNumbers[0]?.slice(0,2));
+  return `<a class="back glass press" href="#/results"><span class="ar">←</span><span class="t">${esc(placeName(resultQuery.from))} → ${esc(placeName(resultQuery.to))}</span></a><div class="hero"><div class="big">${money(f.priceGbp,true)}</div><div class="line"><b class="acc">${ppt(f)}</b> per tier point · ~${fmt(f.estimate.tierPoints)} TP · <span class="avios">~${fmt(f.estimate.avios)} Avios</span></div></div><div class="who">${esc(carrier?.name||f.flightNumbers[0]?.slice(0,2))} · ${esc(resultQuery.cabin)}${f.hiddenCity?' · cabin bag only':''}</div><div class="legs">${leg(f.departure,f.arrival,groups[0],f.returnFlight?'Out':'One way')}${f.returnFlight?leg(f.returnFlight.departure,f.returnFlight.arrival,groups[1]||[],'Back'):''}</div><div class="gold1"><span>Gold</span><span class="gbar"><i style="width:${pct*100}%"></i><u style="left:${pct*100}%;width:${add*100}%"></u></span><span><b>${fmt(Math.min(after,gold.target))}</b> / ${fmt(gold.target)}</span></div>${f.estimate.tierPoints!==credit?'<p class="left">Gold progress includes only tier points in your collection year.</p>':''}${booking?`<div class="dock"><a class="book glass press" href="${esc(booking)}" id="book" target="_blank" rel="noopener noreferrer">Book on Skiplagged <span class="arr">↗</span></a></div>`:''}<p class="left" style="text-align:center">US$${esc(f.price.amount)}${response.meta?.fx?' at '+esc(response.meta.fx.usdToGbp)+' GBP/USD':''}</p>`;
+}
+function safeBooking(link){try{const u=new URL(link);return u.protocol==='https:'&&u.hostname==='skiplagged.com'&&!u.username&&!u.password&&!u.port?u.href:null}catch{return null}}
+function vGold(){document.title='Gold · Flights';const pct=Math.min(1,gold.tp/gold.target),left=Math.max(0,gold.target-gold.tp);return `<a class="back glass press" href="#/search"><span class="ar">←</span><span class="t">Search</span></a><div class="gwrap"><div class="gring">${ring(180,8,pct)}<div class="n">${left?fmt(left):'Kept'}<small>${left?'tier points to Gold':'Gold for next year'}</small></div></div><p style="color:var(--dim)">${fmt(gold.tp)} of ${fmt(gold.target)} · by ${D(gold.ends).toLocaleDateString('en-GB',{day:'numeric',month:'long',timeZone:'UTC'})}</p><form class="gform glass" id="gf" novalidate><label>Tier points so far<input id="gtp" inputmode="numeric" value="${gold.tp}" aria-describedby="gErr"></label><label>Target<input id="gtarget" inputmode="numeric" value="${gold.target}" aria-describedby="gErr"></label><label>Year ends<input id="gend" type="date" value="${gold.ends}" aria-describedby="gErr"></label></form><div class="hintline" id="gErr" role="status"></div><button class="go glass press save" form="gf" type="submit">Save</button><p class="left">Kept on this device.</p></div>`}
+function vLoading(){document.title='Searching · Flights';return `${backPill()}<p class="est" style="margin-top:28px" role="status"><span class="spin"></span>Searching Skiplagged</p><div class="list" aria-busy="true">${[0,1,2,3,4].map(i=>`<div class="sk"><div style="flex:1;display:grid;gap:9px"><i style="width:${42-i*3}%"></i><i style="width:${60-i*5}%"></i></div><i style="width:56px"></i></div>`).join('')}</div>`}
+function vEmpty(){document.title='No earning fares · Flights';return `${backPill()}<div class="state"><h1>No earning fares</h1><p>No fares with a positive tier-point estimate for these dates.</p>${partialNote()}<div class="acts"><a class="go glass press" href="#/search/when">Other dates <span class="arr">→</span></a><button class="txtb dark" id="anywhere">Anywhere from ${esc(placeName(S.from))}</button></div></div>`}
+function vError(){const throttled=searchState==='throttled',remaining=Math.max(0,Math.ceil((retryAt-Date.now())/1000));document.title=(throttled?'Too many requests':'Search failed')+' · Flights';return `${backPill()}<div class="state" role="status"><h1>${throttled?'A moment, please':"Skiplagged didn't answer"}</h1><p>${throttled?'Too many requests. '+(remaining?'Try again in '+remaining+' seconds.':'Ready to try again.'):'The search could not finish. Try again.'}</p><div class="acts"><button class="go glass press" id="retry" ${throttled&&remaining?'disabled':''}>Try again <span class="arr">→</span></button></div></div>`}
+function route(){return(location.hash||'#/search').slice(1).split('/').filter(Boolean)}
+function go(hash){history.replaceState(null,'',hash);render()}
+function renderLive(){
+  const p=route();if(p[0]==='search'&&p[1]==='when'&&!calOpen)S.view=calendarMonth();if(p[0]!=='loading'&&searchState==='loading'){searchController?.abort();searchSerial++;searchState='idle'}
+  if(p[0]!=='search'){flexController?.abort();flexSerial++;if(flexState==='loading'){flexState='';flexKey=''}}
+  renderRing();let h;
+  switch(p[0]){case 'results':h=vResults();break;case 'fare':try{h=vFare(decodeURIComponent(p.slice(1).join('/')))}catch{h=vSearch()}break;case 'gold':h=vGold();break;case 'loading':h=searchState==='loading'?vLoading():vSearch();break;case 'error':h=vError();break;default:calOpen=p[1]==='when';fromOpen=p[1]==='from';h=vSearch()}
+  $('#app').innerHTML=`<div class="fade">${h}</div>`;bind();window.scrollTo(0,0);
+}
+function redraw(){if($('#sf')){$('#app').innerHTML=vSearch();bind()}}
+function clearFlex(){flexController?.abort();flexSerial++;flexRows=[];flexState='';flexKey=''}
+async function loadFlex(){
+  if(!S.prices||!S.to||S.to==='ANY')return;
+  const q={...S,out:S.view+'-01'};if(q.out<TODAY)q.out=TODAY;if(S.back){const duration=nights(S.out,S.back);q.back=key(new Date(D(q.out).getTime()+duration*864e5));if(q.back>LATEST)q.back=LATEST}
+  const k=params('flex',q).toString();if(k===flexKey&&flexState!=='error'&&flexState!=='throttled')return;
+  flexController?.abort();const serial=++flexSerial;flexController=new AbortController();flexKey=k;flexState='loading';redraw();
+  try{const data=await request('flex',q,flexController.signal);if(serial!==flexSerial)return;flexRows=data.results;flexState='ready'}catch(e){if(e.name==='AbortError'||serial!==flexSerial)return;flexState=e.status===429?'throttled':'error'}
+  if(route()[0]==='search')redraw();
+}
+function chooseDestination(code){S.to=code;draft='';sugOpen=false;hint='';selection=-1;clearFlex();if(!S.out){S.view=calendarMonth();calOpen=true;history.replaceState(null,'','#/search/when')}redraw();if(calOpen&&S.prices)loadFlex()}
+function redrawSug(){const input=$('#to'),bar=input.parentNode;bar.querySelector('.pop')?.remove();input.setAttribute('aria-expanded',String(sugOpen));input.removeAttribute('aria-activedescendant');if(!calOpen)$('#cal')?.remove();if(sugOpen){bar.insertAdjacentHTML('beforeend',sugPop(draft));bindSug()}}
+function bindSug(){document.querySelectorAll('.pop [data-to]').forEach(b=>{b.onmousedown=e=>e.preventDefault();b.onclick=()=>chooseDestination(b.dataset.to)})}
+function bindCal(){const cal=$('#cal');if(!cal)return;cal.querySelectorAll('.d[data-k]:not(.past)').forEach(b=>{b.onclick=()=>{tapDay(b.dataset.k);clearFlex();redraw();if(S.prices)loadFlex()};b.onmouseenter=()=>{if(S.out&&!S.back&&b.dataset.k>S.out){S.hover=b.dataset.k;paintHover()}}});cal.querySelector('.grid').onmouseleave=()=>{S.hover='';paintHover()};const sh=v=>{const[y,m]=S.view.split('-').map(Number);S.view=key(new Date(Date.UTC(y,m-1+v,1))).slice(0,7);clearFlex();redraw();if(S.prices)loadFlex()};$('#pm').onclick=()=>sh(-1);$('#nm').onclick=()=>sh(1);if($('#pt'))$('#pt').onclick=()=>{S.prices=!S.prices;redraw();if(S.prices)loadFlex()};if($('#clr'))$('#clr').onclick=()=>{S.out='';S.back='';clearFlex();redraw()}}
+function paintHover(){document.querySelectorAll('#cal .d[data-k]').forEach(b=>{const k=b.dataset.k,on=!!S.hover&&k>S.out&&k<=S.hover;b.classList.toggle('pv',on||(k===S.out&&!!S.hover));b.classList.toggle('e',k===S.out?!S.hover:on&&k===S.hover)})}
+function bindLive(){
+  const sf=$('#sf');if(sf){
+    const to=$('#to');to.onfocus=()=>{if(!sugOpen){sugOpen=true;calOpen=false;fromOpen=false;draft=S.to?placeName(S.to):draft;redrawSug()}};
+    to.oninput=()=>{draft=to.value;S.to='';sugOpen=true;selection=-1;clearFlex();redrawSug()};
+    to.onkeydown=e=>{const options=[...document.querySelectorAll('[data-to]')];if(e.key==='Escape'){sugOpen=false;redrawSug()}if(['ArrowDown','ArrowUp'].includes(e.key)){e.preventDefault();selection=(selection+(e.key==='ArrowDown'?1:-1)+options.length)%options.length;options.forEach((b,i)=>{b.classList.toggle('on',i===selection);b.setAttribute('aria-selected',String(i===selection))});if(options[selection])to.setAttribute('aria-activedescendant',options[selection].id)}if(e.key==='Enter'&&sugOpen){e.preventDefault();if(options.length)chooseDestination(options[Math.max(0,selection)].dataset.to)}};
+    bindSug();$('#whenBtn').onclick=()=>{if(!calOpen)S.view=calendarMonth();calOpen=!calOpen;sugOpen=false;fromOpen=false;go(calOpen?'#/search/when':'#/search');if(calOpen&&S.prices)loadFlex()};bindCal();
+    $('#cabin').onchange=e=>{S.cabin=e.target.value;clearFlex();if(S.prices)loadFlex()};
+    $('#fromBtn').onclick=()=>{fromOpen=!fromOpen;sugOpen=false;go(fromOpen?'#/search/from':'#/search')};
+    const setFrom=code=>{S.from=code;fromOpen=false;clearFlex();go('#/search')};document.querySelectorAll('[data-from]').forEach(b=>b.onclick=()=>setFrom(b.dataset.from));
+    const fq=$('#fromQ');if(fq){fq.oninput=()=>{const list=fq.value.trim()?matches(fq.value,true):[];$('#fromRes').innerHTML=list.map(a=>`<button type="button" class="opt" data-from2="${a[0]}"><span>${a[1]}</span><span class="c">${a[0]}</span></button>`).join('');document.querySelectorAll('[data-from2]').forEach(b=>b.onclick=()=>setFrom(b.dataset.from2))};fq.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();const b=$('[data-from2]');if(b)setFrom(b.dataset.from2)}}}
+    if(fromOpen)$('#fromPop .opt.on')?.focus();
+    sf.onsubmit=e=>{e.preventDefault();if(!S.to){hint='Choose where to, or Anywhere.';redraw();$('#to').focus();return}if(!S.out){hint='Pick a date.';S.view=calendarMonth();calOpen=true;go('#/search/when');$('#whenBar').classList.add('shake');return}if(origins(S).split(',').includes(S.to)){hint='Choose a different destination.';redraw();return}search()};
+  }
+  document.querySelectorAll('[data-discover]').forEach(a=>a.onclick=e=>{e.preventDefault();const r=discoveries()[+a.dataset.discover];S.to=r.destination;clearFlex();search()});
+  if($('#anywhere'))$('#anywhere').onclick=()=>{S.to='ANY';search()};if($('#retry'))$('#retry').onclick=search;
+  const gf=$('#gf');if(gf)gf.onsubmit=e=>{e.preventDefault();const tp=$('#gtp').value.replace(/[,\s]/g,''),target=$('#gtarget').value.replace(/[,\s]/g,''),ends=$('#gend').value;const err=$('#gErr');if(!/^\d+$/.test(tp)||!Number.isSafeInteger(+tp)||!/^\d+$/.test(target)||!Number.isSafeInteger(+target)||+target<=0){err.textContent='Enter whole tier points and a target above zero.';return}if(!realDate(ends)){err.textContent='Enter a valid year-end date.';return}const saved=goldData({tp:+tp,target:+target,ends});if(!saved){err.textContent='Could not save on this device.';return}gold=saved;render();toast('Saved')};
+}
+async function search(){
+  if(!S.out||!S.to){go('#/search');return}
+  searchController?.abort();flexController?.abort();const serial=++searchSerial;searchController=new AbortController();const q={...S};resultQuery=q;response=null;searchState='loading';calOpen=false;sugOpen=false;fromOpen=false;clearTimeout(retryTimer);go('#/loading');
+  try{const data=await request(q.to==='ANY'?'anywhere':'search',q,searchController.signal);if(serial!==searchSerial||route()[0]!=='loading')return;response=data;searchState='ready';if(data.action==='search'){const best=fares()[0];if(best){verified.set(cacheKey(q),best);if(verified.size>64)verified.delete(verified.keys().next().value)}}go('#/results')}
+  catch(e){if(e.name==='AbortError'||serial!==searchSerial)return;searchState=e.status===429?'throttled':'error';retryAt=Date.now()+e.retryAfter*1000;go('#/error');if(searchState==='throttled')retryTimer=setTimeout(()=>{if(route()[0]==='error'&&searchState==='throttled')render()},e.retryAfter*1000)}
+}
+window.addEventListener('hashchange',()=>render());
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&fromOpen){fromOpen=false;go('#/search')}});
+document.addEventListener('click',e=>{if(fromOpen&&!e.target.closest('.fromwrap')){fromOpen=false;go('#/search')}if(sugOpen&&!e.target.closest('label.bar')){sugOpen=false;if($('#to'))redrawSug()}});
+// render() is called by the prototype script below
+</script>
+<script>
+// ---- v3 view layer: flick.fan-inverse styling over the live behaviour above ----
+const PLANE='<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M21 16v-2l-8-5V3.5c0-.83-.67-1.5-1.5-1.5S10 2.67 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z"/></svg>';
+const ARROW='<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>';
+const CHEV='<svg width="10" height="10" viewBox="0 0 10 10" aria-hidden="true"><path d="M2 3.5 5 6.5 8 3.5" fill="none" stroke="currentColor" stroke-width="1.3"/></svg>';
+const GLOBE='<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.6 2.8 2.6 15.2 0 18M12 3c-2.6 2.8-2.6 15.2 0 18"/></svg>';
+
+/* Fix: English city names, never "Firenze FI" or "Frankfurt am Main". */
+const ENGLISH={'firenze':'Florence','frankfurt am main':'Frankfurt','münchen':'Munich','munchen':'Munich','lisboa':'Lisbon','roma':'Rome','milano':'Milan','praha':'Prague',
+  'wien':'Vienna','sevilla':'Seville','bruxelles':'Brussels','brussel':'Brussels','københavn':'Copenhagen','athina':'Athens','napoli':'Naples','venezia':'Venice',
+  'köln':'Cologne','genève':'Geneva','torino':'Turin','firenze peretola':'Florence','valència':'Valencia','palma de mallorca':'Palma','den haag':'The Hague','warszawa':'Warsaw'};
+function englishCity(raw){let n=String(raw||'').split(',')[0].trim().replace(/\s+[A-Z]{2}$/,'');return ENGLISH[n.toLowerCase()]||n}
+function originCities(q){const codes=q.from==='LON'?['LON',...LONDON]:[q.from];return{codes,names:new Set(codes.map(c=>englishCity(placeName(c)).replace(/ (Heathrow|Gatwick|City|Stansted|Luton|Southend)$/,'')))}}
+/* Fix: Anywhere never lists the origin city (no London from London). */
+function discoveries(){
+  const q=resultQuery||S,o=originCities(q),seen=new Set();
+  return response.results.slice().sort((a,b)=>a.priceGbp-b.priceGbp).filter(r=>{
+    const city=englishCity(response.meta?.airports?.[r.destination]||r.city||cityName(r.destination));
+    if(o.codes.includes(r.destination)||o.names.has(city)||seen.has(city))return false;seen.add(city);return true});
+}
+function vAnywhere(){
+  const list=discoveries();document.title='Anywhere · Flights';
+  if(!list.length)return `${backPill()}<div class="state"><h1>No destinations found</h1><p>Try another date or origin.</p>${partialNote()}<div class="acts"><a class="go" href="#/search/when">Other dates <span class="arr">→</span></a></div></div>`;
+  return `${backPill()}<h1>Where to?</h1><p class="est">Discovery prices. Choose a city to check earning fares and £/TP.</p>${partialNote()}<div class="list discovery">${list.map((r,i)=>`<a class="row" href="#/results" data-discover="${i}"><span class="tm">${esc(englishCity(response.meta?.airports?.[r.destination]||r.city||cityName(r.destination)))}</span><span class="v">${money(r.priceGbp)}</span><span class="m">from ${esc(r.origin)}${resultQuery.back?' · return':''}</span></a>`).join('')}</div>`;
+}
+
+function renderRing(){const pct=Math.min(1,gold.tp/gold.target),el=$('#ring');el.innerHTML=`<span>Gold</span><span class="mini"><i style="width:${pct*100}%"></i></span>`;el.setAttribute('aria-label',`Gold: ${fmt(gold.tp)} of ${fmt(gold.target)} tier points`);el.title=`${fmt(Math.max(0,gold.target-gold.tp))} tier points to Gold`}
+
+function vSearch(){
+  document.title='Flights';
+  return `<section class="hero"><h1>Where to?</h1>
+  <form class="search" id="sf" novalidate autocomplete="off">
+    <label class="bar searchBox" for="to"><input class="where" id="to" placeholder="City or airport" value="${esc(S.to?placeName(S.to):draft)}" aria-label="Where to" aria-autocomplete="list" aria-expanded="${sugOpen}" aria-controls="destinations" role="combobox"><button class="goC" id="go" type="submit" aria-label="Search">${ARROW}</button>${sugOpen?sugPop(draft):''}</label>
+  </form>
+  <div class="rows">
+    <div class="frow fromwrap"><span class="fl">From</span><button type="button" class="fv" id="fromBtn" aria-haspopup="true" aria-expanded="${fromOpen}">${esc(placeName(S.from))} ${CHEV}</button>${fromOpen?fromPop():''}</div>
+    <div class="frow" id="whenBar"><span class="fl">When</span><button type="button" class="fv ${S.out?'':'ph'}" id="whenBtn" aria-label="When" aria-expanded="${calOpen}">${S.out?whenText()+(S.back?'':' · one way'):'Add a date'} ${CHEV}</button></div>
+    ${calOpen?calHTML():''}
+    <div class="frow"><label class="fl" for="cabin">Cabin</label><select class="fv cabin" id="cabin">${Object.keys(CABINS).map(c=>`<option ${S.cabin===c?'selected':''}>${c}</option>`).join('')}</select></div>
+  </div>
+  <div class="hintline ${hint?'err':''}" role="status">${esc(hint)}</div>
+  <button type="button" class="actionPill" id="anyPill">${GLOBE} Anywhere</button></section>`;
+}
+
+/* ---------- results: Skiplagged-style cards, tier points first ---------- */
+const SORTS={value:['Best value','Best value'],cheap:['Cheapest','Cheapest'],fast:['Fastest','Fastest'],tp:['Most tier points','Most TP']};
+let SORT='value',F=null;
+function resetFilters(){SORT='value';F={stops:'any',dep:[0,24],arr:[0,24],air:new Set()}}
+resetFilters();
+const legUnits=(f,i)=>(f.legs?.[i]?.units||[]).filter(u=>u.flown);
+const stopsOf=f=>Math.max(0,...[0,1].map(i=>legUnits(f,i).length-1));
+const minsOf=(a,b)=>Math.round((new Date(b.dateTime)-new Date(a.dateTime))/6e4);
+const totalMins=f=>minsOf(f.departure,f.arrival)+(f.returnFlight?minsOf(f.returnFlight.departure,f.returnFlight.arrival):0);
+const hm=m=>Math.floor(m/60)+'h'+(m%60?' '+String(m%60).padStart(2,'0')+'m':'');
+const hour=p=>+p.dateTime.slice(11,13)+ +p.dateTime.slice(14,16)/60;
+const carrierOf=f=>f.flightNumbers[0].slice(0,2);
+const carrierName=c=>response?.meta?.carriers?.find(x=>x.code===c)?.name||c;
+const hh=h=>h>=24?'23:59':String(h).padStart(2,'0')+':00';
+const perTp=f=>f.priceGbp/f.estimate.tierPoints;
+function passes(f,skip){
+  if(skip!=='stops'&&F.stops!=='any'&&stopsOf(f)>+F.stops)return false;
+  const d=hour(f.departure),a=hour(f.arrival);
+  if(skip!=='dep'&&(d<F.dep[0]||d>F.dep[1]))return false;
+  if(skip!=='arr'&&(a<F.arr[0]||a>F.arr[1]))return false;
+  if(skip!=='air'&&F.air.size&&!F.air.has(carrierOf(f)))return false;
+  return true;
+}
+function sortedFares(list){
+  const by={value:(a,b)=>perTp(a)-perTp(b)||a.priceGbp-b.priceGbp,cheap:(a,b)=>a.priceGbp-b.priceGbp,fast:(a,b)=>totalMins(a)-totalMins(b)||a.priceGbp-b.priceGbp,tp:(a,b)=>b.estimate.tierPoints-a.estimate.tierPoints||perTp(a)-perTp(b)};
+  return list.slice().sort(by[SORT]);
+}
+function legRow(f,i){
+  const units=legUnits(f,i);if(!units.length)return '';
+  const dep=units[0].departure,arr=units.at(-1).arrival,plus=nights(dep.dateTime.slice(0,10),arr.dateTime.slice(0,10));
+  const durs=units.length>1?units.map(u=>hm(minsOf(u.departure,u.arrival))):[];
+  return `<div class="lrow"><div class="ep"><b>${time(dep)}</b><span>${esc(dep.airport)}</span></div>
+    <div class="mid"><div class="durs">${durs.map(d=>`<span>${d}</span>`).join('')}</div><div class="line"><i></i>${PLANE}<i></i></div><div class="via">${units.slice(0,-1).map(u=>esc(u.to)).join(' · ')}</div></div>
+    <div class="ep r"><b>${time(arr)}${plus?`<sup>+${plus}</sup>`:''}</b><span>${esc(arr.airport)}</span></div></div>`;
+}
+function card(f,i){
+  const st=stopsOf(f),c=carrierOf(f);
+  return `<article class="fc glass">
+    <div class="cl">${i===0?`<span class="tag">${SORTS[SORT][0]}</span>`:''}${legRow(f,0)}${f.returnFlight?legRow(f,1):''}
+      <div class="air">${esc(carrierName(c))}${f.operatedBy?` <span>· operated by ${esc(f.operatedBy)}</span>`:''}${f.hiddenCity?`<span class="hc">ticketed to ${esc(f.ticketedTo)}, leave at ${esc(f.leaveAt)}</span>`:''}</div></div>
+    <div class="cr"><div class="stp"><b>${st?st+(st>1?' stops':' stop'):'Direct'}</b><span>${hm(totalMins(f))}</span></div>
+      <div class="money"><span class="prc">${money(f.priceGbp)}</span><span class="tpv">+${fmt(f.estimate.tierPoints)} TP</span></div>
+      <div class="pt">${ppt(f)}/TP · ~${fmt(f.estimate.avios)} Avios</div>
+      <a class="sel" href="#/fare/${encodeURIComponent(f.id)}">Select</a></div>
+  </article>`;
+}
+function hist(kind){
+  const all=fares(),bins=Array(24).fill(0);all.filter(f=>passes(f,kind)).forEach(f=>bins[Math.min(23,Math.floor(hour(kind==='dep'?f.departure:f.arrival)))]++);
+  const mx=Math.max(1,...bins),[lo,hi]=F[kind];
+  return `<div class="hist" aria-hidden="true">${bins.map((n,h)=>`<i style="height:${n?Math.max(10,n/mx*100):0}%" class="${h+1<=lo||h>=hi?'off':''}"></i>`).join('')}</div>`;
+}
+function rangeBlock(kind,label){
+  const [lo,hi]=F[kind];
+  return `<section class="fs" data-kind="${kind}"><div class="fsh"><h3>${label}</h3><span class="rv">${hh(lo)} – ${hh(hi)}</span></div>${hist(kind)}
+    <div class="rng"><u style="left:${lo/24*100}%;right:${100-hi/24*100}%"></u><input type="range" min="0" max="24" step="1" value="${lo}" data-r="${kind}" data-i="0" aria-label="${label} from"><input type="range" min="0" max="24" step="1" value="${hi}" data-r="${kind}" data-i="1" aria-label="${label} until"></div>
+    <div class="rends"><span>00:00</span><span>23:59</span></div></section>`;
+}
+function filtersHTML(){
+  const all=fares(),from=fn=>{const l=all.filter(fn);return l.length?'from '+money(Math.min(...l.map(f=>f.priceGbp))):'none'};
+  const carriers=[...new Set(all.map(carrierOf))];
+  return `<aside class="fcol" id="fcol" aria-label="Filters"><div class="fpanel glass">
+    <div class="fhd"><b>Filters</b><button type="button" class="txtb" id="freset">Reset</button></div>
+    <section class="fs"><div class="fsh"><h3>Stops</h3></div>${[['0','Direct'],['1','Up to 1 stop'],['any','2+ stops']].map(([v,l])=>`<label class="radio"><span><b>${l}</b><small>${from(f=>v==='any'||stopsOf(f)<=+v)}</small></span><input type="radio" name="stops" value="${v}" ${F.stops===v?'checked':''}><i></i></label>`).join('')}</section>
+    ${rangeBlock('dep','Take-off')}${rangeBlock('arr','Landing')}
+    <section class="fs"><div class="fsh"><h3>Airlines</h3></div>${carriers.map(c=>`<label class="radio"><span><b>${esc(carrierName(c))}</b><small>${from(f=>carrierOf(f)===c)}</small></span><input type="checkbox" value="${c}" ${!F.air.size||F.air.has(c)?'checked':''}><i class="sq"></i></label>`).join('')}</section>
+    <button type="button" class="go fshow" id="fshow">Show flights</button>
+  </div></aside>`;
+}
+function cardsHTML(){
+  const list=sortedFares(fares().filter(f=>passes(f)));
+  return list.length?list.map(card).join(''):`<div class="state"><p>No flights match these filters.</p><div class="acts"><button type="button" class="txtb dark" id="freset2">Reset filters</button></div></div>`;
+}
+function countText(){const n=fares().filter(f=>passes(f)).length;return `${n} ${n===1?'flight':'flights'}`}
+function activeFilters(){return (F.stops!=='any')+(F.dep[0]>0||F.dep[1]<24)+(F.arr[0]>0||F.arr[1]<24)+(F.air.size>0)}
+function vResults(){
+  if(!response)return vSearch();if(response.action==='anywhere')return vAnywhere();
+  const list=fares();if(!list.length)return vEmpty();
+  const b=list[0];document.title=`${placeName(resultQuery.from)} → ${placeName(resultQuery.to)} · Flights`;
+  return `${backPill()}<h1>${esc(flightGroups(b)[0][0])} <span class="soft">earns ~${fmt(b.estimate.tierPoints)}&nbsp;TP at/span> ${ppt(b)} <span class="soft">each</span></h1>
+  <p class="est">${resultNote()}</p>${partialNote()}
+  <div class="rgrid">${filtersHTML()}<div class="rcol">
+    <div class="tabs" role="tablist" aria-label="Sort">${Object.entries(SORTS).map(([k,[l,s]])=>`<button type="button" role="tab" aria-selected="${SORT===k}" data-sort="${k}"><span class="lg2">${l}</span><span class="sm2">${s}</span></button>`).join('')}</div>
+    <div class="rbar"><span id="rcount">${countText()}</span><button type="button" class="fopen" id="fopen">Filters${activeFilters()?` · ${activeFilters()}`:''}</button></div>
+    <div id="cards">${cardsHTML()}</div>${coverage()?`<p class="left">${coverage()}</p>`:''}</div></div>`;
+}
+function refreshResults(){
+  $('#cards').innerHTML=cardsHTML();$('#rcount').textContent=countText();
+  $('#fopen').textContent='Filters'+(activeFilters()?' · '+activeFilters():'');
+  $('#fshow').textContent=`Show ${countText()}`;
+  document.querySelectorAll('.fs[data-kind]').forEach(s=>{const k=s.dataset.kind,[lo,hi]=F[k];s.querySelector('.rv').textContent=`${hh(lo)} – ${hh(hi)}`;
+    s.querySelector('.hist').outerHTML=hist(k);const u=s.querySelector('.rng u');u.style.left=lo/24*100+'%';u.style.right=100-hi/24*100+'%'});
+  bindResults(true);
+}
+function bindResults(cardsOnly){
+  const r2=$('#freset2');if(r2)r2.onclick=()=>{resetFilters();render()};
+  if(cardsOnly)return;
+  document.querySelectorAll('[data-sort]').forEach(b=>b.onclick=()=>{SORT=b.dataset.sort;document.querySelectorAll('[data-sort]').forEach(x=>x.setAttribute('aria-selected',x===b));refreshResults()});
+  document.querySelectorAll('input[name=stops]').forEach(r=>r.onchange=()=>{F.stops=r.value;refreshResults()});
+  document.querySelectorAll('.fs input[type=checkbox]').forEach(c=>c.onchange=()=>{const all=[...document.querySelectorAll('.fs input[type=checkbox]')],on=all.filter(x=>x.checked).map(x=>x.value);F.air=on.length===all.length?new Set():new Set(on);refreshResults()});
+  document.querySelectorAll('input[data-r]').forEach(inp=>inp.oninput=()=>{const k=inp.dataset.r,i=+inp.dataset.i,v=+inp.value,o=F[k].slice();o[i]=v;if(o[0]>=o[1]){if(i)o[1]=o[0]+1;else o[0]=o[1]-1;inp.value=o[i]}F[k]=o;refreshResults()});
+  const sheet=on=>{document.body.classList.toggle('sheet',on);$('#fopen').setAttribute('aria-expanded',on)};
+  $('#fopen').onclick=()=>sheet(true);$('#fshow').onclick=()=>sheet(false);
+  $('#freset').onclick=()=>{resetFilters();const open=document.body.classList.contains('sheet');render();if(open)document.body.classList.add('sheet')};
+  $('#fshow').textContent=`Show ${countText()}`;
+}
+
+/* ---------- render + bind: the live versions plus the v3 hooks ---------- */
+function render(){
+  const p=route();
+  if(p[0]==='demo'){runDemo(p[1]);return}
+  if(p[0]==='loading'&&searchState==='loading')resetFilters();
+  document.body.classList.remove('sheet');
+  renderLive();
+  document.body.classList.toggle('wide',p[0]==='results'&&response?.action==='search'&&fares().length>0);
+  paintIndex();
+}
+function bind(){
+  bindLive();
+  const any=$('#anyPill');if(any)any.onclick=()=>chooseDestination('ANY');
+  if($('#cards'))bindResults(false);
+}
+
+/* ---------- prototype screen index (not part of the product) ---------- */
+const DEMOS=[['Search','search'],['Search · dates','when'],['Search · return picked','range'],['Search · £/TP calendar','prices'],['Search · origin','from'],
+  ['Results · New York','jfk'],['Results · Madrid return','mad'],['Results · filters (phone)','filters'],['Fare · hidden city','hidden'],['Fare · return','fare'],['Anywhere','anywhere'],
+  ['Gold','gold'],['Loading','loading'],['Partial','partial'],['No earning fares','empty'],['Error','error'],['Busy','busy']];
+const dPlus=n=>key(new Date(D(TODAY).getTime()+n*864e5));
+async function runDemo(name){
+  MOCK.mode='ok';MOCK.delay=700;calOpen=false;sugOpen=false;fromOpen=false;hint='';S.prices=false;S.from='LON';
+  const set=(to,o,b)=>{S.to=to;S.out=o;S.back=b||''};
+  switch(name){
+    case 'when':set('MAD','');S.view=calendarMonth();go('#/search/when');break;
+    case 'range':set('MAD',dPlus(15),dPlus(18));S.view=calendarMonth();go('#/search/when');break;
+    case 'prices':set('MAD',dPlus(15));S.prices=true;S.view=calendarMonth();go('#/search/when');loadFlex();break;
+    case 'from':go('#/search/from');break;
+    case 'jfk':set('JFK',dPlus(15));MOCK.delay=300;search();break;
+    case 'mad':set('MAD',dPlus(15),dPlus(18));MOCK.delay=300;search();break;
+    case 'filters':set('JFK',dPlus(15));MOCK.delay=300;await search();if(route()[0]==='results'){F.stops='1';render();document.body.classList.add('sheet')}break;
+    case 'hidden':set('JFK',dPlus(15));MOCK.delay=300;await search();{const f=fares().find(f=>f.hiddenCity);if(f)go('#/fare/'+encodeURIComponent(f.id))}break;
+    case 'fare':set('MAD',dPlus(15),dPlus(18));MOCK.delay=300;await search();{const f=fares()[0];if(f)go('#/fare/'+encodeURIComponent(f.id))}break;
+    case 'anywhere':set('ANY',dPlus(15));MOCK.delay=300;search();break;
+    case 'gold':go('#/gold');break;
+    case 'loading':set('JFK',dPlus(15));MOCK.delay=6e8;search();break;
+    case 'partial':set('MAD',dPlus(15));MOCK.mode='partial';MOCK.delay=300;search();break;
+    case 'empty':set('MAD',dPlus(15));MOCK.mode='empty';MOCK.delay=300;search();break;
+    case 'error':set('MAD',dPlus(15));MOCK.mode='error';MOCK.delay=300;search();break;
+    case 'busy':set('MAD',dPlus(15));MOCK.mode='throttled';MOCK.delay=300;search();break;
+    default:set('','');go('#/search');
+  }
+}
+function paintIndex(){$('#idx nav').innerHTML=DEMOS.map(([l,k])=>`<a href="#/demo/${k}">${l}</a>`).join('')}
+{const idx=$('#idx'),ib=idx.querySelector('button');ib.onclick=()=>{const o=idx.classList.toggle('open');ib.setAttribute('aria-expanded',o)};
+  idx.addEventListener('click',e=>{if(e.target.tagName==='A'){idx.classList.remove('open');ib.setAttribute('aria-expanded',false)}});}
+render();
+</script>
+</body>
+</html>

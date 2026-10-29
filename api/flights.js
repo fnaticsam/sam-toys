@@ -164,7 +164,7 @@ function createHandler({ callTool = createClient(), now = Date.now,
           collectionYear: collectionYear(query.departureDate), goldThreshold: goldThreshold(query.departureDate),
           sources: { ...SOURCES, gold: GOLD_SOURCE, extraTierPoints: BONUS_SOURCE },
           ranking: query.action === 'search' ? 'GBP-per-estimated-tier-point-then-price' : null,
-          discoveryOnly: query.action !== 'search',
+          discoveryOnly: query.action !== 'search', earningOnly: query.earningOnly,
           notice: query.action === 'search' ? 'Estimates only; verify booking class, operator and earning with BA before buying. Search covers returned fares, not every fare available.' :
             'Unfiltered discovery prices may be on non-earning airlines. Run search for each destination/date before comparing tier-point value.',
         } };

@@ -10,12 +10,19 @@ const script = fs.readFileSync(path.join(__dirname, '../../flights/index.html'),
 
 // Exercise the shipping inline script without a browser or external packages.
 // DOM layout, actual events and viewport appearance belong to browser-check.cjs.
-function page({ saved, storageFailure = false, fetch } = {}) {
+function page({ saved, earningOnly, storageFailure = false, fetch } = {}) {
   const storage = new Map(saved === undefined ? [] : [['flights.gold.v2', saved]]);
+  if (earningOnly !== undefined) storage.set('flights.earningOnly.v1', earningOnly);
+  function classList() {
+    const values = new Set();
+    return { add: value => values.add(value), remove: value => values.delete(value), contains: value => values.has(value),
+      toggle(value, force) { const on = force === undefined ? !values.has(value) : force; if (on) values.add(value); else values.delete(value); return on; } };
+  }
   const elements = Object.fromEntries(['#app', '#ring', '#toast'].map(k => [k, {
-    innerHTML: '', textContent: '', classList: { add() {}, remove() {} }, setAttribute() {},
+    innerHTML: '', textContent: '', classList: classList(), setAttribute() {},
   }]));
   const location = { hash: '#/search' };
+  const lists = {};
   class FixedDate extends Date {
     constructor(...args) { super(...(args.length ? args : [NOW])); }
     static now() { return NOW; }
@@ -23,7 +30,7 @@ function page({ saved, storageFailure = false, fetch } = {}) {
   const context = vm.createContext({
     URL, URLSearchParams, AbortController, Date: FixedDate, location,
     history: { replaceState(_state, _title, hash) { location.hash = hash; } },
-    document: { title: '', querySelector: s => elements[s] || null, querySelectorAll: () => [], addEventListener() {} },
+    document: { title: '', body: { classList: classList() }, querySelector: s => elements[s] || null, querySelectorAll: s => lists[s] || [], addEventListener() {} },
     window: { scrollTo() {}, addEventListener() {} },
     localStorage: {
       getItem(k) { if (storageFailure) throw new Error('Storage unavailable'); return storage.get(k) ?? null; },
@@ -37,7 +44,7 @@ function page({ saved, storageFailure = false, fetch } = {}) {
     run: code => vm.runInContext(code, context),
     json: code => JSON.parse(vm.runInContext(`JSON.stringify(${code})`, context)),
     put(name, value) { context[name] = value; },
-    elements, storage, location,
+    elements, lists, storage, location,
   };
 }
 
@@ -58,6 +65,19 @@ function deferredFetch() {
   return { calls, fetch(url, options) { return new Promise(resolve => calls.push({ url, signal: options.signal, resolve })); } };
 }
 const ok = results => ({ ok: true, json: async () => ({ action: 'search', results, meta: {} }) });
+
+function searchControls(p, value) {
+  for (const name of ['#sf', '#whenBtn', '#cabin', '#fromBtn']) p.elements[name] = {};
+  const attributes = new Map();
+  const input = p.elements['#to'] = {
+    value, attributes, focus() { input.onfocus?.(); },
+    setAttribute: (k, v) => attributes.set(k, v), removeAttribute: k => attributes.delete(k),
+    parentNode: { querySelector: () => null, insertAdjacentHTML() {} },
+  };
+  p.run('bind()');
+  return { input, submit: () => p.elements['#sf'].onsubmit({ preventDefault() {} }),
+    enter: () => input.onkeydown({ key: 'Enter', preventDefault() {} }) };
+}
 
 test('UI API parameters use explicit London airports, cabin filters and real return dates', () => {
   const p = page(); query(p);
@@ -158,7 +178,7 @@ test('hostile fare IDs remain encoded in result links and display text is escape
   const html = p.run('vResults()');
   assert(html.includes('#/fare/' + encodeURIComponent(id)));
   assert.doesNotMatch(html, /<img|<svg onload/);
-  assert.match(html, /&lt;svg onload=alert\(1\)&gt;/);
+  assert.match(p.run('vFare(data.results[0].id)'), /&lt;svg onload=alert\(1\)&gt;/);
 });
 
 test('Anywhere and flex discovery never fabricate tier-point ratios', () => {
@@ -256,10 +276,11 @@ test('London results collapse identical flight times to the best fare and keep i
   const base = data.results.find(f => !f.hiddenCity);
   const best = structuredClone(base);
   best.id = 'best-LGW'; best.origin = 'LGW'; best.departure.airport = 'LGW'; best.priceGbp = base.priceGbp - 1;
+  best.legs[0].units[0].departure.airport = 'LGW'; best.legs[0].units[0].from = 'LGW';
   data.results = [base, best, {...structuredClone(base), id:'later', departure:{...base.departure,dateTime:'2026-11-18T20:45:00+00:00'}}];
   const p = page(); query(p); p.put('data',data); p.run('response=data');
   assert.deepEqual(p.json('fares().map(f=>f.id)'), ['best-LGW','later']);
-  assert.match(p.run('vResults()'), /class="m">LGW ·/);
+  assert.match(p.run('vResults()'), /<span>LGW<\/span>/);
 });
 
 test('list money rounds pounds while fare money always retains two decimal places', () => {
@@ -307,4 +328,292 @@ test('Gold at zero draws only its track and retains the editable Target row', ()
   assert.equal((p.run('ring(180,8,0)').match(/<circle/g)||[]).length, 1);
   assert.equal((p.run('ring(180,8,0.5)').match(/<circle/g)||[]).length, 2);
   assert.match(p.run('vGold()'), /<label>Target<input id="gtarget"/);
+});
+
+test('oneworld defaults on, persists off, survives unavailable storage, and scopes API and calendar caches', () => {
+  const p = page(); query(p);
+  assert.equal(p.run('S.earningOnly'), true);
+  for (const action of ['search', 'anywhere', 'flex']) {
+    assert.equal(new URLSearchParams(p.run(`params('${action}',S).toString()`)).get('earningOnly'), 'true');
+  }
+  const firstKey = p.run('cacheKey(S)');
+  p.run('S.earningOnly=false');
+  assert.notEqual(p.run('cacheKey(S)'), firstKey);
+  for (const action of ['search', 'anywhere', 'flex']) {
+    assert.equal(new URLSearchParams(p.run(`params('${action}',S).toString()`)).get('earningOnly'), 'false');
+  }
+  assert.equal(page({ earningOnly: 'false' }).run('S.earningOnly'), false);
+  assert.equal(page({ earningOnly: 'invalid' }).run('S.earningOnly'), true);
+  assert.equal(page({ storageFailure: true }).run('S.earningOnly'), true);
+});
+
+test('changing oneworld persists and repeats the route search with the new flag', async () => {
+  const pending = deferredFetch(), p = page({ fetch: pending.fetch }); query(p);
+  p.location.hash = '#/results';
+  const completion = p.run('setEarningOnly(false)');
+  assert.equal(p.storage.get('flights.earningOnly.v1'), 'false');
+  assert.equal(p.run('S.earningOnly'), false);
+  assert.equal(pending.calls.length, 1);
+  assert.equal(new URL(pending.calls[0].url, 'https://sam.toys').searchParams.get('earningOnly'), 'false');
+  pending.calls[0].resolve(ok([])); await completion;
+});
+
+test('all-airline cards keep non-earning TP neutral and omit a tier-point ratio', async () => {
+  const args = { origin: 'LHR', destination: 'MAD', departureDate: '2026-11-18' };
+  const data = await backend('/api/flights?origin=LHR&destination=MAD&departureDate=2026-11-18&earningOnly=false', searchFixture(args));
+  const fare = data.results.find(f => f.earns === false);
+  assert(fare, 'fixture must exercise a real normalized non-earning result');
+  assert.equal(fare.gbpPerTierPoint, null);
+  const p = page(); query(p, { earningOnly: false }); p.put('data', data); p.put('fare', fare); p.run('response=data');
+  const html = p.run('card(fare,1)');
+  assert.match(html, /No TP/);
+  assert.doesNotMatch(html, /class="tpv"|\+0 TP|\/TP/);
+  const results = p.run('vResults()');
+  assert.match(results, /All airlines/);
+  assert.match(results, /id="earningOnly"/);
+  assert.doesNotMatch(p.run('vFare(fare.id)'), /earns ~0|\+0 TP|£0\.00\/TP/);
+});
+
+test('four result sorts put earning fares first only for value and tier points', () => {
+  const p = page();
+  const rows = [
+    { id: 'value', earns: true, priceGbp: 120, estimate: {tierPoints:120}, departure:{dateTime:'2026-11-18T08:00:00Z'}, arrival:{dateTime:'2026-11-18T12:00:00Z'} },
+    { id: 'points', earns: true, priceGbp: 300, estimate: {tierPoints:200}, departure:{dateTime:'2026-11-18T08:00:00Z'}, arrival:{dateTime:'2026-11-18T13:00:00Z'} },
+    { id: 'none-cheap', earns: false, priceGbp: 30, estimate: {tierPoints:0}, departure:{dateTime:'2026-11-18T08:00:00Z'}, arrival:{dateTime:'2026-11-18T10:00:00Z'} },
+    { id: 'none-fast', earns: false, priceGbp: 60, estimate: {tierPoints:null}, departure:{dateTime:'2026-11-18T08:00:00Z'}, arrival:{dateTime:'2026-11-18T09:00:00Z'} },
+  ];
+  p.put('rows', rows);
+  const expected = { value: ['value','points','none-cheap','none-fast'], tp: ['points','value','none-cheap','none-fast'],
+    cheap: ['none-cheap','none-fast','value','points'], fast: ['none-fast','none-cheap','value','points'] };
+  for (const [sort, ids] of Object.entries(expected)) {
+    p.put('sort',sort); p.run('SORT=sort');
+    assert.deepEqual(p.json('sortedFares(rows).map(f=>f.id)'), ids, sort);
+  }
+  assert.deepEqual(p.json('rows.map(f=>f.id)'), rows.map(f => f.id), 'sorting preserves source order');
+});
+
+test('v3 filters expose stops prices, hour histograms, two handles, and airline choices', async () => {
+  const args = { origin:'LHR', destination:'MAD', departureDate:'2026-11-18' };
+  const data = await backend('/api/flights?origin=LHR&destination=MAD&departureDate=2026-11-18&earningOnly=false', searchFixture(args));
+  const p = page(); query(p, { earningOnly:false }); p.put('data',data); p.run('response=data');
+  const html = p.run('filtersHTML()');
+  assert.match(html, /oneworld only/);
+  assert.equal((html.match(/name="stops"/g)||[]).length, 3);
+  assert.match(html, /Direct/); assert.match(html, /from £/);
+  assert.equal((html.match(/type="range"/g)||[]).length, 4);
+  assert.match(html, /Take-off from/); assert.match(html, /Landing until/);
+  assert.equal((html.match(/class="hist"/g)||[]).length, 2);
+  assert.match(html, /type="checkbox" value="FR"/);
+  assert.match(html, /id="fshow"/);
+  const results = p.run('vResults()');
+  assert.match(results, /id="fopen"/);
+  assert.equal((results.match(/role="tab"/g)||[]).length, 4);
+  const f = data.results.find(f=>f.earns);
+  p.put('fare',f);
+  p.run("F.dep=[0,1]"); assert.equal(p.run('passes(fare)'),false);
+  p.run("resetFilters();F.arr=[0,1]"); assert.equal(p.run('passes(fare)'),false);
+  p.run("resetFilters();F.air=new Set(['FR'])"); assert.equal(p.run('passes(fare)'),false);
+  p.run('resetFilters()'); assert.equal(p.run('passes(fare)'),true);
+});
+
+test('go closes an open calendar and performs a real route search', async () => {
+  const pending = deferredFetch(), p = page({fetch:pending.fetch}); query(p);
+  p.run('calOpen=true'); const completion = p.run('submitSearch()');
+  assert.equal(p.run('calOpen'),false); assert.equal(pending.calls.length,1);
+  assert.equal(new URL(pending.calls[0].url,'https://sam.toys').searchParams.get('destination'),'MAD');
+  pending.calls[0].resolve(ok([])); await completion;
+});
+
+test('go without a destination focuses the field and makes the missing choice explicit', () => {
+  const p = page(); query(p, {to:''}); let focused = false;
+  p.elements['#to'] = {focus() {focused=true;}};
+  p.run('submitSearch()');
+  assert.equal(focused,true); assert.match(p.run('hint'),/where|destination/i);
+});
+
+test('Enter in Where-to dispatches a search for a typed airport and closes the calendar', async () => {
+  const pending = deferredFetch(), p = page({fetch:pending.fetch}); query(p, {to:''});
+  for (const name of ['#sf','#whenBtn','#cabin','#fromBtn']) p.elements[name] = {};
+  p.elements['#to'] = {value:'JFK'};
+  p.run("calOpen=true;draft='JFK';bind()");
+  let prevented = false;
+  p.elements['#to'].onkeydown({key:'Enter',preventDefault(){prevented=true;}});
+  assert.equal(prevented,true);
+  assert.equal(pending.calls.length,1);
+  assert.equal(new URL(pending.calls[0].url,'https://sam.toys').searchParams.get('destination'),'JFK');
+  assert.equal(p.run('calOpen'),false);
+  p.run("go('#/gold')"); pending.calls[0].resolve(ok([])); await Promise.resolve();
+});
+
+test('deselecting every airline shows no fares, while reset restores all carriers', async () => {
+  const args = {origin:'LHR',destination:'MAD',departureDate:'2026-11-18'};
+  const data = await backend('/api/flights?origin=LHR&destination=MAD&departureDate=2026-11-18&earningOnly=false',searchFixture(args));
+  const p = page(); query(p,{earningOnly:false});p.put('data',data);p.run('response=data;F.air=new Set()');
+  assert.equal(p.run('fares().filter(f=>passes(f)).length'),0);
+  assert.match(p.run('cardsHTML()'),/No flights match these filters/);
+  p.run('resetFilters()');
+  assert.equal(p.run('fares().filter(f=>passes(f)).length'),p.run('fares().length'));
+});
+
+test('non-earning airline display names survive normalization and are escaped in every view', async () => {
+  const args = {origin:'LHR',destination:'MAD',departureDate:'2026-11-18'};
+  const data = await backend('/api/flights?origin=LHR&destination=MAD&departureDate=2026-11-18&earningOnly=false',searchFixture(args));
+  const fare = data.results.find(f => f.earns === false);
+  assert.equal(fare.airlines,'Ryanair');
+  const p = page(); query(p,{earningOnly:false}); p.put('data',data); p.put('fare',fare); p.run('response=data');
+  assert.match(p.run('card(fare,1)'),/class="air">Ryanair/);
+  assert.match(p.run('filtersHTML()'),/<b>Ryanair<\/b>/);
+  assert.match(p.run('vFare(fare.id)'),/class="who">Ryanair · Economy/);
+  p.run('fare.airlines=\'Hostile <img src=x onerror=alert(1)>\'');
+  for (const view of ['card(fare,1)','filtersHTML()','vFare(fare.id)']) {
+    const html=p.run(view);
+    assert.match(html,/Hostile &lt;img src=x onerror=alert\(1\)&gt;/,view);
+    assert.doesNotMatch(html,/<img|onerror="/,view);
+  }
+});
+
+test('hidden-city card tolerates an unknown flown arrival time without inventing a duration', async () => {
+  const args = {origin:'LHR',destination:'MAD',departureDate:'2026-11-18'};
+  const source=searchFixture(args);
+  const hidden=source.flights.find(f=>f.attributes.includes('hidden-city'));
+  delete hidden.segments[0].arrival;
+  const data=await backend('/api/flights?origin=LHR&destination=MAD&departureDate=2026-11-18',source);
+  const fare=data.results.find(f=>f.hiddenCity); assert(fare);
+  assert.deepEqual(fare.arrival,{airport:'MAD',dateTime:null});
+  const p=page();query(p);p.put('data',data);p.put('fare',fare);p.run('response=data');
+  const leg=p.run('legRow(fare,0)');
+  assert.match(leg,/Time unavailable/);assert.match(leg,/<span>MAD<\/span>/);
+  const card=p.run('card(fare,0)');
+  assert.match(card,/Duration unavailable/);
+  assert.doesNotMatch(card,/NaN|undefined|\+null/);
+});
+
+test('opaque connected itinerary counts stops and labels the connection without fabricating airports', async () => {
+  const args = {origin:'LHR',destination:'MAD',departureDate:'2026-11-18'};
+  const source=searchFixture(args), connection=source.flights[0];
+  source.flights=[connection];
+  connection.layovers=1;
+  connection.deepLink='https://skiplagged.com/flights/LHR/MAD/2026-11-18#trip=IB714-IB411';
+  const data=await backend('/api/flights?origin=LHR&destination=MAD&departureDate=2026-11-18',source);
+  assert.equal(data.results.length,1);
+  const fare=data.results[0]; assert.equal(fare.legs[0].units[0].opaque,true);
+  const p=page();query(p);p.put('data',data);p.put('fare',fare);p.run('response=data');
+  assert.equal(p.run('stopsOf(fare)'),1);
+  assert.match(p.run('legRow(fare,0)'),/class="via">Connection<\/div>/);
+  const card=p.run('card(fare,0)');
+  assert.match(card,/<b>1 stop<\/b>/);
+  assert.doesNotMatch(card,/NaN|undefined|<b>Direct<\/b>|BCN/);
+  p.run("F.stops='0'");assert.equal(p.run('passes(fare)'),false);
+  p.run("F.stops='1'");assert.equal(p.run('passes(fare)'),true);
+});
+
+test('go and Enter resolve typed city names and IATA codes without choosing a suggestion', async () => {
+  for (const method of ['submit', 'enter']) {
+    for (const [value, from, expected] of [['London Heathrow', 'IBZ', 'LHR'], [' madrid ', 'LON', 'MAD'], ['jfk', 'LON', 'JFK'], ['New York', 'LON', 'JFK'], ['NYC', 'LON', 'JFK'], ['Anywhere', 'LON', 'ANY']]) {
+      const pending = deferredFetch(), p = page({ fetch: pending.fetch }); query(p, { from });
+      const controls = searchControls(p, value);
+      // The real input event must discard the previously selected destination.
+      controls.input.oninput();
+      p.run('calOpen=true;fromOpen=true');
+      const completion = controls[method]();
+      assert.equal(pending.calls.length, 1, `${method}: ${value}`);
+      const params = new URL(pending.calls[0].url, 'https://sam.toys').searchParams;
+      assert.equal(params.get('action'), expected === 'ANY' ? 'anywhere' : 'search');
+      assert.equal(params.get('destination'), expected === 'ANY' ? null : expected);
+      assert.deepEqual(p.json('[calOpen,sugOpen,fromOpen]'), [false, false, false]);
+      assert.equal(p.location.hash, '#/loading');
+      // Stop rendering into the deliberately minimal DOM when the response arrives.
+      p.run("go('#/gold')"); pending.calls[0].resolve(ok([])); await completion;
+    }
+  }
+});
+
+test('Enter uses the keyboard-highlighted suggestion; go resolves the typed text', async () => {
+  for (const method of ['enter', 'submit']) {
+    const pending = deferredFetch(), p = page({ fetch: pending.fetch }); query(p, { to: '' });
+    const controls = searchControls(p, 'Tokyo');
+    controls.input.oninput();
+    p.lists['[data-to]'] = ['HND', 'NRT'].map(code => ({ dataset: { to: code }, id: `suggest-${code}`, classList: { toggle() {} }, setAttribute() {} }));
+    for (let n = 0; n < 2; n++) controls.input.onkeydown({ key: 'ArrowDown', preventDefault() {} });
+    assert.equal(controls.input.attributes.get('aria-activedescendant'), 'suggest-NRT');
+    const completion = controls[method]();
+    assert.equal(new URL(pending.calls[0].url, 'https://sam.toys').searchParams.get('destination'), method === 'enter' ? 'NRT' : 'HND');
+    p.run("go('#/gold')"); pending.calls[0].resolve(ok([])); await completion;
+  }
+});
+
+test('unmatched text is explained next to the destination and never sends an API request', () => {
+  for (const method of ['enter', 'submit']) {
+    const pending = deferredFetch(), p = page({ fetch: pending.fetch }); query(p, { to: '' });
+    const controls = searchControls(p, 'zzqq'); controls.input.oninput();
+    p.run('calOpen=true'); controls[method]();
+    assert.equal(pending.calls.length, 0);
+    assert.equal(p.run('hint'), 'No airport matches “zzqq”.');
+    assert.deepEqual(p.json('[calOpen,sugOpen]'), [false, false]);
+    const html = p.run('vSearch()');
+    assert.match(html, /id="to"[^>]*aria-invalid="true" aria-describedby="toError"/);
+    assert.match(html, /id="toError" role="status">No airport matches “zzqq”\.<\/div>\s*<\/form>/);
+    assert(html.indexOf('id="toError"') < html.indexOf('id="cabin"'));
+    // Correcting the input removes the stale error without stealing focus.
+    let removed = false;
+    p.elements['#toError'] = { remove() { removed = true; } };
+    controls.input.value = 'Madrid'; controls.input.oninput();
+    assert.equal(removed, true); assert.equal(p.run('hint'), '');
+    assert.equal(p.run('sugOpen'), true);
+  }
+  const p = page(); query(p, { to: '' });
+  const controls = searchControls(p, '<img src=x>'); controls.input.oninput(); controls.submit();
+  assert.match(p.run('vSearch()'), /No airport matches “&lt;img src=x&gt;”\./);
+  assert.doesNotMatch(p.run('vSearch()'), /<img/);
+});
+
+test('missing dates open the calendar and explain the problem beside When for go and Enter', () => {
+  for (const method of ['submit', 'enter']) {
+    const pending = deferredFetch(), p = page({ fetch: pending.fetch }); query(p, { to: '', out: '' });
+    const controls = searchControls(p, 'Madrid'); controls.input.oninput(); controls[method]();
+    assert.equal(pending.calls.length, 0); assert.equal(p.run('S.to'), 'MAD');
+    assert.equal(p.location.hash, '#/search/when');
+    assert.deepEqual(p.json('[calOpen,sugOpen]'), [true, false]);
+    const html = p.run('vSearch()');
+    assert.match(html, /id="whenBtn"[^>]*aria-describedby="dateError"/);
+    assert.match(html, /id="dateError" role="status">Pick a date\.<\/div>\s*<div class="cal"/);
+    assert(html.indexOf('id="dateError"') < html.indexOf('id="cabin"'));
+  }
+});
+
+test('same-city groups reject London and New York destinations before requesting fares', () => {
+  for (const [from, value] of [['LON', 'London Heathrow'], ['LON', 'LHR'], ['LHR', 'LGW'], ['NYC', 'JFK'], ['JFK', 'EWR'], ['HND', 'NRT']]) {
+    for (const method of ['enter', 'submit']) {
+      const pending = deferredFetch(), p = page({ fetch: pending.fetch }); query(p, { from, to: '' });
+      const controls = searchControls(p, value); controls.input.oninput(); controls[method]();
+      assert.equal(pending.calls.length, 0, `${from} → ${value}`);
+      assert.equal(p.run('hint'), 'Choose a different destination.');
+      assert.match(p.run('vSearch()'), /id="toError" role="status">Choose a different destination\./);
+      assert.deepEqual(p.json('[calOpen,sugOpen]'), [false, false]);
+    }
+  }
+});
+
+test('JL, CX and QF use airline names in cards, filters and detail with or without metadata', async () => {
+  const data = await backend('/api/flights?origin=LHR&destination=MAD&departureDate=2026-11-18&returnDate=2026-11-21');
+  for (const [code, name] of [['JL', 'Japan Airlines'], ['CX', 'Cathay Pacific'], ['QF', 'Qantas']]) {
+    for (const withMetadata of [true, false]) {
+      const one = structuredClone(data), fare = one.results[0];
+      one.results = [fare]; fare.flightNumbers = [code + '123']; fare.airlines = code;
+      if (!withMetadata) delete one.meta.carriers;
+      const p = page(); query(p); p.put('data', one); p.run('response=data');
+      assert(p.run('card(data.results[0],0)').includes(`<div class="air">${name}`));
+      assert(p.run('filtersHTML()').includes(`<b>${name}</b>`));
+      assert(p.run('vFare(data.results[0].id)').includes(`<div class="who">${name} · Economy`));
+    }
+  }
+});
+
+test('the results title closes the span after at and contains no broken markup', async () => {
+  const data = await backend('/api/flights?origin=LHR&destination=MAD&departureDate=2026-11-18&returnDate=2026-11-21');
+  const p = page(); query(p); p.put('data', data); p.run('response=data');
+  const title = p.run('vResults()').match(/<h1>([\s\S]*?)<\/h1>/)[1];
+  assert.match(title, /<span class="soft">earns ~[\d,]+&nbsp;TP at<\/span> £[\d.]+ <span class="soft">each<\/span>/);
+  assert.equal((title.match(/<span\b/g) || []).length, (title.match(/<\/span>/g) || []).length);
+  assert.doesNotMatch(title, /at\/span>|undefined|NaN/);
 });

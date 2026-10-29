@@ -24,6 +24,7 @@ Common parameters:
 | `origin` | Any 3-letter IATA code, or up to 7 comma-separated codes; normalized to uppercase. Omit for LHR, LGW, LCY, STN, LTN, SEN and IBZ. An implicit origin equal to the destination is skipped. Explicit self-routes are rejected. |
 | `departureDate` | Required real `YYYY-MM-DD`, today through 366 days ahead, UTC. |
 | `returnDate` | Optional return date, on/after departure, within the same horizon. |
+| `earningOnly` | Literal `true` (default) or `false`. Search defaults to eligible carriers; false requests all airlines and retains non-earning fares with `earns:false`. Discovery accepts the flag for context/cache separation but remains unverified. |
 
 Search parameters:
 
@@ -34,15 +35,21 @@ Search parameters:
 | `limit`, `offset` | Per-origin provider page: 1–100 (default 25), 0–99 (default 0). |
 | `maxStops` | Provider enum `none`, `one`, `many` (default). |
 | `includeHiddenCity` | Literal `true` or `false` (default true for one-way; always false when `returnDate` is set). |
-| `airlines` | Optional comma-separated subset of eligible marketing codes. Sent as `preferredAirlines: string[]`, exactly as tools/list specifies; final eligibility is still checked locally. |
+| `airlines` | Optional comma-separated subset of eligible marketing codes. Sent as `preferredAirlines: string[]`, exactly as tools/list specifies; final eligibility is still checked locally. With `earningOnly=false`, no default airline preference is sent; an explicit subset still applies. |
 
 Search always asks the provider for price order, one adult, standard flights,
 and no virtual interlining. It ranks the returned candidates by unrounded
 `priceGbp / estimate.tierPoints`, then by total GBP price. Hidden-city fares
 participate in the same ranking without a penalty or a separate bucket. It is not an exhaustive
 search of every fare: `pages` exposes upstream pagination. Zero/unavailable TP
-have a null ratio and sort last. A malformed/non-earning itinerary is excluded,
-with only its exclusion reason counted in `excluded` (no payload logging).
+have a null ratio. Earning fares always precede non-earning fares; non-earning
+fares sort by price and never receive a GBP/TP ratio. A malformed itinerary is
+always excluded. A non-earning itinerary is excluded by default, with only its
+exclusion reason counted in `excluded` (no payload logging). With
+`earningOnly=false`, carrier, published flight-series and operator earning
+failures instead produce `earns:false`, `eligibility:"non-earning"`, zero TP,
+null Avios and an empty earning breakdown. Structural checks, hidden-city
+safeguards and virtual-interlining exclusion still apply to all fares.
 
 Anywhere accepts `fareClass` but no destination, airline or calendar options.
 Flex accepts `destination`, `mode=depart|return` (default depart), and
@@ -85,6 +92,7 @@ A recorded £93.17 Iberia return result has these earning fields:
   "price": {"amount":121,"currency":"USD"},
   "priceGbp": 93.17,
   "eligibility": "conditional",
+  "earns": true,
   "hiddenCity": false,
   "bookedArrival": null,
   "ticketedTo": "MAD",
@@ -102,12 +110,16 @@ A recorded £93.17 Iberia return result has these earning fields:
 ```
 
 Actual results additionally contain `id`, `origin`, `destination`, `departure`,
-`arrival`, `returnFlight`, `deepLink` and `warnings`. Breakdowns contain flight
+`arrival`, `returnFlight`, `deepLink`, `warnings` and bounded provider `airlines`
+display text (untrusted; the page HTML-escapes it). Breakdowns contain flight
 numbers, airports, date, miles, eligible GBP spend (or null), TP and Avios. The
 real assumptions arrays are populated; the empty arrays above abbreviate them.
 `estimate.status=unavailable` has null TP/Avios and a reason in `assumptions`.
 The `eligibility` field remains conditional whenever booking class or required
 operator information is absent. A positive estimate is not a guarantee of credit.
+Every normalized search row has an `earns` boolean describing whether all booked
+segments pass the carrier/flight-series/operator earning checks. An earning row
+may still have unavailable or zero estimated TP; it is not a guaranteed award.
 
 Anywhere rows have `origin`, `destination`, USD `price`, `priceGbp`, `deepLink`,
 `eligibility:"unverified"`, `estimate:null` and `requiresSearch:true`. Flex rows
@@ -149,7 +161,8 @@ CZ/China Southern and LATAM are Avios-only for this purpose. S7 is suspended.
 AY8100–8700 and published MH excluded series are rejected. Every flight number
 on both outbound and return is checked, including all connections. A mixed
 non-earning/unknown prefix or a known disallowed operator excludes the **whole**
-result. Missing operators are clearly flagged for booking verification.
+result by default, or marks the whole row non-earning with `earningOnly=false`.
+Missing operators are clearly flagged for booking verification.
 
 The pre-April-2025 TP distance bands are obsolete. Current partner TP charts
 are percentages of miles, selected by carrier, cabin and booking class. `ROWS`
@@ -267,7 +280,8 @@ A per-instance response cache retains at most **64 normalised queries**, with a
 200 responses (including empty results) across IPs. Parameter order, IATA/carrier
 case, duplicates in origin/carrier sets, explicit defaults and numeric formatting
 normalise to the same key; different actions, dates, routes, filters, pagination
-and calendar modes remain distinct. Expired entries are pruned on access/write;
+and calendar modes remain distinct, as does the normalized `earningOnly` flag
+(omission and explicit `true` share a key). Expired entries are pruned on access/write;
 when full, the oldest insertion is evicted (reads do not extend TTL or recency).
 Errors and partial origin responses are never cached. Throttling, Origin checks
 and validation run before cache lookup, so cache hits still count toward the
@@ -286,7 +300,13 @@ The page sends the six London airports explicitly (excluding the destination),
 or a selected airport. A first calendar tap selects one way; a later second tap
 adds a return. It displays API totals and ranks positive earning estimates by
 GBP/TP without multiplying a return. Unavailable or zero estimates are excluded
-from the earning list. API errors and 429 with Retry-After have explicit states;
+from the earning list. Turning off the persisted `oneworld only` filter includes
+all structurally valid returned fares, with muted `No TP` for `earns:false`
+and no tier-point ratio. Best value and Most tier points keep earning fares
+first; Cheapest and Fastest mix all airlines. The desktop sticky filters become
+a keyboard-accessible bottom sheet on phone. Go and Enter share submission
+validation, close the calendar for a valid search, and focus an absent destination.
+API errors and 429 with Retry-After have explicit states;
 navigation aborts obsolete requests and stale replies cannot replace the page.
 
 Anywhere and flex are **unverified discovery**, not earning quotes. Anywhere
@@ -322,9 +342,9 @@ was recorded. No production calls are made by tests.
 Playwright at 1280 and 390 pixels, and captures screenshots plus a JSON report
 under `/tmp/flights-browser-qa` (override with `FLIGHTS_SCREENSHOT_DIR`). It uses
 `playwright` from the current installation, `FLIGHTS_PLAYWRIGHT_MODULE` when
-set, or the existing ai-mac installation. For approved reference captures, place
-the prototype from `git show origin/main:prototypes/flights/proto-v2.html` at
-`/tmp/flights-approved-v2.html`. The server uses the real handler with recorded
+set, or the existing ai-mac installation. Approved reference captures use the committed
+`prototypes/flights/proto-v3.html` by default (override `approvedPath` when
+creating the fixture server). The server uses the real handler with recorded
 fixtures and labelled synthetic route/date/hidden-city mutations. It has an
 explicit static-file allowlist and never contacts Skiplagged. It requires a
 runtime permitted to bind loopback sockets and launch Chromium. The Node UI

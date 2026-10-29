@@ -31,12 +31,17 @@ function normalizeFlight(flight, query) {
   const legs = [];
   let flownArrival = endpoint(flight.arrival);
   let operatorVerified = true, bookingClassKnown = true;
+  const nonEarningReasons = new Set();
+  const earningFailure = (reason) => {
+    nonEarningReasons.add(reason);
+    return query.earningOnly !== false;
+  };
   for (let i = 0; i < summaries.length; i++) {
     const s = summaries[i], numbers = groups[i], departure = endpoint(s.departure), arrival = endpoint(s.arrival);
     if (!departure || !arrival || numbers.length < 1 || numbers.length > 6 || !numbers.every(parseFlightNumber)) return fail('invalid-segment-detail');
     // Never accept a missing flight prefix simply because airline names match.
     // Names can only tighten eligibility, e.g. LEVEL operated IB fares.
-    if (typeof s.airlines === 'string' && /\blevel\b/i.test(s.airlines) && numbers.some((n) => /^(IB|I2)/.test(n))) return fail('excluded-operator');
+    if (typeof s.airlines === 'string' && /\blevel\b/i.test(s.airlines) && numbers.some((n) => /^(IB|I2)/.test(n)) && earningFailure('excluded-operator')) return fail('excluded-operator');
     const from = i === 0 ? query.origin : query.destination;
     const to = i === 0 ? query.destination : query.origin;
     const date = i === 0 ? query.departureDate : query.returnDate;
@@ -50,7 +55,7 @@ function normalizeFlight(flight, query) {
       const segment = detailed ? s.segments[j] : {};
       if (segment.flightNumber && parseFlightNumber(segment.flightNumber)?.flightNumber !== parseFlightNumber(numbers[j]).flightNumber) return fail('conflicting-flight-numbers');
       const checked = checkSegment({ ...segment, flightNumber: numbers[j] });
-      if (!checked.ok) return fail(checked.reason);
+      if (!checked.ok && earningFailure(checked.reason)) return fail(checked.reason);
       operatorVerified &&= checked.operatorVerified;
       bookingClassKnown &&= typeof segment.bookingClass === 'string' && /^[A-Z]$/.test(segment.bookingClass);
       if (detailed) {
@@ -58,7 +63,7 @@ function normalizeFlight(flight, query) {
         if (!IATA.test(a) || !IATA.test(b) || (j === 0 ? a !== from : a !== units[j - 1].to)) return fail('disconnected-segments');
         const segmentDate = segment.departure?.dateTime?.slice(0, 10) || date;
         if (!/^\d{4}-\d{2}-\d{2}$/.test(segmentDate) || segmentDate < date) return fail('invalid-segment-date');
-        units.push({ from: a, to: b, date: segmentDate, flightNumbers: [checked.flightNumber],
+        units.push({ from: a, to: b, date: segmentDate, flightNumbers: [parseFlightNumber(numbers[j]).flightNumber],
           bookingClass: /^[A-Z]$/.test(segment.bookingClass || '') ? segment.bookingClass : undefined,
           cabin: ['basic-economy','economy','premium','business','first'].includes(segment.cabin) ? segment.cabin : undefined,
           departure: endpoint(segment.departure), arrival: endpoint(segment.arrival),
@@ -80,6 +85,7 @@ function normalizeFlight(flight, query) {
     legs.push({ from, to, date, units });
   }
   const itinerary = { legs, hiddenCity };
+  const earns = nonEarningReasons.size === 0;
   const priceGbp = Math.round(flight.price.amount * FX.usdToGbp * 100) / 100;
   return { flight: {
     id: typeof flight.id === 'string' ? flight.id.slice(0, 250) : deepLink,
@@ -89,11 +95,16 @@ function normalizeFlight(flight, query) {
     ticketedTo: flight.arrival.airport, leaveAt: query.destination,
     returnFlight: flight.returnFlight ? { departure: endpoint(flight.returnFlight.departure), arrival: endpoint(flight.returnFlight.arrival) } : null,
     flightNumbers: groups.flat(), price: { amount: flight.price.amount, currency: 'USD' }, priceGbp, deepLink,
-    hiddenCity, legs, eligibility: operatorVerified && bookingClassKnown ? 'eligible-subject-to-ticket' : 'conditional',
-    warnings: [...(!operatorVerified ? ['operating-carrier-unavailable-verify-before-booking'] : []),
+    // Untrusted display text only; consumers must escape it when rendering HTML.
+    airlines: typeof flight.airlines === 'string' ? flight.airlines.slice(0, 200) : null,
+    hiddenCity, legs, earns, eligibility: !earns ? 'non-earning' : operatorVerified && bookingClassKnown ? 'eligible-subject-to-ticket' : 'conditional',
+    warnings: [...nonEarningReasons, ...(!operatorVerified ? ['operating-carrier-unavailable-verify-before-booking'] : []),
       ...(!bookingClassKnown ? ['booking-class-unavailable-some-fares-earn-zero'] : []),
       ...(hiddenCity ? ['skipping-a-sector-can-invalidate-ticket-and-credit'] : [])],
-    estimate: estimate(itinerary, priceGbp, query.fareClass),
+    estimate: earns ? estimate(itinerary, priceGbp, query.fareClass) : {
+      status: 'non-earning', tierPoints: 0, avios: null,
+      tierPointsByCollectionYear: {}, breakdown: [], assumptions: [...nonEarningReasons],
+    },
   } };
 }
 module.exports = { safeLink, normalizeFlight };

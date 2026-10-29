@@ -46,6 +46,7 @@ test('recorded Iberia return fare earns once on total spend, with Gold Avios per
   assert.equal(result.hiddenCity,false);assert.equal(result.ticketedTo,'MAD');assert.equal(result.leaveAt,'MAD');
   assert.deepEqual(result.flightNumbers, ['IB714','IB725']);
   assert.equal(result.eligibility, 'conditional');
+  assert.equal(result.earns, true);
   assert.equal(result.estimate.tierPoints, 66); // round(£93.17 * .7 / 2) per leg
   assert.equal(result.estimate.avios, 610); // floor(£32.6095 * 1.17 * 8) per leg
   assert.equal(result.estimate.tierPointsByCollectionYear['2026-2027'], 66);
@@ -151,6 +152,78 @@ test('ranking uses exact GBP/TP, price ties and null for zero/unavailable earnin
     {id:'best',priceGbp:90,estimate:{tierPoints:100}}]);
   assert.deepEqual(r.map(x=>x.id),['best','cheap','expensive','zero','unknown']);
   assert.equal(r[3].gbpPerTierPoint,null);
+});
+
+test('all-airline normalization marks whole itineraries non-earning without weakening route safeguards', () => {
+  const all = {...query, earningOnly:false};
+  for (const number of ['FR725','ZZ725','AY8100','MH3000']) {
+    const f = clone(search.flights[0]);
+    f.deepLink = f.deepLink.replace('IB725',number);
+    assert(normalizeFlight(f,query).excluded,number);
+    const row = normalizeFlight(f,all).flight;
+    assert.equal(row.earns,false,number);
+    assert.equal(row.eligibility,'non-earning');
+    assert.equal(row.estimate.tierPoints,0);
+    assert.equal(row.estimate.avios,null);
+    assert.deepEqual(row.estimate.breakdown,[]);
+    assert.equal(rank([row])[0].gbpPerTierPoint,null);
+  }
+  assert.equal(normalizeFlight(search.flights[0],all).flight.earns,true);
+  const operator = clone(search.flights[0]); operator.airlines='LEVEL';
+  assert.equal(normalizeFlight(operator,query).excluded,'excluded-operator');
+  assert.equal(normalizeFlight(operator,all).flight.earns,false);
+  const detailed = clone(search.flights[0]);
+  detailed.segments=[{flightNumber:'IB714',origin:'LHR',destination:'MAD',operatingCarrier:'LL'}];
+  assert.equal(normalizeFlight(detailed,all).flight.earns,false);
+  detailed.segments[0].origin='CDG';
+  assert.equal(normalizeFlight(detailed,all).excluded,'disconnected-segments');
+  const malformed=clone(search.flights[0]);malformed.deepLink=malformed.deepLink.replace('IB725','INVALID');
+  assert.equal(normalizeFlight(malformed,all).excluded,'invalid-segment-detail');
+  const hidden=clone(search.flights[0]);hidden.attributes.push('hidden-city');
+  assert.equal(normalizeFlight(hidden,all).excluded,'hidden-city-return-cannot-be-assumed-flown');
+  const virtual=clone(search.flights[0]);virtual.attributes.push('virtual-interlining');
+  assert.equal(normalizeFlight(virtual,all).excluded,'virtual-interlining-excluded');
+});
+
+test('best-value ranking keeps unavailable earning fares before non-earners and sorts non-earners by price', () => {
+  const rows=rank([
+    {id:'non-high',earns:false,priceGbp:10,estimate:{tierPoints:1000}},
+    {id:'earning-unknown',earns:true,priceGbp:100,estimate:{tierPoints:null}},
+    {id:'non-low',earns:false,priceGbp:1,estimate:{tierPoints:0}},
+    {id:'earning',earns:true,priceGbp:120,estimate:{tierPoints:100}},
+  ]);
+  assert.deepEqual(rows.map(row=>row.id),['earning','earning-unknown','non-low','non-high']);
+  assert.equal(rows[3].gbpPerTierPoint,null);
+});
+
+test('airline display text is bounded and never establishes carrier eligibility', () => {
+  const f=clone(search.flights[0]);
+  f.deepLink=f.deepLink.replace('IB725','FR725');
+  const hostile='<img src=x onerror=alert(1)> & "British Airways" '+ 'x'.repeat(250);
+  f.airlines=hostile;
+  const row=normalizeFlight(f,{...query,earningOnly:false}).flight;
+  assert.equal(row.airlines,hostile.slice(0,200));
+  assert.equal(row.airlines.length,200);
+  assert.equal(row.earns,false);
+  assert.equal(normalizeFlight(f,query).excluded,'non-earning-or-unknown-flight-number');
+  f.airlines={name:'Ryanair'};
+  assert.equal(normalizeFlight(f,{...query,earningOnly:false}).flight.airlines,null);
+});
+
+test('earningOnly defaults true, validates booleans and removes the provider airline preference only when off', () => {
+  for (const action of ['search','anywhere','flex']) {
+    const base=`/api/flights?action=${action}&departureDate=2026-11-18${action==='anywhere'?'':'&destination=MAD'}`;
+    assert.equal(parseInput(base,NOW).earningOnly,true);
+    assert.equal(parseInput(base+'&earningOnly=true',NOW).earningOnly,true);
+    const all=parseInput(base+'&earningOnly=false',NOW);
+    assert.equal(all.earningOnly,false);
+    assert.equal(Object.hasOwn(toolInput(all,'LHR').args,'preferredAirlines'),false);
+    for (const value of ['0','1','FALSE','yes','']) assert.throws(()=>parseInput(base+'&earningOnly='+value,NOW));
+    assert.throws(()=>parseInput(base+'&earningOnly=true&earningOnly=false',NOW));
+  }
+  const base='/api/flights?destination=MAD&departureDate=2026-11-18';
+  assert.deepEqual(toolInput(parseInput(base,NOW),'LHR').args.preferredAirlines,ELIGIBLE_CODES);
+  assert.deepEqual(toolInput(parseInput(base+'&earningOnly=false&airlines=IB',NOW),'LHR').args.preferredAirlines,['IB']);
 });
 
 test('input validates real dates, IATA, bounded query options and default origins', () => {

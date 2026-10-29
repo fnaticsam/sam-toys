@@ -10,8 +10,9 @@ const script = fs.readFileSync(path.join(__dirname, '../../flights/index.html'),
 
 // Exercise the shipping inline script without a browser or external packages.
 // DOM layout, actual events and viewport appearance belong to browser-check.cjs.
-function page({ saved, earningOnly, storageFailure = false, fetch } = {}) {
+function page({ saved, liveSaved, earningOnly, storageFailure = false, fetch } = {}) {
   const storage = new Map(saved === undefined ? [] : [['flights.gold.v2', saved]]);
+  if (liveSaved !== undefined) storage.set('flights.gold.live.v1', liveSaved);
   if (earningOnly !== undefined) storage.set('flights.earningOnly.v1', earningOnly);
   function classList() {
     const values = new Set();
@@ -21,6 +22,7 @@ function page({ saved, earningOnly, storageFailure = false, fetch } = {}) {
   const elements = Object.fromEntries(['#app', '#ring', '#toast'].map(k => [k, {
     innerHTML: '', textContent: '', classList: classList(), setAttribute() {},
   }]));
+  const events = {};
   const location = { hash: '#/search' };
   const lists = {};
   class FixedDate extends Date {
@@ -30,7 +32,7 @@ function page({ saved, earningOnly, storageFailure = false, fetch } = {}) {
   const context = vm.createContext({
     URL, URLSearchParams, AbortController, Date: FixedDate, location,
     history: { replaceState(_state, _title, hash) { location.hash = hash; } },
-    document: { title: '', body: { classList: classList() }, querySelector: s => elements[s] || null, querySelectorAll: s => lists[s] || [], addEventListener() {} },
+    document: { title: '', body: { classList: classList() }, querySelector: s => elements[s] || null, querySelectorAll: s => lists[s] || [], addEventListener(name, handler) { events[name] = handler; } },
     window: { scrollTo() {}, addEventListener() {} },
     localStorage: {
       getItem(k) { if (storageFailure) throw new Error('Storage unavailable'); return storage.get(k) ?? null; },
@@ -44,7 +46,7 @@ function page({ saved, earningOnly, storageFailure = false, fetch } = {}) {
     run: code => vm.runInContext(code, context),
     json: code => JSON.parse(vm.runInContext(`JSON.stringify(${code})`, context)),
     put(name, value) { context[name] = value; },
-    elements, lists, storage, location,
+    elements, lists, storage, location, events,
   };
 }
 
@@ -117,7 +119,7 @@ test('Gold defaults to zero, 20,000 and the next March 31, with old missing-targ
   const old = page({ saved: JSON.stringify({ tp: 1234, ends: '2027-03-31' }) });
   assert.deepEqual(old.json('gold'), { tp: 1234, target: 20000, ends: '2027-03-31' });
   p.run("gold=goldData({tp:321,target:21000,ends:'2028-03-31'})");
-  assert.deepEqual(JSON.parse(p.storage.get('flights.gold.v2')), { tp: 321, target: 21000, ends: '2028-03-31' });
+  assert.deepEqual(JSON.parse(p.storage.get('flights.gold.live.v1')), { tp: 321, target: 21000, ends: '2028-03-31' });
 });
 
 test('Gold rejects corrupt local data and handles unavailable storage without inventing a balance', () => {
@@ -152,8 +154,8 @@ test('hidden-city detail preserves flown and ticketed endpoints and the actual s
   const detail = p.run('vFare(fareId)');
   assert.match(detail, /You leave at Madrid/); assert.match(detail, /Barcelona · BCN/);
   assert.match(detail, /Iberia · Economy · cabin bag only/);
-  assert.match(detail, /class="lg"><span class="fn">IB714<\/span> · 2h30/);
-  assert.match(detail, /class="lg ghost"><span class="fn">IB411<\/span> · 1h/);
+  assert.match(detail, /class="lg"><span class="fn">IB 714<\/span> · 2h30/);
+  assert.match(detail, /class="lg ghost"><span class="fn">IB 411<\/span> · 1h/);
   assert.match(detail, /Skipping a sector can invalidate the ticket and credit\./);
   assert.doesNotMatch(detail, /Tier points and Avios are estimates|connecting/);
   const rows = p.run('vResults()');
@@ -616,4 +618,83 @@ test('the results title closes the span after at and contains no broken markup',
   assert.match(title, /<span class="soft">earns ~[\d,]+&nbsp;TP at<\/span> £[\d.]+ <span class="soft">each<\/span>/);
   assert.equal((title.match(/<span\b/g) || []).length, (title.match(/<\/span>/g) || []).length);
   assert.doesNotMatch(title, /at\/span>|undefined|NaN/);
+});
+
+
+test('live Gold ignores the exact prototype sample and migrates other legacy balances only once', () => {
+  const sample = {tp:12480,target:20000,ends:'2027-03-31'};
+  const p = page({saved:JSON.stringify(sample)});
+  assert.equal(p.run('gold.tp'),0);
+  assert.equal(p.storage.has('flights.gold.live.v1'),false);
+  for (const value of [{...sample,tp:12481},{...sample,target:21000},{...sample,ends:'2028-03-31'},{...sample,extra:true}]) {
+    const migrated=page({saved:JSON.stringify(value)});
+    assert.equal(migrated.run('gold.tp'),value.tp);
+    assert.deepEqual(JSON.parse(migrated.storage.get('flights.gold.live.v1')),value);
+  }
+  assert.equal(page({saved:JSON.stringify(sample),liveSaved:JSON.stringify({...sample,tp:42})}).run('gold.tp'),42);
+  assert.equal(page({liveSaved:JSON.stringify(sample)}).run('gold.tp'),12480,'an explicitly saved live balance is preserved');
+  const prototype=fs.readFileSync(path.join(__dirname,'../../prototypes/flights/proto-v3.html'),'utf8');
+  assert.equal(prototype,fs.readFileSync(path.join(__dirname,'../../prototypes/flights/index.html'),'utf8'));
+  assert.doesNotMatch(prototype,/flights.gold.v2|flights.gold.live.v1/);
+  assert.equal((prototype.match(/flights.proto.gold/g)||[]).length,4);
+});
+
+test('empty searches stand alone and All airlines retries the same route without oneworld', async () => {
+  const pending=deferredFetch(),p=page({fetch:pending.fetch});query(p);
+  p.run("response={action:'search',results:[],meta:{}}");
+  const html=p.run('vResults()');
+  assert.match(html,/No earning fares/);assert.match(html,/Other dates/);assert.match(html,/Anywhere from London/);
+  assert.match(html,/id="allAirlines"/);
+  assert.doesNotMatch(html,/id="fcol"|class="tabs"|class="rbar"|id="fopen"|Reset filters/);
+  p.elements['#allAirlines']={};p.run('bind()');
+  const completion=p.elements['#allAirlines'].onclick();
+  assert.equal(pending.calls.length,1);
+  const params=new URL(pending.calls[0].url,'https://sam.toys').searchParams;
+  assert.equal(params.get('earningOnly'),'false');assert.equal(params.get('destination'),'MAD');
+  assert.equal(params.get('origin'),'LHR,LGW,LCY,STN,LTN,SEN');
+  pending.calls[0].resolve(ok([]));await completion;
+  assert.doesNotMatch(p.run('vResults()'),/id="allAirlines"|id="fcol"/);
+});
+
+test('results distinguish filters hiding all fares and keep filter labels concise on refresh', async () => {
+  const data=await backend('/api/flights?origin=LHR&destination=MAD&departureDate=2026-11-18',searchFixture({origin:'LHR',destination:'MAD',departureDate:'2026-11-18'}));
+  const p=page();query(p);p.put('data',data);p.run('response=data');
+  assert.match(p.run('vResults()'),/id="fopen"[^>]*>Filters<\/button>/);
+  for(const id of ['#cards','#rcount','#fopen','#fshow'])p.elements[id]={};
+  p.run('refreshResults()');assert.equal(p.elements['#fopen'].textContent,'Filters');
+  p.run('F.dep=[0,1];refreshResults()');assert.equal(p.elements['#fopen'].textContent,'Filters · 1');
+  const html=p.run('vResults()');assert.match(html,/id="fcol"/);assert.match(html,/Reset filters/);
+  assert.doesNotMatch(html,/No earning fares/);
+  p.run('resetFilters();refreshResults()');assert.equal(p.elements['#fopen'].textContent,'Filters');
+  const filters=p.run('filtersHTML()');
+  assert.match(filters,/id="freset">Reset<\/button><button[^>]*id="fclose"[^>]*aria-label="Close filters"><span aria-hidden="true">×<\/span><\/button>/);
+  assert.doesNotMatch(filters,/>Close<\//);
+});
+
+test('flight numbers have a carrier space on cards, headings and every fare leg; Select has no arrow', async () => {
+  const data=await backend('/api/flights?origin=LHR&destination=MAD&departureDate=2026-11-18&returnDate=2026-11-21');
+  const p=page();query(p,{back:'2026-11-21'});p.put('data',data);p.run('response=data');
+  assert.equal(p.run("flightNumber('BA460')"),'BA 460');assert.equal(p.run("flightNumber('IB718')"),'IB 718');
+  assert.equal(p.run("flightNumber('U2123')"),'U2 123');assert.equal(p.run("flightNumber('BA 460')"),'BA 460');
+  const card=p.run('card(fares()[0],0)');assert.match(card,/IB \d+/);
+  assert.match(card,/>Select<\/a>/);assert.doesNotMatch(card,/>Select <span/);
+  assert.match(p.run('vResults()'),/<h1>IB \d+/);
+  const detail=p.run('vFare(fares()[0].id)');
+  assert.match(detail,/class="fn">IB \d+/);assert.doesNotMatch(detail,/class="fn">IB\d+/);
+});
+
+
+test('phone filter sheet closes through Show, icon, Escape and backdrop and restores focus', () => {
+  const p=page();let focused=false;
+  for(const id of ['#fcol','#fopen','#fshow','#fclose','#earningOnly','#freset'])p.elements[id]={
+    click(){this.onclick?.();},setAttribute(){},removeAttribute(){},focus(){if(id==='#fopen')focused=true;}
+  };
+  p.run('bindResults(false)');
+  const isOpen=()=>p.run("document.body.classList.contains('sheet')");
+  for(const close of [()=>p.elements['#fshow'].onclick(),()=>p.elements['#fclose'].onclick(),
+    ()=>p.events.keydown({key:'Escape'}),()=>p.events.click({target:{closest:()=>null}})]){
+    focused=false;p.elements['#fopen'].onclick();assert.equal(isOpen(),true);
+    p.events.click({target:{closest:()=>p.elements['#fcol']}});assert.equal(isOpen(),true);
+    close();assert.equal(isOpen(),false);assert.equal(focused,true);
+  }
 });

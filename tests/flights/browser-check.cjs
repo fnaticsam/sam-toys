@@ -63,9 +63,17 @@ async function main() {
         assert.match(await page.locator('#fromBtn').innerText(), /London/);
         assert.equal(await page.locator('#go').getAttribute('aria-label'), 'Search');
         await snap('search');
-        const ref = await context.newPage(); await ref.goto(fixture.url + '/approved#/search');
-        const file = path.join(out, `${name}-approved-search.png`);
-        await ref.screenshot({ path: file, fullPage: true }); screenshots.push(file); await ref.close();
+        const refContext = await browser.newContext({ viewport: { width, height: 960 }, deviceScaleFactor: 1 });
+        await refContext.route('**/*', route => new URL(route.request().url()).origin === fixture.url || route.request().url().startsWith('data:') ? route.continue() : route.abort());
+        try {
+          const ref = await refContext.newPage(); await ref.clock.setFixedTime(new Date(NOW));
+          await ref.goto(fixture.url + '/approved#/search');
+          assert.equal(await ref.evaluate(() => JSON.parse(localStorage.getItem('flights.proto.gold')).tp),12480);
+          const file = path.join(out, `${name}-approved-search.png`);
+          await ref.screenshot({ path: file, fullPage: true }); screenshots.push(file);
+        } finally { await refContext.close(); }
+        assert.equal(await page.evaluate(() => localStorage.getItem('flights.proto.gold')),null);
+        assert.equal(await page.evaluate(() => localStorage.getItem('flights.gold.live.v1')),null);
       });
       await check(`${name}: go without destination focuses the field`, async () => {
         await page.locator('#go').click();
@@ -140,6 +148,11 @@ async function main() {
         await page.locator('#cabin').selectOption({ label: 'Economy' }); await search();
         assert.equal(await page.locator('#cal').count(), 0);
         assert.equal(await page.locator('.fc').count(), 4);
+        assert.equal(await page.locator('#fopen').innerText(),'Filters');
+        assert((await page.locator('.fc .sel').allTextContents()).every(t=>t==='Select'));
+        assert((await page.locator('.fc .sel span').count())===0);
+        assert((await page.locator('.fc .air').allTextContents()).every(t=>/IB \d+/.test(t)));
+        assert.match(await page.locator('h1').innerText(),/^IB \d+/);
         assert.match(await page.locator('.fc .prc').first().innerText(), /^£[\d,]+$/);
         assert.match(await page.locator('.fc .tpv').first().innerText(), /^\+\d[\d,]* TP$/);
         assert.equal(await page.locator('.fc .line svg').count(), 4);
@@ -161,11 +174,26 @@ async function main() {
         const hidden = data.results.find(f => f.hiddenCity); assert(hidden);
         await page.locator(`a.sel[href="#/fare/${encodeURIComponent(hidden.id)}"]`).click(); await page.locator('#book').waitFor();
         assert.match(await page.locator('.who').innerText(), /Iberia · Economy · cabin bag only/);
-        assert.match(await page.locator('.lg').first().innerText(), /^IB714 · 2h30$/);
-        assert.match(await page.locator('.lg.ghost').innerText(), /^IB411 · 1h$/);
+        assert.match(await page.locator('.lg').first().innerText(), /^IB 714 · 2h30$/);
+        assert.match(await page.locator('.lg.ghost').innerText(), /^IB 411 · 1h$/);
         assert.match(await page.locator('.st.ghost').innerText(), /Barcelona · BCN/);
         assert.match(await page.locator('#app').innerText(), /Skipping a sector can invalidate the ticket and credit\./);
         await snap('hidden-city'); await page.locator('a.back').click(); await page.locator('.fc').first().waitFor();
+      });
+      await check(`${name}: phone filter sheet icon, Show flights, backdrop and Escape close`, async () => {
+        if(width>=700)return;
+        const closed=async()=>assert.equal(await page.locator('body').evaluate(el=>el.classList.contains('sheet')),false);
+        await openFilters();
+        assert.equal(await page.locator('#fclose').innerText(),'×');
+        assert.equal(await page.locator('#fclose').getAttribute('aria-label'),'Close filters');
+        assert.equal(await page.locator('.fhd').getByText('Close',{exact:true}).count(),0);
+        const reset=await page.locator('#freset').boundingBox(),close=await page.locator('#fclose').boundingBox();
+        assert(reset.x+reset.width<=close.x);
+        assert.equal(await page.locator('#fshow').innerText(),'Show 4 flights');
+        await page.locator('#fclose').click();await closed();
+        await openFilters();await page.keyboard.press('Escape');await closed();
+        await openFilters();await page.mouse.click(5,5);await closed();
+        await openFilters();await page.locator('#fshow').click();await closed();
       });
       await check(`${name}: filters column or phone sheet and all-airline toggle`, async () => {
         await openFilters();
@@ -197,7 +225,9 @@ async function main() {
           if(key==='value'||key==='tp') assert.doesNotMatch(await page.locator('.fc').first().innerText(), /No TP/);
           else assert.match(await page.locator('.fc').first().innerText(), /No TP/);
         }
-        await openFilters(); await page.locator('input[name="stops"][value="0"]').check();
+        await openFilters();
+        assert.equal(await page.locator('#fopen').innerText(),'Filters · 1');
+        await page.locator('input[name="stops"][value="0"]').check();
         assert.match(await page.locator('#fopen').innerText(), /Filters ·/);
         const range=page.locator('input[data-r="dep"][data-i="1"]');
         await range.evaluate(el=>{el.value='8';el.dispatchEvent(new Event('input',{bubbles:true}));});
@@ -206,8 +236,14 @@ async function main() {
         const ib=page.locator('.fs input[type="checkbox"][value="IB"]');
         await ib.uncheck(); assert((await page.locator('.fc').allTextContents()).every(t=>/No TP/.test(t)));
         await snap('filters'); await page.locator('#freset').click(); await openFilters();
+        for(const airline of await page.locator('.fs input[type="checkbox"]').all())await airline.uncheck();
+        assert.match(await page.locator('#cards').innerText(),/No flights match these filters/);
+        assert.equal(await page.locator('#fcol').count(),1);assert.equal(await page.locator('[role="tab"]').count(),4);
+        if(width<700)await page.locator('#fshow').click();
+        await page.locator('#freset2').click();await page.locator('.fc').first().waitFor();await openFilters();
         await page.locator('#earningOnly').check(); await page.locator('.fc').first().waitFor();
         assert.equal(searchParams().get('earningOnly'),'true');
+        assert.equal(await page.locator('#fopen').innerText(),'Filters');
         assert.equal(await page.locator('.fc').filter({hasText:'No TP'}).count(),0);
       });
       await check(`${name}: Enter searches an arbitrary typed route`, async () => {
@@ -233,10 +269,20 @@ async function main() {
         await page.locator('#ring').click(); await page.locator('#gtp').waitFor();
         assert.equal(await page.locator('#gtp').inputValue(),'0'); assert.equal(await page.locator('.gring circle').count(),1);
         assert.equal(await page.locator('#gtarget').inputValue(),'20000'); assert.equal(await page.locator('#gend').inputValue(),'2027-03-31');
+        await page.evaluate(() => localStorage.setItem('flights.gold.v2',JSON.stringify({tp:12480,target:20000,ends:'2027-03-31'})));
+        await page.reload();await page.locator('#gtp').waitFor();assert.equal(await page.locator('#gtp').inputValue(),'0');
+        assert.equal(await page.evaluate(() => localStorage.getItem('flights.gold.live.v1')),null);
+        await page.evaluate(() => localStorage.setItem('flights.gold.v2',JSON.stringify({tp:1234,target:21000,ends:'2027-03-30'})));
+        await page.reload();await page.locator('#gtp').waitFor();assert.equal(await page.locator('#gtp').inputValue(),'1234');
+        assert.equal(await page.evaluate(() => JSON.parse(localStorage.getItem('flights.gold.live.v1')).tp),1234);
+        await page.evaluate(() => {localStorage.removeItem('flights.gold.v2');localStorage.removeItem('flights.gold.live.v1');});
+        await page.reload();await page.locator('#gtp').waitFor();assert.equal(await page.locator('#gtp').inputValue(),'0');
         await snap('gold-zero'); await page.locator('#gtp').fill('12500'); await page.locator('#gtarget').fill('21000');
         await page.locator('#gend').fill('2027-03-30'); await page.locator('button[form="gf"]').click(); await page.reload();
         await page.locator('#gtp').waitFor(); assert.equal(await page.locator('#gtp').inputValue(),'12500');
-        assert.equal(await page.locator('#gtarget').inputValue(),'21000'); assert.equal(await page.locator('#gend').inputValue(),'2027-03-30'); await snap('gold');
+        assert.equal(await page.locator('#gtarget').inputValue(),'21000'); assert.equal(await page.locator('#gend').inputValue(),'2027-03-30');
+        assert.equal(await page.evaluate(() => JSON.parse(localStorage.getItem('flights.gold.live.v1')).tp),12500);
+        assert.equal(await page.evaluate(() => localStorage.getItem('flights.gold.v2')),null);await snap('gold');
       });
       await check(`${name}: loading, partial, empty, error, busy and cancellation`, async () => {
         for(const mode of ['loading','partial','empty','error','throttled']) {
@@ -247,10 +293,19 @@ async function main() {
           else if(mode==='partial') {await page.locator('.fc').first().waitFor();assert.match(await page.locator('#app').innerText(),/didn.t answer/i);}
           else await page.locator('.state').waitFor();
           const text=await page.locator('#app').innerText();
-          if(mode==='empty')assert.match(text,/No earning fares|No flights/);
+          if(mode==='empty'){
+            assert.match(text,/No earning fares/);assert.match(text,/Other dates/);assert.match(text,/Anywhere from London/);
+            assert.equal(await page.locator('#fcol, .tabs, .rbar').count(),0);
+            assert.equal(await page.locator('#allAirlines').innerText(),'All airlines');
+            await snap('empty');
+            fixture.setMode('normal');await page.locator('#allAirlines').click();await page.locator('.fc').first().waitFor();
+            assert.equal(searchParams().get('earningOnly'),'false');
+            await openFilters();assert.equal(await page.locator('#earningOnly').isChecked(),false);
+            await page.locator('#earningOnly').check();await page.locator('.fc').first().waitFor();
+          }
           if(mode==='error')assert.match(text,/unavailable|didn.t answer|failed/i);
           if(mode==='throttled')assert.match(text,/moment|busy|wait|requests/i);
-          await snap(mode); await page.locator('a.back').click(); await page.locator('#to').waitFor(); if(cancelled)await cancelled;
+          if(mode!=='empty')await snap(mode); await page.locator('a.back').click(); await page.locator('#to').waitFor(); if(cancelled)await cancelled;
         }
         assert(canceled.length>0,'navigation must abort the old API fetch');
       });
@@ -283,6 +338,7 @@ async function main() {
           }
         }
       });
+      await page.locator('#fromBtn').click(); await page.locator('[data-from="LON"]').click();
       await check(`${name}: valid typed routes retain the chosen cabin and London origins`, async () => {
         await showSearch(); await dates(); await page.locator('#cabin').selectOption({ label: 'Business' });
         await page.locator('#to').fill('Madrid'); await search();

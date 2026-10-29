@@ -139,7 +139,7 @@ select.fv:hover{background-color:var(--hover)}
 .pop{position:absolute;z-index:6;left:14px;right:14px;top:100%;margin-top:8px;padding:6px;border:1px solid var(--hair);border-radius:var(--radius-suggest);
   background:var(--menu);box-shadow:var(--menu-shadow);animation:pop .18s var(--ease)}
 @keyframes pop{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
-.fromwrap .pop{left:auto;right:-10px;width:260px;border-radius:var(--radius-menu);padding:5px}
+.fromwrap .pop{left:auto;right:-10px;width:260px;max-height:60vh;overflow-y:auto;border-radius:var(--radius-menu);padding:5px}
 .opt{display:flex;width:100%;align-items:center;justify-content:space-between;gap:12px;padding:9px 12px;border:0;border-radius:12px;background:transparent;color:var(--ink);text-align:left;font-size:var(--text-base)}
 .fromwrap .opt{border-radius:10px;padding:9px 13px}
 .opt:hover,.opt.on,.opt:focus-visible{background:var(--hover);outline:none}
@@ -391,13 +391,14 @@ h1 .soft{color:var(--faint)}
   <main id="app"></main>
 </div>
 <div class="toast glass" id="toast" role="status"></div>
+<script src="/flights/cities.js"></script>
 <script>
 
 'use strict';
-const AIRPORTS=[['LON','London','all airports'],['LHR','London Heathrow',''],['LGW','London Gatwick',''],['LCY','London City',''],['STN','London Stansted',''],['LTN','London Luton',''],['SEN','London Southend',''],['IBZ','Ibiza',''],['MAD','Madrid',''],['BCN','Barcelona',''],['JFK','New York','JFK'],['DOH','Doha',''],['DUB','Dublin',''],['HEL','Helsinki',''],['AMM','Amman',''],['HND','Tokyo','Haneda'],['VLC','Valencia',''],['SYD','Sydney',''],['LIS','Lisbon',''],['MXP','Milan','Malpensa'],['BKK','Bangkok',''],['LAX','Los Angeles',''],['SIN','Singapore',''],['HKG','Hong Kong',''],['CDG','Paris',''],['NRT','Tokyo Narita',''],['DXB','Dubai','']];
+const {CITY_GROUPS}=FlightCities;
+const AIRPORTS=[...Object.entries(CITY_GROUPS).map(([code,group])=>[code,group.name,'all airports']),['LHR','London Heathrow',''],['LGW','London Gatwick',''],['LCY','London City',''],['STN','London Stansted',''],['LTN','London Luton',''],['SEN','London Southend',''],['IBZ','Ibiza',''],['MAD','Madrid',''],['BCN','Barcelona',''],['JFK','New York','JFK'],['DOH','Doha',''],['DUB','Dublin',''],['HEL','Helsinki',''],['AMM','Amman',''],['HND','Tokyo','Haneda'],['VLC','Valencia',''],['SYD','Sydney',''],['LIS','Lisbon',''],['MXP','Milan','Malpensa'],['BKK','Bangkok',''],['LAX','Los Angeles',''],['SIN','Singapore',''],['HKG','Hong Kong',''],['CDG','Paris',''],['NRT','Tokyo Narita',''],['DXB','Dubai','']];
 const CITY=Object.fromEntries(AIRPORTS.map(a=>[a[0],a[1]]));
-const LONDON=['LHR','LGW','LCY','STN','LTN','SEN'];
-const AIRPORT_GROUPS={LON:LONDON,NYC:['JFK','EWR','LGA'],TYO:['HND','NRT']};
+const AIRPORT_GROUPS=Object.fromEntries(Object.entries(CITY_GROUPS).map(([code,group])=>[code,group.airports]));
 const airportGroup=code=>{const group=Object.entries(AIRPORT_GROUPS).find(([city,airports])=>city===code||airports.includes(code));return group?[group[0],...group[1]]:[code]};
 const CABINS={'Economy':'economy','Premium economy':'premium','Business':'business','First':'first'};
 const TODAY=new Date().toISOString().slice(0,10), LATEST=new Date(Date.now()+366*864e5).toISOString().slice(0,10);
@@ -414,7 +415,7 @@ const D=k=>new Date(k+'T12:00:00Z');
 const key=d=>d.toISOString().slice(0,10);
 const dShort=k=>D(k).toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short',timeZone:'UTC'});
 const nights=(a,b)=>Math.round((D(b)-D(a))/864e5);
-const cityName=c=>response?.meta?.airports?.[c]||CITY[c]||c;
+const cityName=c=>CITY_GROUPS[c]?.name||response?.meta?.airports?.[c]||CITY[c]||c;
 const placeName=c=>c==='ANY'?'Anywhere':CITY[c]||response?.meta?.airports?.[c]||c;
 const realDate=v=>/^\d{4}-\d{2}-\d{2}$/.test(v||'')&&Number.isFinite(D(v).getTime())&&key(D(v))===v;
 function defaultGold(){const y=+TODAY.slice(0,4)+(TODAY.slice(5)>='04-01'?1:0);return{tp:0,target:20000,ends:y+'-03-31'}}
@@ -443,8 +444,8 @@ function whenText(q=S){
 }
 function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('on');clearTimeout(toast.h);toast.h=setTimeout(()=>t.classList.remove('on'),2200)}
 function ring(size,stroke,pct){const r=(size-stroke)/2,c=2*Math.PI*r;return `<svg viewBox="0 0 ${size} ${size}" aria-hidden="true"><circle cx="${size/2}" cy="${size/2}" r="${r}" fill="none" stroke="var(--line)" stroke-width="${stroke}"/>${pct>0?`<circle cx="${size/2}" cy="${size/2}" r="${r}" fill="none" stroke="var(--text)" stroke-width="${stroke}" stroke-linecap="round" stroke-dasharray="${c*pct} ${c}"/>`: ""}</svg>`}
-function origins(q){return q.from==='LON'?LONDON.filter(c=>c!==q.to).join(','):q.from}
-function params(action,q){const p=new URLSearchParams({action,origin:origins(q),departureDate:q.out,earningOnly:String(q.earningOnly!==false)});if(q.back)p.set('returnDate',q.back);if(action!=='anywhere')p.set('destination',q.to);if(action!=='flex')p.set('fareClass',CABINS[q.cabin]);else{p.set('mode','depart');p.set('sort','date')}return p}
+function origins(q){return q.from}
+function params(action,q){const p=new URLSearchParams({action,origin:origins(q),departureDate:q.out,earningOnly:String(q.earningOnly!==false)});if(action==='search')p.set('limit','100');if(q.back)p.set('returnDate',q.back);if(action!=='anywhere')p.set('destination',q.to);if(action!=='flex')p.set('fareClass',CABINS[q.cabin]);else{p.set('mode','depart');p.set('sort','date')}return p}
 async function request(action,q,signal){
   const r=await fetch('/api/flights?'+params(action,q),{signal,cache:'no-store',headers:{Accept:'application/json'}});
   if(!r.ok){const e=new Error('Flight search failed');e.status=r.status;e.retryAfter=Math.min(3600,Math.max(1,Number(r.headers.get('Retry-After'))||60));throw e}
@@ -471,9 +472,9 @@ function calHTML(){
   return `<div class="cal" id="cal"><div class="calhd"><b>${first.toLocaleDateString('en-GB',{month:'long',year:'numeric',timeZone:'UTC'})}</b><div class="nav">${hasRoute?`<button type="button" class="chipg" id="pt" aria-label="Calendar price per tier point" aria-pressed="${S.prices}">£/TP</button>`:''}<button type="button" id="pm" aria-label="Previous month" ${S.view<=TODAY.slice(0,7)?'disabled':''}>‹</button><button type="button" id="nm" aria-label="Next month" ${S.view>=LATEST.slice(0,7)?'disabled':''}>›</button></div></div><div class="grid">${['M','T','W','T','F','S','S'].map(x=>`<span class="dow">${x}</span>`).join('')}${cells}</div><div class="calft">${foot}</div>${showP?`<div class="calnote" role="status">${flexState==='loading'?'Loading dates…':flexState==='throttled'?'Too many requests. Try dates again shortly.':flexState==='error'?'Dates unavailable. Toggle £/TP to try again.':'£ discovery prices · £/TP after search'}</div>`:''}</div>`;
 }
 function tapDay(k){if(!S.out)S.out=k;else if(!S.back){if(k===S.out)S.out='';else if(k<S.out)S.out=k;else S.back=k}else{if(k===S.back)S.back='';else{S.out=k;S.back=''}}S.hover='';hint=''}
-function matches(q,origin=false){q=q.trim().toLowerCase();let list=AIRPORTS.filter(a=>(origin||a[0]!=='LON')&&(a[0].toLowerCase().startsWith(q)||a[1].toLowerCase().includes(q))).slice(0,6);if(/^[a-z]{3}$/.test(q)&&(origin||q!=='lon')&&!list.some(a=>a[0]===q.toUpperCase()))list.push([q.toUpperCase(),q.toUpperCase(),'airport']);return list}
+function matches(q){q=q.trim().toLowerCase();let list=AIRPORTS.filter(a=>a[0].toLowerCase().startsWith(q)||a[1].toLowerCase().includes(q)).slice(0,6);if(/^[a-z]{3}$/.test(q)&&!list.some(a=>a[0]===q.toUpperCase()))list.push([q.toUpperCase(),q.toUpperCase(),'airport']);return list}
 function sugPop(q){q=(q||'').trim().toLowerCase();const list=q?matches(q):AIRPORTS.filter(a=>['MAD','JFK','DOH'].includes(a[0]));const any=!q||'anywhere'.startsWith(q);return `<div class="pop glass" id="destinations" role="listbox" aria-label="Destinations">${any?`<button type="button" class="opt" role="option" aria-selected="false" data-to="ANY" id="suggest-ANY"><span>Anywhere</span><span class="s">explore destinations</span></button>${list.length?'<div class="popsep"></div>':''}`:''}${list.map(a=>`<button type="button" class="opt" role="option" aria-selected="false" data-to="${a[0]}" id="suggest-${a[0]}"><span>${a[1]}${a[2]?` <span class="s">${a[2]}</span>`:''}</span><span class="c">${a[0]}</span></button>`).join('')}${!list.length&&!any?'<div class="opt s">Enter a city or three-letter airport code</div>':''}</div>`}
-function fromPop(){const o=(c,l,s)=>`<button type="button" class="opt ${S.from===c?'on':''}" data-from="${c}"><span>${esc(l)}${s?` <span class="s">${esc(s)}</span>`:''}</span>${S.from===c?'<span class="tick">✓</span>':''}</button>`;return `<div class="pop glass" id="fromPop">${o('LON','London','all airports')}${o('IBZ','Ibiza','')}${!['LON','IBZ'].includes(S.from)?o(S.from,placeName(S.from),S.from):''}<input class="popin" id="fromQ" placeholder="Other airport" aria-label="Other airport"><div id="fromRes"></div></div>`}
+function fromPop(){const o=(c,l,s)=>`<button type="button" class="opt ${S.from===c?'on':''}" data-from="${c}"><span>${esc(l)}${s?` <span class="s">${esc(s)}</span>`:''}</span>${S.from===c?'<span class="tick">✓</span>':''}</button>`;return `<div class="pop glass" id="fromPop"><input class="popin" id="fromQ" placeholder="City or airport" aria-label="Other city or airport"><div id="fromRes"></div>${o('LON',CITY_GROUPS.LON.name,'all airports')}${o('IBZ','Ibiza','')}${o('NYC',CITY_GROUPS.NYC.name,'all airports')}${!['LON','IBZ','NYC'].includes(S.from)?(CITY_GROUPS[S.from]?o(S.from,CITY_GROUPS[S.from].name,'all airports'):o(S.from,placeName(S.from),S.from)):''}</div>`}
 function backPill(){const q=resultQuery||S;return `<a class="back glass press" href="#/search"><span class="ar">←</span><span class="t">${esc(placeName(q.from))} → ${esc(placeName(q.to))}${q.out?' · '+whenText(q):''}</span></a>`}
 function earning(f){return f.earns!==false&&Number.isFinite(f.estimate?.tierPoints)&&f.estimate.tierPoints>0&&Number.isFinite(f.priceGbp)&&f.priceGbp>0}
 function allFares(){return(response?.results||[]).filter(f=>Number.isFinite(f.priceGbp)&&f.priceGbp>0&&(S.earningOnly?earning(f):true)).sort((a,b)=>Number(b.earns!==false)-Number(a.earns!==false)||(earning(a)?a.priceGbp/a.estimate.tierPoints:Infinity)-(earning(b)?b.priceGbp/b.estimate.tierPoints:Infinity)||a.priceGbp-b.priceGbp)}
@@ -485,7 +486,7 @@ const flightNumber=n=>String(n).replace(/^([A-Z0-9]{2})\s*(\d+[A-Z]?)$/,'$1 $2')
 function flightGroups(f){if(f.legs?.length)return f.legs.map(l=>l.units.filter(u=>u.flown).flatMap(u=>u.flightNumbers));try{return new URLSearchParams(new URL(f.deepLink).hash.slice(1)).get('trip').split(',').map(g=>g.split('-'))}catch{return[f.flightNumbers||[]]}}
 function resultNote(){return 'Tier points and Avios are estimates; verify fare class, operator and earning before booking.'}
 function partialNote(){if(!response?.partial)return '';const codes=[...new Set((response.failures||[]).map(f=>f.origin))];return `<p class="left" role="status">${codes.length?esc(codes.length>1?codes.slice(0,-1).join(', ')+' and '+codes.at(-1):codes[0]):'Some airports'} didn't answer</p>`}
-function coverage(){const excluded=Object.values(response?.excluded||{}).reduce((a,b)=>a+b,0);return [excluded?`${fmt(excluded)} fares without verified earning routes are left out.`:'',response?.pages?.some(p=>p.hasMoreResults)?'More fares may be available on Skiplagged.':''].filter(Boolean).join(' ')}
+function coverage(){const excluded=Object.values(response?.excluded||{}).reduce((a,b)=>a+b,0);return [excluded===1?'1 fare without a verified earning route is left out.':excluded?`${fmt(excluded)} fares without verified earning routes are left out.`:'',response?.pages?.some(p=>p.hasMoreResults)?'More fares may be available on Skiplagged.':''].filter(Boolean).join(' ')}
 function goldForFare(f){const y=+gold.ends.slice(0,4)-(gold.ends.slice(5)<'04-01'?1:0),start=y+'-04-01';return(f.estimate?.breakdown||[]).filter(s=>s.date>=start&&s.date<=gold.ends&&Number.isFinite(s.tierPoints)).reduce((a,s)=>a+s.tierPoints,0)}
 function vFare(id){
   const f=allFares().find(f=>f.id===id);if(!f)return vSearch();document.title=flightGroups(f).flat().join(' · ')+' · Flights';const groups=flightGroups(f);
@@ -532,7 +533,7 @@ function bindLive(){
     $('#cabin').onchange=e=>{S.cabin=e.target.value;clearFlex();if(S.prices)loadFlex()};
     $('#fromBtn').onclick=()=>{fromOpen=!fromOpen;sugOpen=false;go(fromOpen?'#/search/from':'#/search')};
     const setFrom=code=>{S.from=code;fromOpen=false;clearFlex();go('#/search')};document.querySelectorAll('[data-from]').forEach(b=>b.onclick=()=>setFrom(b.dataset.from));
-    const fq=$('#fromQ');if(fq){fq.oninput=()=>{const list=fq.value.trim()?matches(fq.value,true):[];$('#fromRes').innerHTML=list.map(a=>`<button type="button" class="opt" data-from2="${a[0]}"><span>${a[1]}</span><span class="c">${a[0]}</span></button>`).join('');document.querySelectorAll('[data-from2]').forEach(b=>b.onclick=()=>setFrom(b.dataset.from2))};fq.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();const b=$('[data-from2]');if(b)setFrom(b.dataset.from2)}}}
+    const fq=$('#fromQ');if(fq){fq.oninput=()=>{const list=fq.value.trim()?matches(fq.value,true):[];$('#fromRes').innerHTML=list.map(a=>`<button type="button" class="opt" data-from2="${a[0]}"><span>${esc(a[1])}${a[2]?` <span class="s">${esc(a[2])}</span>`:''}</span><span class="c">${a[0]}</span></button>`).join('');document.querySelectorAll('[data-from2]').forEach(b=>b.onclick=()=>setFrom(b.dataset.from2))};fq.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();const b=$('[data-from2]');if(b)setFrom(b.dataset.from2)}}}
     if(fromOpen)$('#fromPop .opt.on')?.focus();
     sf.onsubmit=e=>{e.preventDefault();return submitSearch()};
   }
@@ -548,7 +549,7 @@ function resolveDestination(useHighlighted=false){
   const value=($('#to')?.value||draft).trim();
   const options=value?matches(value):[],match=options.find(a=>a[0]===value.toUpperCase()||a[1].toLowerCase()===value.toLowerCase());
   const code=match?.[0]||(value.toLowerCase()==='anywhere'?'ANY':/^[A-Za-z]{3}$/.test(value)?value.toUpperCase():options[0]?.[0]);
-  if(code){S.to=AIRPORT_GROUPS[code]?.[0]||code;draft=''}
+  if(code){S.to=code;draft=''}
 }
 function submitSearch(useHighlighted=false){
   resolveDestination(useHighlighted);calOpen=false;sugOpen=false;fromOpen=false;selection=-1;hint='';hintField='';
@@ -565,7 +566,7 @@ function setEarningOnly(value){
 }
 async function search(){
   if(!S.out||!S.to)return submitSearch();
-  searchController?.abort();flexController?.abort();const serial=++searchSerial;searchController=new AbortController();const q={...S};resultQuery=q;response=null;searchState='loading';calOpen=false;sugOpen=false;fromOpen=false;clearTimeout(retryTimer);go('#/loading');
+  resetFilters();searchController?.abort();flexController?.abort();const serial=++searchSerial;searchController=new AbortController();const q={...S};resultQuery=q;response=null;searchState='loading';calOpen=false;sugOpen=false;fromOpen=false;clearTimeout(retryTimer);go('#/loading');
   try{const data=await request(q.to==='ANY'?'anywhere':'search',q,searchController.signal);if(serial!==searchSerial||route()[0]!=='loading')return;response=data;searchState='ready';if(data.action==='search'){const best=allFares().find(earning);if(best){verified.set(cacheKey(q),best);if(verified.size>64)verified.delete(verified.keys().next().value)}}go('#/results')}
   catch(e){if(e.name==='AbortError'||serial!==searchSerial)return;searchState=e.status===429?'throttled':'error';retryAt=Date.now()+e.retryAfter*1000;go('#/error');if(searchState==='throttled')retryTimer=setTimeout(()=>{if(route()[0]==='error'&&searchState==='throttled')render()},e.retryAfter*1000)}
 }
@@ -688,17 +689,23 @@ function filtersHTML(){
     <button type="button" class="go fshow" id="fshow">Show flights</button>
   </div></aside>`;
 }
+function visibleFares(){return sortedFares(fares().filter(f=>passes(f)))}
+function resultsTitle(){
+  const b=visibleFares()[0];
+  if(!b)return 'No flights match these filters';
+  return earning(b)?`${esc(flightNumber(flightGroups(b)[0][0]))} <span class="soft">earns ~${fmt(b.estimate.tierPoints)}&nbsp;TP at</span> ${ppt(b)} <span class="soft">each</span>`:`${esc(placeName(resultQuery.from))} <span class="soft">to</span> ${esc(placeName(resultQuery.to))}`;
+}
 function cardsHTML(){
-  const list=sortedFares(fares().filter(f=>passes(f)));
-  return list.length?list.map(card).join(''):`<div class="state"><p>No flights match these filters.</p><div class="acts"><button type="button" class="txtb dark" id="freset2">Reset filters</button></div></div>`;
+  const list=visibleFares();
+  return list.length?list.map(card).join(''):`<div class="state"><div class="acts"><button type="button" class="txtb dark" id="freset2">Reset filters</button></div></div>`;
 }
 function countText(){const n=fares().filter(f=>passes(f)).length;return `${n} ${n===1?'flight':'flights'}`}
 function activeFilters(){return (F.stops!=='any')+(F.dep[0]>0||F.dep[1]<24)+(F.arr[0]>0||F.arr[1]<24)+(F.air!==null)+(!S.earningOnly)}
 function vResults(){
   if(!response)return vSearch();if(response.action==='anywhere')return vAnywhere();
   const list=fares();if(!list.length)return vEmpty();
-  const b=list.find(earning)||list[0];document.title=`${placeName(resultQuery.from)} → ${placeName(resultQuery.to)} · Flights`;
-  return `${backPill()}<h1>${earning(b)?`${esc(flightNumber(flightGroups(b)[0][0]))} <span class="soft">earns ~${fmt(b.estimate.tierPoints)}&nbsp;TP at</span> ${ppt(b)} <span class="soft">each</span>`:`${esc(placeName(resultQuery.from))} <span class="soft">to</span> ${esc(placeName(resultQuery.to))}`}</h1>
+  document.title=`${placeName(resultQuery.from)} → ${placeName(resultQuery.to)} · Flights`;
+  return `${backPill()}<h1>${resultsTitle()}</h1>
   <p class="est">${resultNote()}</p>${partialNote()}
   <div class="rgrid">${filtersHTML()}<div class="rcol">
     <div class="tabs" role="tablist" aria-label="Sort">${Object.entries(SORTS).map(([k,[l,s]])=>`<button type="button" role="tab" aria-selected="${SORT===k}" data-sort="${k}"><span class="lg2">${l}</span><span class="sm2">${s}</span></button>`).join('')}</div>
@@ -706,6 +713,7 @@ function vResults(){
     <div id="cards">${cardsHTML()}</div>${coverage()?`<p class="left">${coverage()}</p>`:''}</div></div>`;
 }
 function refreshResults(){
+  const title=$('#app h1');if(title)title.innerHTML=resultsTitle();
   $('#cards').innerHTML=cardsHTML();$('#rcount').textContent=countText();
   $('#fopen').textContent='Filters'+(activeFilters()?' · '+activeFilters():'');
   $('#fshow').textContent=`Show ${countText()}`;
@@ -729,7 +737,6 @@ function bindResults(cardsOnly){
 /* ---------- render + bind: the live versions plus the v3 hooks ---------- */
 function render(){
   const p=route();
-  if(p[0]==='loading'&&searchState==='loading')resetFilters();
   document.body.classList.remove('sheet');
   renderLive();
   document.body.classList.toggle('wide',p[0]==='results'&&response?.action==='search'&&fares().length>0);

@@ -329,7 +329,7 @@ test('cache shares normalised queries across IPs and expires at exactly ten minu
   let time=NOW;
   const s=setup({now:()=>time,throttleOptions:{max:20}});
   const first=await s.call();
-  const equivalent='/api/flights?returnDate=2026-11-21&departureDate=2026-11-18&destination=mad&origin=lhr&action=search&fareClass=economy&limit=025&offset=0&maxStops=many&includeHiddenCity=true';
+  const equivalent='/api/flights?returnDate=2026-11-21&departureDate=2026-11-18&destination=mad&origin=lhr&action=search&fareClass=economy&limit=0100&offset=0&maxStops=many&includeHiddenCity=true';
   time+=599999;
   const cached=await s.call(equivalent,{ip:'203.0.113.2'});
   assert.deepEqual(cached.body,first.body);assert.equal(s.calls.length,1);

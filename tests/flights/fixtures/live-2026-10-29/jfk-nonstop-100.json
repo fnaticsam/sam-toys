@@ -1,0 +1,40 @@
+{
+  "recordedAt": "2026-10-29T02:43:02.383Z",
+  "name": "sk_flights_search",
+  "args": {
+    "origin": "JFK",
+    "destination": "LHR",
+    "departureDate": "2026-11-05",
+    "fareClass": "economy",
+    "adults": 1,
+    "limit": 100,
+    "offset": 0,
+    "sort": "price",
+    "preferredAirlines": [
+      "AS",
+      "AA",
+      "BA",
+      "CX",
+      "FJ",
+      "AY",
+      "IB",
+      "JL",
+      "MH",
+      "WY",
+      "QF",
+      "QR",
+      "AT",
+      "RJ",
+      "UL",
+      "EI",
+      "EA",
+      "I2",
+      "NU"
+    ],
+    "includeHiddenCity": true,
+    "includeVirtualInterlining": false,
+    "includeStandard": true,
+    "maxStops": "none"
+  },
+  "error": "upstream-timeout"
+}

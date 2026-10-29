@@ -5,12 +5,15 @@ const http = require('node:http');
 const fs = require('node:fs/promises');
 const path = require('node:path');
 const { createHandler } = require('../../api/flights');
+const { CITY_GROUPS } = require('../../api/_lib/flights/cities');
 const { UpstreamError } = require('../../api/_lib/flights/mcp');
 const recorded = { search: require('./fixtures/search.json'), anywhere: require('./fixtures/anywhere.json'), flex: require('./fixtures/flex.json') };
 const NOW = Date.parse('2026-10-28T12:00:00Z');
 const ROOT = path.resolve(__dirname, '../..');
 
 function searchFixture(args) {
+  args = { ...args, origin: CITY_GROUPS[args.origin]?.airports[0] || args.origin,
+    destination: CITY_GROUPS[args.destination]?.airports[0] || args.destination };
   // Preserve the actual recorded return price and earning calculation for MAD.
   const out = structuredClone(recorded.search);
   out.flights = out.flights.slice(0, 3).map((f, i) => {
@@ -82,7 +85,18 @@ async function createFixtureServer({ port = 0, approvedPath = path.join(ROOT, 'p
           waiting.add(resolve);
           signal.addEventListener('abort', () => { waiting.delete(resolve); resolve(); }, { once: true });
         });
-        if (thisMode === 'error' || (thisMode === 'partial' && args.origin === 'LGW')) throw new UpstreamError('invalid-upstream-response');
+        if (thisMode === 'error' || (thisMode === 'partial' && args.maxStops === 'none')) throw new UpstreamError('invalid-upstream-response');
+        if (thisMode === 'partial' && name === 'sk_flights_search') {
+          // Single city-code searches can still be partial when the nonstop
+          // supplement fails. Make the base page synthetic connecting fares.
+          const data = searchFixture(args);
+          data.flights = data.flights.filter(f => !f.attributes.includes('hidden-city')).map(f => {
+            f.layovers = 1;
+            f.deepLink = f.deepLink.replace(/#trip=([^,]+)(.*)$/, '#trip=$1-IB411$2');
+            return f;
+          });
+          return data;
+        }
         if (name === 'sk_flights_search') return thisMode === 'empty' ? { flights: [], pagination: { totalAvailable: 0, hasMoreResults: false } } : searchFixture(args);
         if (name === 'sk_destinations_anywhere') return structuredClone(recorded.anywhere);
         return structuredClone(recorded.flex);
@@ -106,6 +120,10 @@ async function createFixtureServer({ port = 0, approvedPath = path.join(ROOT, 'p
       if (/^\/flights\/fonts\/[a-zA-Z0-9._-]+\.woff2$/.test(url.pathname)) {
         res.setHeader('content-type', 'font/woff2');
         return res.end(await fs.readFile(path.join(ROOT, url.pathname)));
+      }
+      if (url.pathname === '/flights/cities.js') {
+        res.setHeader('content-type', 'application/javascript; charset=utf-8');
+        return res.end(await fs.readFile(path.join(ROOT, 'flights/cities.js')));
       }
       if (!file) { res.statusCode = 404; return res.end('Not found'); }
       res.setHeader('content-type', 'text/html; charset=utf-8');

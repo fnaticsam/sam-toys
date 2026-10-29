@@ -43,6 +43,21 @@
         "fix: search any route. Go and Enter always search: a typed city or code is used even when no suggestion was picked, the calendar closes, and anything that can't search says why. Routes without hand-made samples (New York → Heathrow, London → Tokyo, Ibiza → Heathrow) get generated oneworld and BA-partner fares."
       ],
       "fixed": []
+    },
+    {
+      "n": 4,
+      "file": "proto-v4.html",
+      "date": "2026-10-29",
+      "title": "Home: origin pills, open calendar; skip-last-leg; nearby dates",
+      "notes": [
+        "Built on live sam.toys/flights (sam-toys main d06ada5) with sample data; screens other than home and results are unchanged from live.",
+        "Home: the search pill stays as is. Below it on one row: a take-off glyph with London · Ibiza · a type-a-city pill on the left (last used origin is remembered; first visit London), Cabin on the right. The From, When and Cabin rows are gone.",
+        "The calendar is always open under that row, compact and without its own panel: one tap one way, a second tap return, Clear, £/TP toggle. On phone a full-width Search button sits under the calendar.",
+        "Skip-last-leg fares: a 'Skip last leg' chip in the card's tag slot, the skipped final leg drawn dashed and greyed to the ticketed city, 'Ticketed to BCN · get off at MAD' under the airline, and a Show · Hide · Only filter.",
+        "Results: a ±3-day strip under the route header with the cheapest price per day from flex data in the searched cabin; the cheapest nearby day is ringed with ↓; tapping a day re-searches and keeps the trip length; arrows move a week.",
+        "Long business and first fares (five-digit £ and TP) fit the card's right column at 1440 and 390 (matches the flights-card-fit hotfix)."
+      ],
+      "fixed": []
     }
   ]
 }

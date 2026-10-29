@@ -728,12 +728,12 @@ function defaultGold(){const y=+TODAY.slice(0,4)+(TODAY.slice(5)>='04-01'?1:0);r
 function goldData(value){
   const fallback=defaultGold();
   try{
-    if(value){localStorage.setItem('flights.gold.live.v1',JSON.stringify(value));return{...value}}
-    let raw=localStorage.getItem('flights.gold.live.v1');
+    if(value){localStorage.setItem('flights.proto.gold',JSON.stringify(value));return{...value}}
+    let raw=localStorage.getItem('flights.proto.gold');
     if(raw===null){
       const legacy=JSON.parse(localStorage.getItem('flights.gold.v2')||'null');
       const sample=legacy&&Object.keys(legacy).length===3&&legacy.tp===12480&&legacy.target===20000&&legacy.ends==='2027-03-31';
-      if(legacy&&!sample){raw=JSON.stringify(legacy);localStorage.setItem('flights.gold.live.v1',raw)}
+      if(legacy&&!sample){raw=JSON.stringify(legacy);localStorage.setItem('flights.proto.gold',raw)}
     }
     const saved=JSON.parse(raw||'null');
     if(!saved||!Number.isSafeInteger(saved.tp)||saved.tp<0||!realDate(saved.ends))return fallback;

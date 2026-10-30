@@ -60,11 +60,13 @@ function normalizeFlight(flight, query) {
       operatorVerified &&= checked.operatorVerified;
       bookingClassKnown &&= typeof segment.bookingClass === 'string' && /^[A-Z]$/.test(segment.bookingClass);
       if (detailed) {
+        const operatingCarrier = segment.operatingCarrier ?? (numbers.length === 1 ? s.operatingCarrier : undefined);
         const a = segment.origin || segment.departure?.airport, b = segment.destination || segment.arrival?.airport;
         if (!IATA.test(a) || !IATA.test(b) || (j === 0 ? a !== departure.airport : a !== units[j - 1].to)) return fail('disconnected-segments');
         const segmentDate = segment.departure?.dateTime?.slice(0, 10) || date;
         if (!/^\d{4}-\d{2}-\d{2}$/.test(segmentDate) || segmentDate < date) return fail('invalid-segment-date');
         units.push({ from: a, to: b, date: segmentDate, flightNumbers: [parseFlightNumber(numbers[j]).flightNumber],
+          ...(typeof operatingCarrier === 'string' ? { operatingCarrier: operatingCarrier.slice(0, 100) } : {}),
           bookingClass: /^[A-Z]$/.test(segment.bookingClass || '') ? segment.bookingClass : undefined,
           cabin: ['basic-economy','economy','premium','business','first'].includes(segment.cabin) ? segment.cabin : undefined,
           departure: endpoint(segment.departure), arrival: endpoint(segment.arrival),
@@ -81,6 +83,7 @@ function normalizeFlight(flight, query) {
       if (hiddenCity) flownArrival = endpoint(s.segments[destinationIndex].arrival) || { airport: units[destinationIndex].to, dateTime: null };
     } else {
       units.push({ from: departure.airport, to: arrival.airport, date, flightNumbers: numbers.map((n) => parseFlightNumber(n).flightNumber),
+        ...(typeof s.operatingCarrier === 'string' ? { operatingCarrier: s.operatingCarrier.slice(0, 100) } : {}),
         departure, arrival, flown: true, opaque: numbers.length > 1 });
     }
     legs.push({ from: departure.airport, to: units.findLast((u) => u.flown).to, date, units });

@@ -425,3 +425,97 @@ separation are covered by tests; the original screen's cause cannot be establish
 without its original request/result. At the £3,440 price implied by 860 × £4,
 137 TP would cost about **£25.11/TP**. No speculative chart-rate change was made.
 See the sourced BA chart above and `tests/flights/aer-lingus.test.js`.
+
+## Starlink estimates (30 October 2026)
+
+Every normalized **search** result includes `starlink: {p, basis, note}`. `p` is
+0–1 or `null`; `basis` is `fleet-share`, `route`, `lower-bound`, or `unknown`. For example,
+`&starlinkMin=0.8` keeps **p >= 0.8**, excluding unknowns. The boundary is
+inclusive (the UI label should say “at least 80%” if it uses this value).
+Omission disables the filter; `0` retains known zeroes but still excludes null.
+Only strict decimal numbers from 0 through 1 are accepted. Duplicate/empty,
+invalid or discovery (`anywhere`/`flex`) thresholds return 400. The normalized
+threshold participates in the cache key; it is never sent to Skiplagged.
+Filtering happens locally after normalization and deduplication, preserving
+ranking and provider-call limits. It does not request additional provider pages
+just because the filtered results are empty, and cannot find candidates absent
+from those returned pages.
+
+The evidence table lives in [starlink.js](starlink.js); the complete
+[carrier/sub-fleet report and source ledger](STARLINK-SOURCES.md) records source
+URLs, publication/update dates and access dates (29–30 October 2026). Every carrier in
+carriers.js is covered, plus HA, UA, AF, NZ, WS, BT, EK, VS, TP, DL, SK, AC and
+ZG. “Unknown” is distinct from confirmed “no Starlink”. Generic free Wi-Fi,
+another provider, a contract, a completion target or a share of *flights* does
+not establish an installed fleet percentage. Dates in the data are observation
+dates, not forecasts; no scheduled target is automatically marked complete.
+
+`starlinkProbability(row)` additionally returns deduplicated `sources` objects
+(`url`, `published`, `accessed`) for audit use; HTTP rows omit this repeated
+payload. It consumes normalized `legs[].units`, uses a supplied operating
+carrier before a marketing prefix, and never maps the merged **AS** code to
+Hawaiian’s Airbus fleet. **HA** remains a legacy/operator evidence key, not a
+change to earning eligibility. When an operator is absent it uses the marketing
+carrier’s fleet as an explicit assumption, with a verify-codeshares note. Thus
+an equipped-fleet prior is not a verified operator or aircraft assignment.
+
+Skiplagged does not provide an aircraft type. The model uses great-circle
+statute miles and explicit candidate cohorts: over **2,500 miles** is long-haul.
+Regional and European narrowbody cohorts are short-haul; widebodies are
+long-haul; transcontinental/Hawaii-capable narrowbodies stay in both. Broad
+model caps exclude 737 / ordinary A321 cohorts above 4,500 miles, 757 above
+5,000 and EI A321LR/XLR above 5,500. These are modelling bands, **not** certified
+ranges or schedules. Unknown mixed fleets remain candidates at every distance
+so that range inference cannot erase uncertainty. Dated route candidate sets
+refine QR LHR–DOH and BA LHR–JFK in both directions. QR retains 777, A350,
+both 787 types (including conservative substitution candidates) and A380;
+BA JFK uses 777-200/-300ER and 787-9/-10, without credit from A350/787-8
+aircraft serving other routes. These sets are snapshot assumptions, not live
+aircraft assignments. Distance alone never identifies an AS Hawaii flight as
+a Hawaiian A330.
+
+Within a compatible cohort, the estimator divides summed equipped aircraft by
+summed fleet aircraft. All-compatible-100% or all-compatible-0% needs no invented
+weighting. When all candidate counts are known, unknown equipped shares contribute
+zero to the numerator and their full aircraft count to the denominator. This
+returns `basis: lower-bound` and names each unknown-share sub-fleet in the note;
+the evidence shares themselves remain null. Missing candidate denominators still
+return unknown. `starlinkMin` compares this lower bound directly, inclusively.
+This uniform-aircraft prior is **not a measured route-frequency probability**:
+aircraft utilization, sub-fleet deployment and the route’s actual type mixture
+can differ. `basis: route` means distance or neighbor-island inference selected
+a subset; it does not imply a live route schedule. Aircraft swaps happen, and
+connectivity may be unavailable because of outages or regulatory restrictions.
+Even `p=1` is an equipped-fleet model value, not guaranteed working internet.
+
+Itinerary `p` is the product over **all flown sectors**, including a return,
+assuming independent assignments. An unflown hidden-city continuation does not
+participate. Any lower-bound sector makes the product a lower bound too.
+**Any unknown flown sector makes the whole result null, even when
+another sector is known zero.** Opaque connections without intermediate airports
+are unknown rather than applying the whole journey distance to each flight
+number. Missing airport geometry also yields null. AA/AT’s pre-installation
+zeroes become unknown for departures in 2027, when installation is due to start.
+Other numeric values remain explicitly dated snapshot priors, not rollout
+forecasts for the requested date.
+
+Illustrative direct sectors using the snapshot and a **November 2026** departure:
+
+| Route / carrier | p | Basis | Explanation |
+| --- | ---: | --- | --- |
+| LHR–DOH QR | 81.44% | lower-bound | (64 777 + 62 A350 + 32 787-8) / (158 + 26 787-9 + 10 A380); unknown 787-9/A380 shares count as zero equipped. |
+| LHR–JFK BA | 0% | lower-bound | 89 candidate 777/787-9/-10 aircraft have unknown equipped shares; no credit from A350/787-8. This does not establish no Starlink on JFK flights. |
+| LHR–JFK AA | 0% | route | Mainline installations begin early 2027. |
+| SEA–HNL AS | unknown | unknown | Shared AS code / incomplete merged-fleet census. |
+| SEA–HNL HA | 89.36% | route | Legacy Hawaiian compatible-aircraft prior: 42 Airbus equipped / (42 Airbus + 5 unequipped 787). |
+| LHR–MAD IB | unknown | unknown | Compatible short-haul aircraft counts are unknown. |
+| LHR–ORD UA (oneworld off) | 30.84% | route | 313 / 1,015 compatible aircraft; includes transatlantic-range narrowbody candidates under the broad range model. |
+
+For example, two Hawaiian long-haul sectors model as `(42/47)^2 = 79.86%`, so
+that return does **not** pass `starlinkMin=0.8`. Explicit unknown operators always
+return null rather than inheriting a completed marketing fleet.
+
+Where reports conflict about active fleet scope, the estimator keeps the
+uncertainty. For example EI's reported 12/12 completed A330s coexist with a
+report of two unequipped A330-200s due to be parked; unverified parking is not
+assumed complete, so equipment-unspecified EI long-haul rows remain null.

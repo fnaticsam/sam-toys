@@ -746,18 +746,23 @@ function vEmpty(){document.title=(S.earningOnly?'No earning fares':'No flights')
 function vError(){const throttled=searchState==='throttled',remaining=Math.max(0,Math.ceil((retryAt-Date.now())/1000));document.title=(throttled?'Too many requests':'Search failed')+' · Flights';return `${backPill()}<div class="state" role="status"><h1>${throttled?'A moment, please':"Skiplagged didn't answer"}</h1><p>${throttled?'Too many requests. '+(remaining?'Try again in '+remaining+' seconds.':'Ready to try again.'):'The search could not finish. Try again.'}</p><div class="acts"><button class="go glass press" id="retry" ${throttled&&remaining?'disabled':''}>Try again <span class="arr">→</span></button></div></div>`}
 function route(){return(location.hash||'#/search').slice(1).split('/').filter(Boolean)}
 function go(hash,push=false){history[push?'pushState':'replaceState']({flightsQuery:resultQuery},'',hash);render()}
-function renderLive(){
+function renderLive(refreshGold=false){
   const p=route();if(restoreHistory(p))return;if(!['loading','results','fare'].includes(p[0])&&stripController){stripController.abort();stripController=null;stripRequestKey=''}if(p[0]==='search'&&p[1]==='when'&&!calOpen)S.view=calendarMonth();if(p[0]!=='loading'&&searchState==='loading'){searchController?.abort();searchSerial++;searchState='idle'}
   if(p[0]!=='search'){flexController?.abort();flexSerial++;if(flexState==='loading'){flexState='';flexKey=''}}
   if(['results','fare'].includes(p[0])&&resultQuery&&response&&!history.state?.flightsQuery)history.replaceState({flightsQuery:resultQuery},'',location.hash);
-  renderRing();let h;
+  renderRing();
+  // popstate and hashchange can both render one navigation. Keep the live form,
+  // including focus and unsaved values, until Save explicitly refreshes it.
+  if(p[0]==='gold'&&$('#gf')&&!refreshGold)return;
+  let h;
   switch(p[0]){case 'results':h=vResults();break;case 'fare':try{h=vFare(decodeURIComponent(p.slice(1).join('/')))}catch{h=vSearch()}break;case 'gold':h=vGold();break;case 'loading':h=searchState==='loading'?vLoading():vSearch();break;case 'error':h=vError();break;default:calOpen=p[1]==='when';fromOpen=p[1]==='from';h=vSearch()}
   releaseGlides();$('#app').innerHTML=`<div class="fade">${h}</div>`;bind();animatePage();if(p[0]==='results')animateCards();window.scrollTo(0,0);
 }
-function redraw(){if($('#sf')){releaseGlides();$('#app').innerHTML=vSearch();bind()}}
+function redraw(){if(route()[0]==='search'&&$('#sf')){releaseGlides();$('#app').innerHTML=vSearch();bind()}}
 function clearFlex(){flexController?.abort();flexSerial++;flexRows=[];flexState='';flexKey=''}
 // Price arrivals must preserve day buttons, focus and in-progress taps.
 function paintCalendarPrices(){
+  if(route()[0]!=='search')return;
   const show=S.prices&&S.to&&S.to!=='ANY';
   document.querySelectorAll('#cal [data-k]').forEach(b=>{
     const k=b.dataset.k,quote=show&&!b.disabled?calendarQuote(k):null;
@@ -776,7 +781,7 @@ async function loadFlex(){
   if(route()[0]==='search')paintCalendarPrices();
 }
 function chooseDestination(code){S.to=code;draft='';sugOpen=false;hint='';selection=-1;clearFlex();if(!S.out){S.view=calendarMonth();calOpen=true;history.replaceState(null,'','#/search/when')}redraw();if(calOpen&&S.prices)loadFlex()}
-function redrawSug(){const input=$('#to'),bar=input.parentNode;bar.querySelector('.pop')?.remove();input.setAttribute('aria-expanded',String(sugOpen));input.removeAttribute('aria-activedescendant');if(sugOpen){bar.insertAdjacentHTML('beforeend',sugPop(draft));bindSug()}}
+function redrawSug(){const input=$('#to');if(route()[0]!=='search'||!input)return;const bar=input.parentNode;bar.querySelector('.pop')?.remove();input.setAttribute('aria-expanded',String(sugOpen));input.removeAttribute('aria-activedescendant');if(sugOpen){bar.insertAdjacentHTML('beforeend',sugPop(draft));bindSug()}}
 function bindSug(){document.querySelectorAll('.pop [data-to]').forEach(b=>{b.onmousedown=e=>e.preventDefault();b.onclick=()=>chooseDestination(b.dataset.to)})}
 function bindCal(){
   const cal=$('#cal');if(!cal)return;
@@ -800,14 +805,14 @@ function bindLive(){
     $('#cabin').onchange=e=>{S.cabin=e.target.value;clearFlex();if(S.prices)loadFlex()};
     if($('#fromBtn'))$('#fromBtn').onclick=()=>{fromOpen=!fromOpen;sugOpen=false;go(fromOpen?'#/search/from':'#/search')};
     const setFrom=code=>{S.from=code;saveFromCode(code);fromOpen=false;clearTimeout(originTimer);clearFlex();go('#/search')};document.querySelectorAll('[data-from]').forEach(b=>b.onclick=()=>setFrom(b.dataset.from));
-    const fq=$('#fromQ');if(fq){fq.oninput=()=>{clearTimeout(originTimer);originTimer=setTimeout(()=>{if($('#fromQ')!==fq)return;const list=fq.value.trim()?matches(fq.value,true):[];$('#fromRes').innerHTML=list.map(a=>`<button type="button" class="opt" data-from2="${a[0]}"><span>${esc(a[1])}${a[2]?` <span class="s">${esc(a[2])}</span>`:''}</span><span class="c">${a[0]}</span></button>`).join('');document.querySelectorAll('[data-from2]').forEach(b=>{b.onmousedown=e=>e.preventDefault();b.onclick=()=>setFrom(b.dataset.from2)})},80)};fq.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();const b=$('[data-from2]');if(b)setFrom(b.dataset.from2)}}}
+    const fq=$('#fromQ');if(fq){fq.oninput=()=>{clearTimeout(originTimer);originTimer=setTimeout(()=>{if(route()[0]!=='search'||$('#fromQ')!==fq)return;const list=fq.value.trim()?matches(fq.value,true):[];$('#fromRes').innerHTML=list.map(a=>`<button type="button" class="opt" data-from2="${a[0]}"><span>${esc(a[1])}${a[2]?` <span class="s">${esc(a[2])}</span>`:''}</span><span class="c">${a[0]}</span></button>`).join('');document.querySelectorAll('[data-from2]').forEach(b=>{b.onmousedown=e=>e.preventDefault();b.onclick=()=>setFrom(b.dataset.from2)})},80)};fq.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();const b=$('[data-from2]');if(b)setFrom(b.dataset.from2)}}}
     if(fromOpen)$('#fromPop .opt.on')?.focus();
     sf.onsubmit=e=>{e.preventDefault();return submitSearch()};
   }
   document.querySelectorAll('[data-discover]').forEach(a=>a.onclick=e=>{e.preventDefault();const r=discoveries()[+a.dataset.discover];S.to=r.destination;clearFlex();search()});
   if($('#allAirlines'))$('#allAirlines').onclick=()=>setEarningOnly(false);
   if($('#anywhere'))$('#anywhere').onclick=()=>{S.to='ANY';search()};if($('#retry'))$('#retry').onclick=search;
-  const gf=$('#gf');if(gf)gf.onsubmit=e=>{e.preventDefault();const tp=$('#gtp').value.replace(/[,\s]/g,''),target=$('#gtarget').value.replace(/[,\s]/g,''),ends=$('#gend').value;const err=$('#gErr');if(!/^\d+$/.test(tp)||!Number.isSafeInteger(+tp)||!/^\d+$/.test(target)||!Number.isSafeInteger(+target)||+target<=0){err.textContent='Enter whole tier points and a target above zero.';return}if(!realDate(ends)){err.textContent='Enter a valid year-end date.';return}const saved=goldData({tp:+tp,target:+target,ends});if(!saved){err.textContent='Could not save on this device.';return}gold=saved;render();toast('Saved')};
+  const gf=$('#gf');if(gf)gf.onsubmit=e=>{e.preventDefault();const tp=$('#gtp').value.replace(/[,\s]/g,''),target=$('#gtarget').value.replace(/[,\s]/g,''),ends=$('#gend').value;const err=$('#gErr');if(!/^\d+$/.test(tp)||!Number.isSafeInteger(+tp)||!/^\d+$/.test(target)||!Number.isSafeInteger(+target)||+target<=0){err.textContent='Enter whole tier points and a target above zero.';return}if(!realDate(ends)){err.textContent='Enter a valid year-end date.';return}const saved=goldData({tp:+tp,target:+target,ends});if(!saved){err.textContent='Could not save on this device.';return}gold=saved;render(true);toast('Saved')};
 }
 function resolveDestination(useHighlighted=false){
   const selected=useHighlighted&&sugOpen&&selection>=0?[...document.querySelectorAll('[data-to]')][selection]?.dataset.to:null;
@@ -838,8 +843,8 @@ async function search(replaceHistory=false){
   if(cached){response=cached.data;searchState='ready';go('#/results',!replaceHistory&&route()[0]!=='loading');warmStrip(q,strip.for===q?strip.center:q.out);return}
   searchState='loading';go('#/loading',!replaceHistory&&!['loading','error'].includes(route()[0]));
   const pending=prepareSearch(q);searchController=pending.controller;warmStrip(q,strip.for===q?strip.center:q.out);
-  try{const data=await pending.promise;if(serial!==searchSerial||route()[0]!=='loading')return;prepared=null;response=data;searchState='ready';saveResults(q,data);if(data.action==='search'){const best=allFares().find(earning);if(best){verified.set(cacheKey(q),best);if(verified.size>64)verified.delete(verified.keys().next().value)}}go('#/results')}
-  catch(e){if(e.name==='AbortError'||serial!==searchSerial)return;prepared=null;searchState=e.status===429?'throttled':'error';retryAt=Date.now()+(e.retryAfter||60)*1000;go('#/error');if(searchState==='throttled')retryTimer=setTimeout(()=>{if(route()[0]==='error'&&searchState==='throttled')render()},e.retryAfter*1000)}
+  try{const data=await pending.promise;saveResults(q,data);if(serial!==searchSerial||route()[0]!=='loading')return;prepared=null;response=data;searchState='ready';if(data.action==='search'){const best=allFares().find(earning);if(best){verified.set(cacheKey(q),best);if(verified.size>64)verified.delete(verified.keys().next().value)}}go('#/results')}
+  catch(e){if(e.name==='AbortError'||serial!==searchSerial||route()[0]!=='loading')return;prepared=null;searchState=e.status===429?'throttled':'error';retryAt=Date.now()+(e.retryAfter||60)*1000;go('#/error');if(searchState==='throttled')retryTimer=setTimeout(()=>{if(route()[0]==='error'&&searchState==='throttled')render()},e.retryAfter*1000)}
 }
 window.addEventListener('hashchange',()=>render());
 window.addEventListener('popstate',()=>render());
@@ -1015,11 +1020,11 @@ function bindResults(cardsOnly){
 }
 
 /* ---------- render + bind: the live versions plus the v3 hooks ---------- */
-function render(){
+function render(refreshGold=false){
   const p=route();
   document.body.classList.remove('sheet');
   document.body.classList.toggle('wide',(p[0]==='loading'&&resultQuery?.to!=='ANY')||(p[0]==='results'&&response?.action==='search'));
-  renderLive();
+  renderLive(refreshGold);
   const current=route();
   document.body.classList.toggle('wide',(current[0]==='loading'&&resultQuery?.to!=='ANY')||(current[0]==='results'&&response?.action==='search'));
 }
@@ -1028,7 +1033,7 @@ function bind(){
   const any=$('#anyPill');if(any)any.onclick=()=>{S.to='ANY';draft='';submitSearch()};
   const goBtn=$('#go');if(goBtn){goBtn.onpointerdown=e=>{if(e.button===0)prefetchSearch()};goBtn.onclick=e=>{e.preventDefault();return submitSearch()}};
   const big=$('.gobig');if(big)big.onpointerdown=e=>{if(e.button===0)prefetchSearch()};
-  const fq=$('#fromQ');if(fq){fq.addEventListener('focus',()=>fq.select());fq.addEventListener('blur',()=>setTimeout(()=>{if(document.activeElement!==fq&&$('#fromRes'))$('#fromRes').innerHTML=''},150));fq.addEventListener('keydown',e=>{if(e.key==='Escape'){fq.blur();redraw()}})}
+  const fq=$('#fromQ');if(fq){fq.addEventListener('focus',()=>fq.select());fq.addEventListener('blur',()=>setTimeout(()=>{if(route()[0]==='search'&&$('#fromQ')===fq&&document.activeElement!==fq&&$('#fromRes'))$('#fromRes').innerHTML=''},150));fq.addEventListener('keydown',e=>{if(e.key==='Escape'){fq.blur();redraw()}})}
   if($('#cards'))bindResults(false);if($('#dstrip'))stripHook();if(typeof applyGlides==='function')applyGlides();
 }
 
@@ -1048,7 +1053,7 @@ function dateStrip(){
     const off=k<TODAY||k>LATEST||(resultQuery.back&&stripQuery(resultQuery,k).back>LATEST),sel=k===resultQuery.out,p=prices[i],low=min<max&&p!==null&&p===min;
     return `<button type="button" class="dday${sel?' on':''}${low?' low':''}" data-day="${k}" ${off?'disabled':''} ${sel?'aria-current="date"':''} aria-label="${dShort(k)}${p!==null?', from '+money(p):''}${low?', cheapest nearby':''}"><span>${label(k)}</span><b>${p!==null?(low?'↓ ':'')+money(p):strip.state==='loading'?'…':'—'}</b></button>`}).join('')}</div><button type="button" class="dnav" id="dnext" aria-label="Later dates" ${days[6]>=LATEST?'disabled':''}>›</button></div>`;
 }
-function paintStrip(){const el=$('#dstrip');if(!el)return;el.outerHTML=dateStrip();bindStrip();applyGlides()}
+function paintStrip(){if(!['loading','results'].includes(route()[0]))return;const el=$('#dstrip');if(!el)return;el.outerHTML=dateStrip();bindStrip();applyGlides()}
 // Success freshness and retry admission are separate: partial rows stay visible
 // during a per-query cooldown, but are never treated as a cached success.
 const stripRequests=new Map(),stripRetries=new Map();let stripController=null,stripRequestKey='',stripLoadSerial=0;
@@ -1076,7 +1081,7 @@ function warmStrip(q,center=q.out){
 }
 async function loadStrip(){
   if(!resultQuery||resultQuery.to==='ANY')return;stripDays();const q=stripQuery(resultQuery,strip.center),k=cacheKey(q);
-  const serial=++stripLoadSerial;strip.key=k;strip.state='loading';paintStrip();const data=await warmStrip(resultQuery,strip.center);if(strip.key!==k||serial!==stripLoadSerial)return;
+  const serial=++stripLoadSerial;strip.key=k;strip.state='loading';paintStrip();const data=await warmStrip(resultQuery,strip.center);if(strip.for!==resultQuery||strip.key!==k||serial!==stripLoadSerial)return;
   if(Array.isArray(data?.results))strip.rows=data.partial?mergeStripRows(strip.rows,data.results):data.results;strip.state=data?(data.partial?'partial':'ready'):'error';paintStrip();
 }
 function bindStrip(){

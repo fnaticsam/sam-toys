@@ -26,6 +26,19 @@ function page({ saved, liveSaved, earningOnly, origin, sessionSaved, initialHash
   const elements = Object.fromEntries(['#app', '#ring', '#toast'].map(k => [k, {
     innerHTML: '', textContent: '', classList: classList(), setAttribute() {},
   }]));
+  // Model Gold input replacement so a redraw cannot silently keep test-only nodes.
+  let appHTML = '';
+  Object.defineProperty(elements['#app'], 'innerHTML', {
+    get: () => appHTML,
+    set(html) {
+      appHTML = html;
+      for (const id of ['gf', 'gtp', 'gtarget', 'gend', 'gErr']) delete elements['#' + id];
+      if (!html.includes('id="gf"')) return;
+      elements['#gf'] = {};
+      elements['#gErr'] = { textContent: '' };
+      for (const [, id, value] of html.matchAll(/<input id="(gtp|gtarget|gend)"[^>]* value="([^"]*)"/g)) elements['#' + id] = { value };
+    },
+  });
   const events = {}, documentHandlers = {};
   const location = { hash: initialHash };
   const lists = {};
@@ -92,6 +105,98 @@ function searchControls(p, value) {
   return { input, submit: () => p.elements['#sf'].onsubmit({ preventDefault() {} }),
     enter: () => input.onkeydown({ key: 'Enter', preventDefault() {} }) };
 }
+
+function editGold(p, renderNavigation = true) {
+  if (renderNavigation) p.run("go('#/gold')");
+  else {
+    // Mount Gold without search cancellation to isolate the route guard in the
+    // interval between native hash navigation and its render events.
+    p.location.hash = '#/gold';
+    p.elements['#app'].innerHTML = p.run('vGold()'); p.run('bind()');
+  }
+  const ids = ['#gtp', '#gtarget', '#gend'], values = ['12500', '21000', '2027-03-30'];
+  const inputs = ids.map((id, i) => { const input = p.elements[id]; input.value = values[i]; return input; });
+  const form = p.elements['#gf'];
+  return () => {
+    assert.equal(p.location.hash, '#/gold');
+    assert.equal(p.elements['#gf'], form, 'late work must preserve the live Gold form');
+    ids.forEach((id, i) => { assert.equal(p.elements[id], inputs[i]); assert.equal(p.elements[id].value, values[i]); });
+    form.onsubmit({ preventDefault() {} });
+    assert.deepEqual(JSON.parse(p.storage.get('flights.gold.live.v1')), { tp: 12500, target: 21000, ends: '2027-03-30' });
+  };
+}
+
+test('Gold edits survive duplicate navigation renders and Save updates the summary', () => {
+  const p = page(), save = editGold(p);
+  p.windowEvents.popstate(); p.windowEvents.hashchange(); p.run('render()');
+  save();
+  assert.match(p.elements['#app'].innerHTML, /12,500 of 21,000/);
+  assert.match(p.elements['#ring'].innerHTML, /width:/);
+});
+
+test('late search success and failure preserve typed Gold values and Save', async () => {
+  for (const status of [200, 502, 429]) for (const renderNavigation of [true, false]) {
+    const pending = deferredFetch(), p = page({ fetch: pending.fetch }); query(p);
+    const completion = p.run('search()');
+    // Also cover the native hash changing before its navigation events run.
+    const save = editGold(p, renderNavigation);
+    pending.searches[0].resolve(status === 200 ? ok([]) : { ok: false, status, headers: { get: () => '12' } });
+    await completion;
+    if (status === 200) assert.equal(p.run('readResults(S).data.results.length'), 0, 'late success stays cached for its query');
+    save();
+  }
+});
+
+test('late calendar flex and day-strip replies preserve typed Gold values and Save', async () => {
+  for (const kind of ['calendar', 'strip', 'prefetch']) for (const status of [200, 502, 429]) {
+    const pending = deferredFetch(), p = page({ fetch: pending.fetch }); query(p);
+    p.run("S.prices=true;S.view='2026-11'");
+    const completion = p.run(kind === 'calendar' ? 'loadFlex()' : kind === 'strip' ? 'loadStrip()' : 'warmStrip(S)');
+    const save = editGold(p);
+    pending.flexes[0].resolve(status === 200 ? { ok: true, json: async () => ({ results: [{ departureDate: '2026-11-18', priceGbp: 99 }], expiresAt: NOW + 600000 }) } : { ok: false, status, headers: { get: () => '12' } });
+    await completion;
+    if (kind !== 'calendar' && status === 200) assert.equal(p.run('stripRequests.get(cacheKey(S)).ready'), true);
+    save();
+  }
+});
+
+test('late search failures cannot navigate away from search or fare before hashchange renders', async () => {
+  for (const hash of ['#/search', '#/fare/previous']) for (const status of [502, 429]) {
+    const pending = deferredFetch(), p = page({ fetch: pending.fetch }); query(p);
+    const completion = p.run('search()'); p.location.hash = hash;
+    const html = p.elements['#app'].innerHTML;
+    pending.searches[0].resolve({ ok: false, status, headers: { get: () => '12' } }); await completion;
+    assert.equal(p.location.hash, hash); assert.equal(p.elements['#app'].innerHTML, html);
+  }
+});
+
+test('late day-strip completion caches data without painting another route or query', async () => {
+  for (const hash of ['#/gold', '#/fare/previous', '#/search', '#/results']) {
+    const pending = deferredFetch(), p = page({ fetch: pending.fetch }); query(p);
+    p.location.hash = '#/results';
+    let paints = 0;
+    p.elements['#dstrip'] = { set outerHTML(html) { paints++; } };
+    const completion = p.run('loadStrip()'); assert.equal(paints, 1);
+    p.location.hash = hash;
+    if (hash === '#/results') p.run("resultQuery={...S,to:'JFK'}");
+    pending.flexes[0].resolve({ ok: true, json: async () => ({ results: [{ departureDate: '2026-11-18', priceGbp: 99 }], expiresAt: NOW + 600000 }) }); await completion;
+    assert.equal(paints, 1, hash + ' must not receive the previous strip DOM');
+    assert.equal(p.run('stripRequests.get(cacheKey(S)).ready'), true);
+  }
+});
+
+test('delayed origin suggestions and blur cannot update another route or a replacement input', () => {
+  for (const hash of ['#/gold', '#/fare/previous', '#/search']) {
+    const p = page(); searchControls(p, 'MAD');
+    const listeners = {}, input = p.elements['#fromQ'] = { value: 'MAD', addEventListener(name, fn) { listeners[name] = fn; } };
+    const results = p.elements['#fromRes'] = { innerHTML: 'Keep current suggestions' };
+    p.run('bind()'); input.oninput(); listeners.blur();
+    p.location.hash = hash;
+    if (hash === '#/search') p.elements['#fromQ'] = { value: 'JFK' };
+    p.flushTimers(150);
+    assert.equal(results.innerHTML, 'Keep current suggestions');
+  }
+});
 
 test('UI API parameters use city codes once with the maximum provider limit, cabin filters and real return dates', () => {
   const p = page(); query(p);

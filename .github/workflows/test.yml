@@ -1,0 +1,102 @@
+name: Tests
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+# A unique group for every main run also protects pending main runs from cancellation.
+concurrency:
+  group: tests-${{ github.event_name == 'pull_request' && github.ref || github.run_id }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  changes:
+    name: Select test suites
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    outputs:
+      node: ${{ steps.plan.outputs.node }}
+      locks: ${{ steps.plan.outputs.locks }}
+      matrix: ${{ steps.plan.outputs.matrix }}
+      browser: ${{ steps.plan.outputs.browser }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Read Node version and select affected suites
+        id: plan
+        env:
+          CI_EVENT: ${{ github.event_name }}
+          CI_BASE: ${{ github.event.pull_request.base.sha }}
+          CI_HEAD: ${{ github.event.pull_request.head.sha }}
+        run: node .github/scripts/tests.cjs plan
+
+  node:
+    name: Node / ${{ matrix.suite }}
+    needs: changes
+    if: needs.changes.outputs.matrix != '[]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    strategy:
+      fail-fast: false
+      matrix:
+        suite: ${{ fromJSON(needs.changes.outputs.matrix) }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ needs.changes.outputs.node }}
+          cache: npm
+          cache-dependency-path: ${{ needs.changes.outputs.locks }}
+      - name: Install locked dependencies
+        shell: bash
+        run: |
+          npm ci --no-audit --no-fund
+          for dir in robot/ba api/_lib/samid; do
+            if [[ -f "$dir/package-lock.json" ]]; then
+              npm ci --prefix "$dir" --no-audit --no-fund
+            fi
+          done
+      - name: Run suite
+        run: node .github/scripts/tests.cjs run "${{ matrix.suite }}"
+
+  browser:
+    name: Flights / Chromium
+    needs: changes
+    if: needs.changes.outputs.browser == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ needs.changes.outputs.node }}
+          cache: npm
+          cache-dependency-path: ${{ needs.changes.outputs.locks }}
+      - run: npm ci --no-audit --no-fund
+      - name: Cache Chromium
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: chromium-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('package-lock.json') }}
+      # Run even on cache hits: Linux system libraries are not in the browser cache.
+      - run: npx --no-install playwright install --with-deps chromium
+      - run: node tests/flights/browser-check.cjs
+      - name: Upload browser evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: flights-browser
+          path: /tmp/flights-browser-qa
+          if-no-files-found: ignore
+          retention-days: 7

@@ -1,3 +1,6 @@
+// Shared, deliberately dummy credentials: these suites never need local secrets.
+process.env.PLAYA_PASSWORD = "test-playa-password-not-real";
+
 const assert = require('node:assert/strict');
 const { EventEmitter } = require('node:events');
 const { Writable } = require('node:stream');

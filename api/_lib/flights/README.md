@@ -7,7 +7,13 @@ integration is included.
 ## HTTP
 
 `GET /api/flights?action=search|anywhere|flex` (default action: `search`).
-All responses are JSON, private/no-store and noindex. Other methods return 405.
+All responses are JSON, private and noindex. Complete successful responses have
+`Cache-Control: private, max-age=N, must-revalidate`, where N is the remaining
+whole seconds of the existing ten-minute in-memory entry (at most 600). A cache
+hit never resets freshness. `Vary: Origin` preserves the browser origin check;
+Vercel CDN caching stays disabled. Errors, partial results and responses with
+in-memory caching disabled remain `private, no-store, max-age=0`.
+Other methods return 405.
 The page and API are open, with no password, API token, session or login proxy.
 An absent `Origin` header is allowed; when present it must be a valid origin
 matching the request's scheme, Host and port, otherwise the API returns 403.
@@ -88,7 +94,35 @@ to build the response (a cached response makes zero new calls).
 Anywhere accepts `fareClass` but no destination, airline or calendar options.
 Flex accepts `destination`, `mode=depart|return` (default depart), and
 `sort=date|price` (default date). `mode=return` requires `returnDate`. The provider
-does **not** accept a cabin filter for flex. Unknown, duplicate and empty query
+does **not** accept a cabin filter for its calendar tools. Omitting both
+`fareClass` and `cabin` retains those unfiltered discovery tools. Explicitly
+supplying `fareClass` (or its flex-only alias `cabin`, never both) instead asks
+for the lowest normalized returned search candidate in that cabin filter for
+each date within **±3 days of the supplied center date**. Accepted cabin values
+match search. The backend makes direct `sk_flights_search` calls, passing the
+real provider `fareClass` parameter; it never adds invented parameters to the
+calendar tools or labels their economy prices as another cabin.
+
+Cabin flex makes at most **7 calls / 3 concurrent**, with no supplemental probe,
+all-airline union or automatic discovery-to-search cascade. It searches a
+100-candidate price-ordered page for each valid date, not every available fare.
+Departure flex shifts both dates to preserve trip length when a return is
+supplied; return flex varies the return date and fixes departure. Past dates,
+dates beyond the 366-day horizon and returns before departure are omitted.
+Multiple origins are processed in the supplied priority order; dates for later
+origins beyond the seven-call cap are reported in `failures` with their dates
+and `provider-call-cap`, and the response is partial and uncached. City codes
+such as LON still use one provider call per date. A request without explicit
+origins can therefore exhaust the cap on its first origin; callers wanting a
+complete seven-day strip should provide a single origin/city code.
+
+Cabin flex rows carry `fareClass` (the requested filter), `cabinFiltered:true`,
+the cheapest accepted candidate's `eligibility` and `estimate`, and
+`requiresSearch:true`. `meta.flexSource:"cabin-search"` and `meta.fareClass`
+distinguish this mode. A cabin filter is **not proof of the ticket cabin**;
+booking class, operator and earning still need verification. Failed dates
+remain explicit partial failures; successful empty dates have no price row.
+Unknown, duplicate and empty query
 parameters are rejected rather than silently ignored.
 
 Successful envelope:
@@ -158,10 +192,11 @@ may still have unavailable or zero estimated TP; it is not a guaranteed award.
 Anywhere rows have `origin`, `destination`, USD `price`, `priceGbp`, `deepLink`,
 `eligibility:"unverified"`, `estimate:null` and `requiresSearch:true`. Flex rows
 instead add `departureDate` and `returnDate` (nullable) and omit the booking link.
-Both are **unfiltered discovery prices**, can include non-earning airlines, and
+Without an explicit flex cabin, both are **unfiltered discovery prices**, can include non-earning airlines, and
 have `meta.discoveryOnly:true` and `meta.ranking:null`. They cannot be used to
 claim a status bargain until the caller runs search for that route/date. There
-is no automatic discovery-to-search fan-out against the public MCP.
+is no automatic discovery-to-search fan-out against the public MCP; explicit
+cabin flex is the bounded direct-search mode described above.
 Neither discovery tool accepts an airline filter in its provider schema, so
 both toggle values use the same single query per origin; duplicating it would
 not add earning candidates. Cache entries still distinguish `earningOnly`.
@@ -323,7 +358,9 @@ when full, the oldest insertion is evicted (reads do not extend TTL or recency).
 Errors and partial origin responses are never cached. Throttling, Origin checks
 and validation run before cache lookup, so cache hits still count toward the
 per-IP limit. Concurrent misses may each call the provider, within the existing
-concurrency caps. HTTP/CDN caches remain disabled by the response headers.
+concurrency caps. Private browser caching uses only the entry's remaining TTL;
+shared/CDN caches remain disabled. Explicit cabin-flex queries preserve origin
+priority in their cache keys because later origins can be omitted by the cap.
 
 Both maps and concurrency counters are local to a warm function instance and
 reset on restart; they are not a distributed provider-load guarantee. No browser
@@ -349,7 +386,7 @@ validation, close the calendar for a valid search, and focus an absent destinati
 API errors and 429 with Retry-After have explicit states;
 navigation aborts obsolete requests and stale replies cannot replace the page.
 
-Anywhere and flex are **unverified discovery**, not earning quotes. Anywhere
+Anywhere and flex are **discovery**, not guaranteed earning quotes. Anywhere
 shows price order and an explicit destination click runs search; it does not
 silently fan out searches. The calendar's £/TP switch fetches flex once for the
 current context: unverified dates show £ discovery prices, and dates previously

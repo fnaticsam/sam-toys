@@ -15,7 +15,7 @@ function parseInput(rawUrl, now = Date.now()) {
   if (!['search', 'anywhere', 'flex'].includes(action)) bad('action must be search, anywhere or flex.');
   const shared = ['action','origin','departureDate','returnDate','earningOnly'];
   const allowed = new Set([...shared, ...(action === 'search' ? ['destination','fareClass','limit','offset','maxStops','includeHiddenCity','airlines','starlinkMin'] :
-    action === 'anywhere' ? ['fareClass'] : ['destination','mode','sort'])]);
+    action === 'anywhere' ? ['fareClass'] : ['destination','mode','sort','fareClass','cabin'])]);
   for (const key of params.keys()) {
     if (!allowed.has(key) || params.getAll(key).length !== 1 || params.get(key) === '') bad('Unknown, duplicate or empty parameter.');
   }
@@ -29,7 +29,8 @@ function parseInput(rawUrl, now = Date.now()) {
   const latest = new Date(now + 366 * 86400000).toISOString().slice(0, 10);
   if (!validDate(departureDate) || departureDate < today || departureDate > latest) bad('departureDate must be a real YYYY-MM-DD within the next 366 days.');
   if (returnDate && (!validDate(returnDate) || returnDate < departureDate || returnDate > latest)) bad('returnDate must be a real YYYY-MM-DD on or after departureDate, within 366 days.');
-  const fareClass = params.get('fareClass') || 'economy';
+  if (params.has('fareClass') && params.has('cabin')) bad('Use fareClass or cabin, not both.');
+  const fareClass = params.get('fareClass') || params.get('cabin') || 'economy';
   if (!CABINS.includes(fareClass)) bad('Invalid fareClass.');
   const integer = (key, fallback, min, max) => {
     if (!params.has(key)) return fallback;
@@ -56,20 +57,37 @@ function parseInput(rawUrl, now = Date.now()) {
   const mode = params.get('mode') || 'depart', sort = params.get('sort') || 'date';
   if (!['depart','return'].includes(mode) || !['date','price'].includes(sort)) bad('Invalid calendar mode or sort.');
   if (action === 'flex' && mode === 'return' && !returnDate) bad('returnDate is required for a return calendar.');
+  const flexCabin = action === 'flex' && (params.has('fareClass') || params.has('cabin'));
+  // The provider calendars have no cabin filter. Explicit cabin requests use
+  // direct, bounded search pages instead. Shift both dates to preserve the
+  // trip length for departure strips; return strips keep departure fixed.
+  const flexDates = flexCabin ? Array.from({ length: 7 }, (_, i) => i - 3).map((shift) => {
+    const move = (date) => new Date(Date.parse(date + 'T00:00:00Z') + shift * 86400000).toISOString().slice(0, 10);
+    return { departureDate: mode === 'return' ? departureDate : move(departureDate),
+      returnDate: returnDate ? move(returnDate) : undefined };
+  }).filter((dates) => dates.departureDate >= today && dates.departureDate <= latest &&
+    (!dates.returnDate || (dates.returnDate >= dates.departureDate && dates.returnDate <= latest))) : undefined;
   return { action, origins, destination, departureDate, returnDate, fareClass, limit, offset,
-    maxStops, includeHiddenCity: !returnDate && hidden !== 'false', earningOnly, airlines, mode, sort, starlinkMin };
+    maxStops, includeHiddenCity: !returnDate && hidden !== 'false', earningOnly, airlines, mode, sort, starlinkMin,
+    ...(flexCabin ? { flexCabin, flexDates } : {}) };
 }
 function toolInput(query, origin) {
   const q = query;
   if (q.action === 'anywhere') return { name: 'sk_destinations_anywhere', args: {
     from: origin, depart: q.departureDate, ...(q.returnDate ? { return: q.returnDate } : {}), fare_class: q.fareClass, adults: 1 } };
   const dates = { origin, destination: q.destination, departureDate: q.departureDate, ...(q.returnDate ? { returnDate: q.returnDate } : {}) };
-  if (q.action === 'flex') return { name: q.mode === 'return' ? 'sk_flex_return_calendar' : 'sk_flex_departure_calendar', args: { ...dates, sort: q.sort, adults: 1 } };
+  if (q.action === 'flex' && !q.flexCabin) return { name: q.mode === 'return' ? 'sk_flex_return_calendar' : 'sk_flex_departure_calendar', args: { ...dates, sort: q.sort, adults: 1 } };
   return { name: 'sk_flights_search', args: { ...dates, fareClass: q.fareClass, adults: 1,
     limit: q.limit, offset: q.offset, sort: 'price', ...(q.airlines.length ? { preferredAirlines: q.airlines } : {}),
     includeHiddenCity: !q.returnDate && q.includeHiddenCity, includeVirtualInterlining: false, includeStandard: true, maxStops: q.maxStops } };
 }
 function providerPlan(query) {
+  if (query.flexCabin) {
+    const candidates = query.origins.flatMap((origin) => query.flexDates.map((dates) => ({ origin,
+      ...toolInput({ ...query, ...dates }, origin) })));
+    return { calls: candidates.slice(0, 7), skipped: candidates.slice(7).map(({ origin, args }) =>
+      ({ origin, departureDate: args.departureDate, ...(args.returnDate ? { returnDate: args.returnDate } : {}), code: 'provider-call-cap' })) };
+  }
   // Reserve one eligible search for every origin before adding broad searches.
   // Discovery tools have no airline filter, so their query is already identical
   // for either toggle value; do not spend calls repeating it.

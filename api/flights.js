@@ -32,19 +32,25 @@ function createCache({ now, ttlMs = 600000, capacity = 64 }) {
     for (const [key, entry] of entries) if (entry.until <= time) entries.delete(key);
   };
   return {
-    get(key) { prune(); return entries.get(key)?.body; },
+    get(key) {
+      prune();
+      const entry = entries.get(key);
+      return entry ? { body: entry.body, maxAge: Math.max(0, Math.floor((entry.until - now()) / 1000)) } : undefined;
+    },
     set(key, body) {
       prune();
       entries.delete(key);
       if (capacity <= 0) return;
       if (entries.size >= capacity) entries.delete(entries.keys().next().value);
-      entries.set(key, { body, until: now() + ttlMs });
+      const until = now() + ttlMs;
+      body.expiresAt = until;
+      entries.set(key, { body, until });
     },
   };
 }
 function cacheKey(query) {
   // Parameter order, case, explicit defaults and set order share one entry.
-  return JSON.stringify({ ...query, origins: [...query.origins].sort(), airlines: [...query.airlines].sort() });
+  return JSON.stringify({ ...query, origins: query.flexCabin ? query.origins : [...query.origins].sort(), airlines: [...query.airlines].sort() });
 }
 function createThrottle({ now, max = 5, windowMs = 60000, capacity = 512 }) {
   const entries = new Map();
@@ -67,11 +73,12 @@ function clientIp(req) {
   const ip = req.headers?.['x-real-ip'];
   return typeof ip === 'string' && isIP(ip) ? ip : (isIP(req.socket?.remoteAddress || '') ? req.socket.remoteAddress : 'unknown');
 }
-function send(res, status, body) {
+function send(res, status, body, maxAge) {
   res.statusCode = status;
   res.setHeader('Content-Type', 'application/json; charset=utf-8');
-  res.setHeader('Cache-Control', 'private, no-store, max-age=0');
+  res.setHeader('Cache-Control', Number.isInteger(maxAge) ? `private, max-age=${Math.min(600, maxAge)}, must-revalidate` : 'private, no-store, max-age=0');
   res.setHeader('Vercel-CDN-Cache-Control', 'no-store');
+  res.setHeader('Vary', 'Origin');
   res.setHeader('X-Robots-Tag', 'noindex, nofollow');
   res.setHeader('X-Content-Type-Options', 'nosniff');
   res.setHeader('Referrer-Policy', 'no-referrer');
@@ -108,7 +115,7 @@ function createHandler({ callTool = createClient(), now = Date.now,
     try { query = parseInput(req.url, now()); }
     catch (error) { return send(res, 400, { error: error instanceof InputError ? error.message : 'Invalid parameters.' }); }
     const key = cacheKey(query), cached = cache.get(key);
-    if (cached) return send(res, 200, cached);
+    if (cached) return send(res, 200, cached.body, cached.maxAge);
     if (active >= maxConcurrentRequests) { res.setHeader('Retry-After', '5'); return send(res, 429, { error: 'Flights API is busy.' }); }
     active++;
     const controller = new AbortController();
@@ -126,17 +133,27 @@ function createHandler({ callTool = createClient(), now = Date.now,
         while (cursor < plan.calls.length) {
           const index = cursor++;
           const { origin, scope, name, args } = plan.calls[index];
-          const source = { origin, ...(scope ? { scope } : {}), ...(args.maxStops === 'none' ? { maxStops: 'none' } : {}) };
+          const source = { origin, ...(scope ? { scope } : {}), ...(args.maxStops === 'none' ? { maxStops: 'none' } : {}),
+            ...(query.flexCabin ? { departureDate: args.departureDate, ...(args.returnDate ? { returnDate: args.returnDate } : {}) } : {}) };
           if (controller.signal.aborted) { failures.push({ ...source, code: 'upstream-timeout' }); continue; }
           try {
             providerCalls++;
             const data = await callTool(name, args, controller.signal);
-            if (query.action === 'search') {
+            if (query.action === 'search' || query.flexCabin) {
               if (!Array.isArray(data?.flights) || data.flights.length > 100) throw new UpstreamError('invalid-upstream-response');
               // Process in isolation before publishing results, so a malformed
               // origin cannot leave half-normalized fares in a partial response.
-              const normalized = data.flights.map((f) => normalizeFlight(f, { ...query, origin }));
-              batches[index] = normalized;
+              const normalized = data.flights.map((f) => normalizeFlight(f, { ...query, origin,
+                ...(query.flexCabin ? { departureDate: args.departureDate, returnDate: args.returnDate } : {}) }));
+              if (query.flexCabin) {
+                const candidates = normalized.flatMap((item) => item.flight ? [item.flight] : []);
+                const cheapest = candidates.reduce((best, row) => !best || row.priceGbp < best.priceGbp ? row : best, null);
+                if (cheapest) results.push({ origin, destination: query.destination, departureDate: args.departureDate,
+                  returnDate: args.returnDate || null, price: cheapest.price, priceGbp: cheapest.priceGbp,
+                  fareClass: query.fareClass, cabinFiltered: true, eligibility: cheapest.eligibility,
+                  estimate: cheapest.estimate, requiresSearch: true });
+                for (const item of normalized) if (item.excluded) excluded[item.excluded] = (excluded[item.excluded] || 0) + 1;
+              } else batches[index] = normalized;
               const p = data.pagination;
               pages.push({ ...source, offset: args.offset, limit: args.limit,
                 totalAvailable: Number.isInteger(p?.totalAvailable) ? p.totalAvailable : null,
@@ -203,13 +220,15 @@ function createHandler({ callTool = createClient(), now = Date.now,
           sources: { ...SOURCES, gold: GOLD_SOURCE, extraTierPoints: BONUS_SOURCE },
           ranking: query.action === 'search' ? 'GBP-per-estimated-tier-point-then-price' : null,
           discoveryOnly: query.action !== 'search', earningOnly: query.earningOnly,
+          ...(query.flexCabin ? { fareClass: query.fareClass, flexSource: 'cabin-search' } : {}),
           providerCalls,
-          notice: query.action === 'search' ? 'Estimates only; verify booking class, operator and earning with BA before buying. Search covers returned fares, not every fare available.' :
+          notice: query.flexCabin ? 'Lowest returned candidate per date with the requested cabin filter; ticket cabin and earning remain unverified. Bounded to seven search pages, not every fare available.' : query.action === 'search' ? 'Estimates only; verify booking class, operator and earning with BA before buying. Search covers returned fares, not every fare available.' :
             'Unfiltered discovery prices may be on non-earning airlines. Run search for each destination/date before comparing tier-point value.',
         } };
       // Retry incomplete responses on the next request; never cache failures.
       if (!body.partial) cache.set(key, body);
-      return send(res, 200, body);
+      else res.setHeader('Retry-After', '60');
+      return send(res, 200, body, !body.partial ? cache.get(key)?.maxAge : undefined);
     } finally {
       clearTimeout(timer); req.removeListener?.('aborted', onAborted); active--;
     }

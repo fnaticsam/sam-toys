@@ -8,6 +8,7 @@
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='9' fill='%230b0b0c'/%3E%3Cpath transform='translate(4 4) rotate(45 12 12)' fill='%23fff' d='M21 16v-2l-8-5V3.5c0-.83-.67-1.5-1.5-1.5S10 2.67 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z'/%3E%3C/svg%3E">
 <title>Flights</title>
 <link rel="preload" href="/flights/fonts/Geist-Variable.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/flights/fonts/GeistMono-Variable.woff2" as="font" type="font/woff2" crossorigin>
 <style>@font-face{font-family:Geist;src:url('/flights/fonts/Geist-Variable.woff2') format('woff2');font-style:normal;font-weight:100 900;font-display:swap}
 @font-face{font-family:'Geist Mono';src:url('/flights/fonts/GeistMono-Variable.woff2') format('woff2');font-style:normal;font-weight:100 900;font-display:swap}
 
@@ -82,8 +83,8 @@ svg{flex-shrink:0}
 .logo svg{width:19px;height:19px;transform:rotate(45deg)}
 .logo .dot{color:var(--warm)}
 .ring{display:inline-flex;align-items:center;gap:9px;min-height:34px;padding:0 13px;border-radius:var(--radius-control);color:var(--soft);font-size:13.5px;
-  transition:color .2s}
-.ring:hover{color:var(--ink)}
+  transition:color .2s}@media (hover:hover) and (pointer:fine){
+.ring:hover{color:var(--ink)}}
 .ring .mini{width:40px;height:1px;background:rgba(0,0,0,.14);overflow:hidden}
 .ring .mini i{display:block;height:1px;background:var(--warm)}
 @media (max-width:640px){.top{padding:34px 24px 0}.ring{padding:0 0 0 13px}}
@@ -93,8 +94,8 @@ svg{flex-shrink:0}
 
 /* glass (flick .glassPanel) */
 .glass{background:var(--glass-gradient),var(--glass-fill);-webkit-backdrop-filter:var(--glass-blur);backdrop-filter:var(--glass-blur);box-shadow:var(--glass-shadow)}
-.press{transition:transform .2s var(--ease),color .2s}
-.press:hover{transform:scale(1.03)}
+.press{transition:transform .2s var(--ease),color .2s}@media (hover:hover) and (pointer:fine){
+.press:hover{transform:scale(1.03)}}
 
 /* home hero */
 section.hero{display:flex;flex-direction:column;align-items:center;padding-top:56px}
@@ -105,27 +106,27 @@ section.hero h1{margin:0 0 36px;font-size:var(--text-display);font-weight:500;li
 .searchBox:focus-within{outline:1.5px solid rgba(0,0,0,.7);outline-offset:3px}
 .where{background:transparent;border:0;outline:0;color:var(--ink);flex:1;min-width:0;font-size:var(--text-input);letter-spacing:-.01em;text-overflow:ellipsis}
 .where::placeholder{color:var(--soft-home);opacity:1}
-.goC{flex:none;display:grid;place-items:center;width:48px;height:48px;border:0;border-radius:50%;background:var(--ink);color:var(--paper);transition:transform .2s var(--ease)}
-.goC:hover{transform:scale(1.04)}
+.goC{flex:none;display:grid;place-items:center;width:48px;height:48px;border:0;border-radius:50%;background:var(--ink);color:var(--paper);transition:transform .2s var(--ease)}@media (hover:hover) and (pointer:fine){
+.goC:hover{transform:scale(1.04)}}
 /* filter rows (flick FilterRow: label left, control right, 680 wide) */
 .rows{width:100%;margin-top:22px}
 .frow{display:flex;align-items:center;justify-content:space-between;gap:16px;min-height:40px;position:relative}
 .frow+.frow,.cal+.frow,.frow+.cal{margin-top:8px}
 .fl{flex:none;color:var(--soft-home);font-size:var(--text-sm)}
-.fv{display:inline-flex;align-items:center;gap:6px;border:0;background:transparent;color:var(--ink);font-size:var(--text-sm);font-weight:500;height:30px;padding:0 10px;margin-right:-10px;border-radius:var(--radius-control);transition:background .2s}
-.fv:hover,.fv[aria-expanded=true]{background:var(--hover)}
+.fv{display:inline-flex;align-items:center;gap:6px;border:0;background:transparent;color:var(--ink);font-size:var(--text-sm);font-weight:500;height:30px;padding:0 10px;margin-right:-10px;border-radius:var(--radius-control);transition:background .2s}.fv[aria-expanded=true]{background:var(--hover)}@media (hover:hover) and (pointer:fine){
+.fv:hover{background:var(--hover)}}
 .fv.ph{color:var(--soft-home);font-weight:400}
 .fv svg{color:var(--faint)}
 select.fv{appearance:none;-webkit-appearance:none;text-align:right;padding-right:28px;margin-right:-10px;cursor:pointer;
-  background:transparent url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 10 10'%3E%3Cpath d='M2 3.5 5 6.5 8 3.5' fill='none' stroke='%23000' stroke-opacity='.46' stroke-width='1.3'/%3E%3C/svg%3E") no-repeat right 10px center}
-select.fv:hover{background-color:var(--hover)}
+  background:transparent url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 10 10'%3E%3Cpath d='M2 3.5 5 6.5 8 3.5' fill='none' stroke='%23000' stroke-opacity='.46' stroke-width='1.3'/%3E%3C/svg%3E") no-repeat right 10px center}@media (hover:hover) and (pointer:fine){
+select.fv:hover{background-color:var(--hover)}}
 .hintline{min-height:20px;margin-top:10px;color:var(--soft);font-size:var(--text-sm);text-align:center}
 .hintline.err{color:var(--ink)}
 .hintline.fieldHint{text-align:left;min-height:0}
 .actionPill{display:inline-flex;align-items:center;gap:7px;min-height:44px;padding:0 16px;margin-top:14px;border:0;border-radius:var(--radius-control);
-  background:rgba(0,0,0,.04);box-shadow:inset 0 0 0 1px rgba(0,0,0,.1);color:var(--soft);font-size:13.5px;transition:color .2s,transform .2s var(--ease)}
-.actionPill:hover{color:var(--ink);transform:scale(1.03)}
-.shake{animation:shake .32s}
+  background:rgba(0,0,0,.04);box-shadow:inset 0 0 0 1px rgba(0,0,0,.1);color:var(--soft);font-size:13.5px;transition:color .2s,transform .2s var(--ease)}@media (hover:hover) and (pointer:fine){
+.actionPill:hover{color:var(--ink);transform:scale(1.03)}}
+.shake{animation:shake .26s}
 @keyframes shake{20%{transform:translateX(-5px)}50%{transform:translateX(4px)}80%{transform:translateX(-2px)}}
 @media (max-width:640px){
   section.hero{padding-top:44px}
@@ -141,8 +142,8 @@ select.fv:hover{background-color:var(--hover)}
 @keyframes pop{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
 .fromwrap .pop{left:auto;right:-10px;width:260px;max-height:60vh;overflow-y:auto;border-radius:var(--radius-menu);padding:5px}
 .opt{display:flex;width:100%;align-items:center;justify-content:space-between;gap:12px;padding:9px 12px;border:0;border-radius:12px;background:transparent;color:var(--ink);text-align:left;font-size:var(--text-base)}
-.fromwrap .opt{border-radius:10px;padding:9px 13px}
-.opt:hover,.opt.on,.opt:focus-visible{background:var(--hover);outline:none}
+.fromwrap .opt{border-radius:10px;padding:9px 13px}.opt.on,.opt:focus-visible{background:var(--hover);outline:none}@media (hover:hover) and (pointer:fine){
+.opt:hover{background:var(--hover);outline:none}}
 .opt .s{color:var(--faint);font-size:var(--text-sm)}
 .opt .c{color:var(--faint);font-family:var(--mono);font-size:12px}
 .opt .tick{color:var(--ink)}
@@ -156,14 +157,14 @@ div.opt{color:var(--faint)}
 .calhd{display:flex;align-items:center;justify-content:space-between;padding:0 4px 12px}
 .calhd b{font-weight:500;font-size:var(--text-meta);letter-spacing:-.01em}
 .nav{display:flex;align-items:center;gap:6px}
-.nav button{display:grid;place-items:center;min-width:30px;height:30px;padding:0 10px;border:0;border-radius:var(--radius-control);background:transparent;color:var(--soft);font-size:var(--text-sm);transition:background .2s,color .2s}
-.nav button:hover:not(:disabled){background:var(--hover);color:var(--ink)}
+.nav button{display:grid;place-items:center;min-width:30px;height:30px;padding:0 10px;border:0;border-radius:var(--radius-control);background:transparent;color:var(--soft);font-size:var(--text-sm);transition:background .2s,color .2s}@media (hover:hover) and (pointer:fine){
+.nav button:hover:not(:disabled){background:var(--hover);color:var(--ink)}}
 .chipg[aria-pressed=true]{background:var(--ink)!important;color:var(--paper)!important;font-weight:500}
 .grid{display:grid;grid-template-columns:repeat(7,1fr);row-gap:2px}
 .dow{text-align:center;color:var(--faint);font-size:var(--text-xs);padding:0 0 6px}
 .d{position:relative;height:44px;border:0;background:none;display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--ink);font-size:var(--text-base)}
-.d span{position:relative;z-index:1;display:grid;place-items:center;width:38px;height:38px;border-radius:50%;transition:background .2s,color .2s}
-.d:hover:not(.past) span{background:var(--hover)}
+.d span{position:relative;z-index:1;display:grid;place-items:center;width:38px;height:38px;border-radius:50%;transition:background .2s,color .2s}@media (hover:hover) and (pointer:fine){
+.d:hover:not(.past) span{background:var(--hover)}}
 .d.past{color:rgba(0,0,0,.22);opacity:1}
 .d.today span{box-shadow:inset 0 0 0 1px rgba(0,0,0,.18)}
 .d.in::before,.d.pv::before{content:"";position:absolute;left:0;right:0;top:4px;bottom:4px;background:rgba(0,0,0,.055)}
@@ -176,24 +177,24 @@ div.opt{color:var(--faint)}
 .calft{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:10px;padding:12px 4px 2px;border-top:1px solid var(--hair);color:var(--soft);font-size:var(--text-sm)}
 .calft b{color:var(--ink);font-weight:500}
 .calnote{padding:6px 4px 0;color:var(--faint);font-size:var(--text-xs)}
-.txtb{border:0;background:transparent;padding:0;color:var(--soft);font-size:var(--text-sm);transition:color .2s}
-.txtb:hover{color:var(--ink)}
+.txtb{border:0;background:transparent;padding:0;color:var(--soft);font-size:var(--text-sm);transition:color .2s}@media (hover:hover) and (pointer:fine){
+.txtb:hover{color:var(--ink)}}
 .txtb.dark{color:var(--ink);text-decoration:underline;text-underline-offset:3px;text-decoration-color:rgba(0,0,0,.25)}
 @media (max-width:640px){.cal{padding:14px 8px 10px;border-radius:24px}.d{height:42px}.d span{width:36px;height:36px}}
 
 /* results (flick ResultsScreen: centred 26px title, quiet note, then the list) */
 .back{display:inline-flex;align-items:center;gap:8px;min-height:34px;padding:0 14px 0 11px;border-radius:var(--radius-control);color:var(--soft);font-size:13.5px;max-width:100%;
   background:rgba(0,0,0,.04);box-shadow:inset 0 0 0 1px rgba(0,0,0,.1)}
-.back.glass{background:rgba(0,0,0,.04);-webkit-backdrop-filter:none;backdrop-filter:none;box-shadow:inset 0 0 0 1px rgba(0,0,0,.1)}
-.back:hover{color:var(--ink)}
+.back.glass{background:rgba(0,0,0,.04);-webkit-backdrop-filter:none;backdrop-filter:none;box-shadow:inset 0 0 0 1px rgba(0,0,0,.1)}@media (hover:hover) and (pointer:fine){
+.back:hover{color:var(--ink)}}
 .back .ar{color:var(--faint)}
 .back .t{overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
 #app>.fade>h1,.state h1{margin:36px 0 0;font-size:var(--text-state);font-weight:500;letter-spacing:-.04em;line-height:1.15;text-wrap:balance}
 h1 .soft{color:var(--faint)}
 .est{margin-top:10px;color:var(--faint);font-size:var(--text-xs);max-width:60ch}
 .list{margin-top:30px;border-top:1px solid var(--hair)}
-.row{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:baseline;gap:6px 20px;padding:18px 0;border-bottom:1px solid var(--hair);transition:background .35s var(--ease)}
-.row:hover{background:linear-gradient(90deg,transparent,rgba(0,0,0,.025) 12%,rgba(0,0,0,.025) 88%,transparent)}
+.row{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:baseline;gap:6px 20px;padding:18px 0;border-bottom:1px solid var(--hair);transition:background .2s var(--ease)}@media (hover:hover) and (pointer:fine){
+.row:hover{background:linear-gradient(90deg,transparent,rgba(0,0,0,.025) 12%,rgba(0,0,0,.025) 88%,transparent)}}
 .row .tm{font-size:var(--text-input);font-weight:500;letter-spacing:-.01em}
 .row .tm sup{font-size:11px;color:var(--faint);font-weight:400;margin-left:2px}
 .row .v{font-size:var(--text-score);font-weight:500;letter-spacing:-.03em;line-height:1;text-align:right}
@@ -231,14 +232,14 @@ h1 .soft{color:var(--faint)}
 .gold1 b{color:var(--ink);font-weight:500}
 .gbar{position:relative;flex:1;max-width:180px;height:1px;background:rgba(0,0,0,.14)}
 .gbar i{position:absolute;inset:0 auto 0 0;background:var(--ink)}
-.gbar u{position:absolute;top:-1px;bottom:-1px;background:var(--warm);animation:grow .6s var(--ease) both;transform-origin:left}
+.gbar u{position:absolute;top:-1px;bottom:-1px;background:var(--warm);animation:grow .22s var(--ease) both;transform-origin:left}
 @keyframes grow{from{transform:scaleX(0)}to{transform:scaleX(1)}}
 .dock{position:sticky;bottom:18px;z-index:4;display:flex;justify-content:center;margin-top:32px}
 /* primary = flick .button_primary, inverted */
 .go,.go.glass,.book,.book.glass{display:inline-flex;align-items:center;justify-content:center;gap:9px;height:46px;padding:0 22px 0 20px;border:0;border-radius:23px;
   background:var(--ink);color:var(--paper);font-size:var(--text-control);font-weight:500;letter-spacing:-.01em;white-space:nowrap;
-  -webkit-backdrop-filter:none;backdrop-filter:none;box-shadow:0 18px 40px -18px rgba(0,0,0,.45);transition:transform .2s var(--ease)}
-.go:hover,.book:hover{transform:scale(1.03)}
+  -webkit-backdrop-filter:none;backdrop-filter:none;box-shadow:0 18px 40px -18px rgba(0,0,0,.45);transition:transform .2s var(--ease)}@media (hover:hover) and (pointer:fine){
+.go:hover,.book:hover{transform:scale(1.03)}}
 .go .arr,.book .arr{color:rgba(250,250,249,.7)}
 
 /* gold */
@@ -263,8 +264,7 @@ h1 .soft{color:var(--faint)}
 .sk{display:flex;align-items:center;justify-content:space-between;gap:20px;height:76px;border-bottom:1px solid var(--hair)}
 .sk i{display:block;height:11px;border-radius:6px;background:linear-gradient(90deg,rgba(0,0,0,.05),rgba(0,0,0,.09),rgba(0,0,0,.05));background-size:200% 100%;animation:sh 1.3s linear infinite}
 @keyframes sh{from{background-position:200% 0}to{background-position:-200% 0}}
-.spin{display:inline-block;width:11px;height:11px;margin-right:8px;vertical-align:-1px;border-radius:50%;border:1.5px solid rgba(0,0,0,.12);border-top-color:var(--ink);animation:rot .8s linear infinite}
-@keyframes rot{to{transform:rotate(360deg)}}
+
 
 
 /* ---------- results v3: Skiplagged structure, flick-inverse skin ---------- */
@@ -272,8 +272,8 @@ h1 .soft{color:var(--faint)}
 .rgrid{display:grid;grid-template-columns:288px minmax(0,1fr);gap:44px;align-items:start;margin-top:30px}
 .rcol{min-width:0}
 .tabs{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;padding:4px;border-radius:var(--radius-control);background:rgba(0,0,0,.04);box-shadow:inset 0 0 0 1px rgba(0,0,0,.08)}
-.tabs button{height:38px;border:0;border-radius:var(--radius-control);background:transparent;color:var(--soft);font-size:var(--text-sm);transition:background .2s,color .2s}
-.tabs button:hover{color:var(--ink)}
+.tabs button{height:38px;border:0;border-radius:var(--radius-control);background:transparent;color:var(--soft);font-size:var(--text-sm);transition:background .2s,color .2s}@media (hover:hover) and (pointer:fine){
+.tabs button:hover{color:var(--ink)}}
 .tabs button[aria-selected=true]{background:var(--ink);color:var(--paper);font-weight:500}
 .tabs .sm2{display:none}
 .rbar{display:flex;align-items:center;justify-content:space-between;min-height:40px;margin:10px 0 6px;color:var(--faint);font-size:var(--text-xs)}
@@ -305,8 +305,8 @@ h1 .soft{color:var(--faint)}
 .prc{font-size:var(--text-score);font-weight:500;letter-spacing:-.03em;line-height:1}
 .tpv{font-size:var(--text-score);font-weight:500;letter-spacing:-.03em;line-height:1;color:var(--warm);white-space:nowrap}
 .pt{color:var(--dim-home);font-size:var(--text-xs)}
-.sel{display:flex;align-items:center;justify-content:center;height:42px;margin-top:10px;border-radius:21px;background:var(--ink);color:var(--paper);font-size:var(--text-control);font-weight:500;transition:transform .2s var(--ease)}
-.sel:hover{transform:scale(1.03)}
+.sel{display:flex;align-items:center;justify-content:center;height:42px;margin-top:10px;border-radius:21px;background:var(--ink);color:var(--paper);font-size:var(--text-control);font-weight:500;transition:transform .2s var(--ease)}@media (hover:hover) and (pointer:fine){
+.sel:hover{transform:scale(1.03)}}
 /* filters */
 .fcol{position:sticky;top:20px}
 .fpanel{border-radius:var(--radius-panel);padding:18px 22px 20px}
@@ -328,7 +328,7 @@ h1 .soft{color:var(--faint)}
 .radio input:checked+i.sq{box-shadow:none;background:var(--ink) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cpath d='M5.5 10.5l3 3 6-7' fill='none' stroke='%23fafaf9' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/20px}
 .radio input:focus-visible+i{outline:1.5px solid rgba(0,0,0,.7);outline-offset:3px}
 .hist{display:flex;align-items:flex-end;gap:2px;height:56px;padding:0 9px}
-.hist i{flex:1;background:var(--ink);opacity:.62;border-radius:2px 2px 0 0;transition:opacity .2s,height .3s var(--ease)}
+.hist i{flex:1;background:var(--ink);opacity:.62;border-radius:2px 2px 0 0;transition:opacity .2s}
 .hist i.off{opacity:.12}
 .rng{position:relative;height:22px;margin:0}
 .rng::before{content:"";position:absolute;left:9px;right:9px;top:10px;height:1.5px;background:rgba(0,0,0,.14)}
@@ -364,7 +364,7 @@ h1 .soft{color:var(--faint)}
 .toast{position:fixed;left:50%;bottom:24px;z-index:20;transform:translate(-50%,14px);opacity:0;padding:8px 16px;border-radius:16px;color:var(--ink);font-size:var(--text-sm);pointer-events:none;transition:opacity .2s,transform .2s var(--ease)}
 .toast.on{opacity:1;transform:translate(-50%,0)}
 .sr{clip:rect(0,0,0,0);clip-path:inset(50%);height:1px;overflow:hidden;position:absolute;white-space:nowrap;width:1px}
-.fade{animation:fd .3s var(--ease)}
+.fade{min-height:380px}
 @keyframes fd{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 
@@ -379,6 +379,181 @@ h1 .soft{color:var(--faint)}
 @media(max-width:900px){body.sheet .fclose{display:inline-flex}}
 @media(min-width:901px){.fpanel{max-height:calc(100dvh - 40px);overflow-y:auto}}
 .hc{white-space:normal}.pt{overflow-wrap:anywhere}
+/* ---------- v4 home: origin pills + cabin under the search pill, calendar always open ---------- */
+.under{width:100%;display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:14px;min-height:34px}
+.orow{display:flex;align-items:center;gap:4px;min-width:0}
+.orow>svg{color:var(--faint);margin-right:6px}
+.opill{height:30px;padding:0 12px;border:0;border-radius:var(--radius-control);background:transparent;color:var(--soft);font-size:var(--text-sm);white-space:nowrap;transition:background .2s,color .2s}@media (hover:hover) and (pointer:fine){
+.opill:hover{background:var(--hover);color:var(--ink)}}
+.opill.on,.opin.on{background:var(--ink);color:var(--paper);font-weight:500}
+.owrap{position:relative;display:inline-flex;min-width:0}
+.opin{width:104px;min-width:0;max-width:100%;height:30px;padding:0 12px;border:0;border-radius:var(--radius-control);background:rgba(0,0,0,.04);box-shadow:inset 0 0 0 1px rgba(0,0,0,.1);color:var(--ink);font-size:var(--text-sm);outline:0;transition:width .25s var(--ease),background .2s}
+.opin::placeholder{color:var(--soft-home);opacity:1}
+.opin:focus{width:150px;background:var(--paper);color:var(--ink);font-weight:400;box-shadow:inset 0 0 0 1.5px var(--ink)}
+.opin.on:not(:focus){box-shadow:none;text-overflow:ellipsis}
+#fromRes:empty{display:none}
+#fromRes{position:absolute;z-index:12;top:38px;left:0;min-width:240px;padding:5px;border:1px solid var(--hair);border-radius:var(--radius-menu);background:var(--menu);box-shadow:var(--menu-shadow);animation:pop .18s var(--ease)}
+#fromRes .opt{border-radius:10px;padding:9px 13px}
+.under .cabin{margin-right:-10px}
+section.hero .cal{width:100%;margin-top:18px;padding:0;border-radius:0;background:none;-webkit-backdrop-filter:none;backdrop-filter:none;box-shadow:none;animation:none}
+section.hero .calhd{padding:0 0 4px}
+section.hero .calhd b{font-size:var(--text-sm)}
+section.hero .d{height:34px}
+section.hero .d span{width:30px;height:30px;font-size:var(--text-sm)}
+section.hero .d.in::before,section.hero .d.pv::before{top:2px;bottom:2px}
+section.hero .d.pr span{width:26px;height:26px;margin-top:-8px}
+section.hero .dow{padding-bottom:2px}
+section.hero .calft{margin-top:6px;padding:10px 0 0}
+section.hero .calnote{padding:4px 0 0}
+section.hero .fieldHint{margin:10px 0 0}
+.gobig{display:none!important}
+@media (max-width:640px){
+  .under{margin-top:12px}
+  .orow{gap:2px}.orow>svg{margin-right:4px}
+  .opill{padding:0 10px}
+  .opin{width:84px;padding:0 10px}.opin:focus{width:128px}
+  section.hero .d{height:40px}section.hero .d span{width:34px;height:34px}
+  .gobig{display:flex!important;width:100%;margin-top:16px}
+}
+/* ---------- v4 skip-last-leg ---------- */
+.tags{display:flex;gap:6px;align-items:center}
+.tag.skip{background:transparent;color:var(--ink);box-shadow:inset 0 0 0 1px rgba(0,0,0,.3)}
+.hcl{margin-top:-8px;color:var(--body);font-size:var(--text-xs)}
+.lrow.skipping{grid-template-columns:auto minmax(40px,1fr) auto minmax(64px,.55fr)}
+.skipx{display:grid;grid-template-columns:minmax(16px,1fr) auto;column-gap:10px;color:var(--faint)}
+.skipx .sd{display:flex;align-items:center;height:20px;margin-top:28px}
+.skipx .sd i{flex:1;border-top:1.5px dashed rgba(0,0,0,.28)}
+.skipx .ep b{color:var(--faint)}
+.skipx .ep span{color:var(--faint);text-decoration:line-through;text-decoration-color:rgba(0,0,0,.25)}
+.seg3{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;padding:4px;border-radius:var(--radius-control);background:rgba(0,0,0,.04);box-shadow:inset 0 0 0 1px rgba(0,0,0,.08);margin-bottom:8px}
+.seg3 label{position:relative;cursor:pointer}
+.seg3 input{position:absolute;opacity:0;width:1px;height:1px}
+.seg3 span{display:flex;align-items:center;justify-content:center;height:32px;border-radius:var(--radius-control);color:var(--soft);font-size:var(--text-sm);transition:background .2s,color .2s}
+.seg3 input:checked+span{background:var(--ink);color:var(--paper);font-weight:500}
+.seg3 input:focus-visible+span{outline:1.5px solid rgba(0,0,0,.7);outline-offset:2px}
+/* results date strip */
+.dstrip{display:flex;align-items:center;gap:6px;margin-top:20px}
+.dnav{flex:none;display:grid;place-items:center;width:34px;height:34px;border:0;border-radius:var(--radius-control);background:transparent;color:var(--soft);font-size:var(--text-input);transition:background .2s,color .2s}@media (hover:hover) and (pointer:fine){
+.dnav:hover:not(:disabled){background:var(--hover);color:var(--ink)}}
+.ddays{flex:1;min-width:0;display:grid;grid-template-columns:repeat(7,minmax(64px,1fr));gap:4px;overflow-x:auto;scroll-snap-type:x proximity;scrollbar-width:none}
+.ddays::-webkit-scrollbar{display:none}
+.dday{scroll-snap-align:center;display:flex;flex-direction:column;align-items:center;gap:2px;min-height:48px;padding:6px 4px;border:0;border-radius:14px;background:transparent;color:var(--ink);transition:background .2s}@media (hover:hover) and (pointer:fine){
+.dday:hover:not(:disabled):not(.on){background:var(--hover)}}
+.dday span{color:var(--dim-home);font-size:var(--text-xs)}
+.dday b{font-size:var(--text-base);font-weight:500;white-space:nowrap}
+.dday.low{box-shadow:inset 0 0 0 1px rgba(0,0,0,.28)}
+.dday.on{background:var(--ink);color:var(--paper);box-shadow:none}
+.dday.on span{color:rgba(250,250,249,.68)}
+.dday:disabled{opacity:.32;cursor:default}
+@media (max-width:640px){.dstrip{gap:2px;margin-inline:-6px}.ddays{grid-template-columns:repeat(7,64px)}.dnav{width:30px}}
+
+/* long business fares fit (matches hotfix flights-card-fit) */
+.rgrid{gap:44px}
+.fc{grid-template-columns:minmax(0,1fr) 248px}
+.money{flex-wrap:wrap;row-gap:4px}
+@media (max-width:640px){.fc{grid-template-columns:1fr}}
+.lrow.skipping{grid-template-columns:auto minmax(32px,1fr) auto auto}
+.skipx{grid-template-columns:28px auto}
+@media (max-width:640px){
+  .lrow.skipping{column-gap:8px}
+  .skipx{grid-template-columns:18px auto;column-gap:6px}
+  .skipx .ep b{display:none}
+  .skipx .ep{padding-top:28px}
+}
+@media (max-width:640px){.ddays{mask-image:linear-gradient(90deg,transparent 0,#000 14px,#000 calc(100% - 14px),transparent);-webkit-mask-image:linear-gradient(90deg,transparent 0,#000 14px,#000 calc(100% - 14px),transparent)}}
+/* sliding highlight */
+.glider{position:relative;isolation:isolate}
+.glide{position:absolute;left:0;top:0;z-index:0;border-radius:var(--radius-control);background:var(--ink);pointer-events:none;
+  transition:transform .26s var(--ease),width .26s var(--ease)}
+.glide[data-mode=tint]{background:rgba(0,0,0,.07)}
+.glider>:not(.glide){position:relative;z-index:1}
+.glider .opill,.glider .opin,.glider [data-sort],.glider label span{transition:color .26s var(--ease),background-color .26s var(--ease),box-shadow .2s,width .25s var(--ease)}
+/* the shape replaces each item's own fill */
+.glider .opill.on,.glider [data-sort][aria-selected=true],.seg3.glider input:checked+span{background:transparent}@media (hover:hover) and (pointer:fine){.glider .opill:hover,.glider [data-sort]:hover{background:transparent}}
+.glider .opin.on:not(:focus){background:transparent;box-shadow:none}
+.glider .opin.gl-hover:not(:focus):not(.on){background:transparent}
+/* text cross-fades as the ink passes under it */
+.glider .opill.on,.glider [data-sort][aria-selected=true],.glider .opin.on:not(:focus){color:var(--ink)}
+.seg3.glider input:checked+span{color:var(--ink)}
+.glider .opill.gl-under,.glider [data-sort].gl-under,.glider .opin.gl-under:not(:focus),.seg3.glider .gl-under span{color:var(--paper)}
+.glider .gl-hover{color:var(--ink)}
+.seg3.glider span:not(.glide){background:transparent}
+/* oneworld switch: same easing */
+.earning-toggle input,.earning-toggle input::after{transition:background-color .26s var(--ease),transform .26s var(--ease)}
+.seg3.glider .gl-under input:checked+span{color:var(--paper)}
+
+/* Starlink */
+.sat{display:inline-block;vertical-align:-2px}
+.sl{display:inline-flex;align-items:center;gap:4px;margin-left:10px;color:var(--dim-home);white-space:nowrap}
+.sl svg{color:var(--faint)}
+.starlink-toggle{margin-top:0;border-top:0;padding-top:0}
+.starlink-toggle>span{display:inline-flex;align-items:center;gap:6px}
+.starlink-toggle small{color:var(--dim-home);font-size:var(--text-xs);margin-left:4px}
+.slf{display:flex;flex-direction:column;gap:2px;margin-top:10px;color:var(--body);font-size:var(--text-sm)}
+.slf small{color:var(--dim-home);font-size:var(--text-xs)}
+.slf b{font-weight:500;display:inline-flex;align-items:center;gap:6px}
+
+/* two-month calendar */
+section.hero .cal2{position:relative;padding:0 44px}
+.cal2 .months{display:grid;grid-template-columns:1fr 1fr;gap:36px}
+.cal2 .mname{text-align:center;font-size:var(--text-meta);font-weight:500;letter-spacing:-.01em;padding:2px 0 8px}
+.cal2 .cnav{position:absolute;top:50%;transform:translateY(-50%);width:36px;height:36px;border:0;border-radius:50%;display:grid;place-items:center;
+  background:var(--menu);box-shadow:inset 0 0 0 1px var(--hair),0 6px 16px -8px rgba(0,0,0,.25);color:var(--ink);font-size:var(--text-input);transition:transform .2s var(--ease)}@media (hover:hover) and (pointer:fine){
+.cal2 .cnav:hover:not(:disabled){transform:translateY(-50%) scale(1.04)}}
+.cal2 .cnav:disabled{opacity:.35;box-shadow:inset 0 0 0 1px var(--hair)}
+.cal2 .cnav.l{left:0}.cal2 .cnav.r{right:0}
+.cal2 .calft{margin-left:-44px;margin-right:-44px}
+.cal2 .calnote{margin:0 -44px}
+.cft-r{display:inline-flex;align-items:center;gap:14px}
+.cal2 .chipg{height:28px;padding:0 10px;border:0;border-radius:999px;background:transparent;color:var(--soft);font-size:var(--text-sm)}
+@media (max-width:640px){
+  section.hero .cal2{padding:0}
+  .cal2 .months{grid-template-columns:1fr}
+  .cal2 .mon+.mon{display:none}
+  .cal2.skip1 .mon:first-child{display:none}.cal2.skip1 .mon+.mon{display:block}
+  .cal2 .cnav{top:0;transform:none;width:32px;height:32px}@media (hover:hover) and (pointer:fine){
+  .cal2 .cnav:hover:not(:disabled){transform:scale(1.04)}}
+  .cal2 .calft,.cal2 .calnote{margin-left:0;margin-right:0}
+}
+.under{position:relative;z-index:11}
+.gl-noanim,.gl-noanim *{transition:none!important}
+
+/* v4.1: Anywhere leads the pill row (a destination action), origin pills follow the take-off glyph */
+.search{z-index:12}
+.prow{display:flex;align-items:center;gap:12px;min-width:0}
+.anyp{display:inline-flex;align-items:center;gap:6px;height:30px;padding:0 12px 0 10px;border:0;border-radius:var(--radius-control);background:rgba(0,0,0,.04);box-shadow:inset 0 0 0 1px rgba(0,0,0,.1);color:var(--ink);font-size:var(--text-sm);white-space:nowrap;transition:transform .2s var(--ease),background .2s}@media (hover:hover) and (pointer:fine){
+.anyp:hover{background:rgba(0,0,0,.07)}}
+.anyp svg{color:var(--soft)}
+.clab{display:none}
+@media (max-width:640px){
+  .under{display:contents}
+  .prow{gap:8px;margin-top:12px;width:100%}
+  .opin{width:76px}
+  .cabinw{order:5;display:flex;align-items:center;justify-content:space-between;width:100%;min-height:40px;margin-top:10px}
+  .clab{display:inline;color:var(--soft-home);font-size:var(--text-sm)}
+  .gobig{order:6}
+  .cabinw .cabin{margin-right:-10px}
+}
+@media (max-width:640px){.opin{width:84px;padding:0 9px}.orow{flex:1}.orow>.opill{flex:none}.anyp{flex:none}}
+@media (max-width:640px){.prow{position:relative;z-index:11}}
+@media (max-width:640px){#fromRes{left:auto;right:0;min-width:0;width:min(240px,calc(100vw - 48px))}}
+
+
+/* Stable shells provide immediate feedback while the two requests run in parallel. */
+.keyboard-motion *{animation:none!important;transition:none!important}
+.skcard{min-height:196px;pointer-events:none}
+.skcard .cl{justify-content:center}.skcard .cr{gap:16px}
+.skline{height:12px;width:100%;border-radius:6px;background:rgba(0,0,0,.07)}
+.skline.short{width:60%}.skpanel{min-height:660px;display:grid;align-content:start;gap:62px;padding-top:24px}
+.sktabs{height:47px;background:rgba(0,0,0,.04)}
+.opill,[data-sort],.dday,.seg3 label,.sel,#go{-webkit-tap-highlight-color:transparent}#cards{min-height:380px}.cal2 .months{min-height:236px;overflow:hidden}
+.cal2 .mon .grid{min-height:206px;align-content:start}.calft{min-height:31px}
+.ddays .glide{border-radius:14px}.ddays.glider .dday.on{background:transparent}.ddays.glider .dday.on span{color:rgba(250,250,249,.68)}
+.ddays.glider .dday.on{color:var(--paper)}
+#fromRes{max-height:min(300px,45dvh);overflow-y:auto}
+.goC:active,.gobig:active{transform:scale(.97)}
+@media(max-width:640px){.cal2 .months{min-height:270px}.cal2 .mon .grid{min-height:240px}.skcard{min-height:236px}.skpanel{display:none}.skcard .cr{min-height:116px}}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}.goC:active,.gobig:active{transform:none}}
 </style>
 </head>
 <body>
@@ -393,6 +568,50 @@ h1 .soft{color:var(--faint)}
 <div class="toast glass" id="toast" role="status"></div>
 <script src="/flights/cities.js"></script>
 <script>
+// Bounded, tab-local query cache; estimates expire with the server's ten-minute cache.
+const SESSION_KEY='flights.results.v1',sessionResults=new Map();
+let suggestionTimer,originTimer,prepared=null,keyboardInput=false,tapPoint=null;
+const glideObservers=new Set();
+function releaseGlides(){for(const observer of glideObservers)observer.disconnect();glideObservers.clear()}
+function motion(el,frames,duration=180,delay=0){if(el?.animate&&!reduceMotion.matches&&!keyboardInput)return el.animate(frames,{duration,delay,easing:'cubic-bezier(.2,.7,.2,1)',fill:'backwards'})}
+function animatePage(){const el=$('#app>.fade');if(!el)return;const r=el.getBoundingClientRect?.(),dy=r&&tapPoint?Math.max(-6,Math.min(6,(tapPoint.y-r.top)*.02)):4;motion(el,[{opacity:.3,transform:`translateY(${dy}px)`},{opacity:1,transform:'translateY(0)'}],160)}
+function cardPositions(){return new Map([...document.querySelectorAll('#cards .fc')].map(el=>[el.dataset.fareId,el.getBoundingClientRect()]))}
+function animateCards(before=new Map()){
+  document.querySelectorAll('#cards .fc').forEach((el,i)=>{const old=before.get(el.dataset.fareId);if(old){const next=el.getBoundingClientRect(),x=old.left-next.left,y=old.top-next.top;if(x||y)motion(el,[{transform:`translate(${x}px,${y}px)`},{transform:'translate(0,0)'}],200)}else if(i<8)motion(el,[{opacity:0,transform:'translateY(6px)'},{opacity:1,transform:'translateY(0)'}],180,i*15)});
+}
+function readResults(q){
+  try{if(!sessionResults.size){const entries=JSON.parse(sessionStorage.getItem(SESSION_KEY)||'[]');if(Array.isArray(entries))for(const entry of entries.slice(-6))if(typeof entry?.key==='string'&&entry.until>Date.now()&&Number.isFinite(entry.data?.expiresAt)&&entry.until<=entry.data.expiresAt&&!entry.data.partial&&Array.isArray(entry.data?.results)&&['search','anywhere'].includes(entry.data.action))sessionResults.set(entry.key,entry)}}catch{}
+  const entry=sessionResults.get(cacheKey(q));if(!entry||entry.until<=Date.now()||!Number.isFinite(entry.data.expiresAt)||entry.until>entry.data.expiresAt)return null;return entry;
+}
+function saveResults(q,data){
+  if(data.partial||!Number.isFinite(data.expiresAt)||data.expiresAt<=Date.now())return;
+  const k=cacheKey(q);sessionResults.delete(k);sessionResults.set(k,{key:k,until:data.expiresAt,data});
+  for(const [key,entry] of sessionResults)if(entry.until<=Date.now())sessionResults.delete(key);
+  while(sessionResults.size>6)sessionResults.delete(sessionResults.keys().next().value);
+  try{sessionStorage.setItem(SESSION_KEY,JSON.stringify([...sessionResults.values()]))}catch{}
+}
+function restoreHistory(p){
+  const q=history.state?.flightsQuery;if(!q||!['results','fare'].includes(p[0])||!realDate(q.out)||!CABINS[q.cabin]||!/^([A-Z]{3})$/.test(q.from)||!/^([A-Z]{3})$/.test(q.to))return;
+  if(resultQuery&&cacheKey(resultQuery)===cacheKey(q)&&response)return;
+  const cached=readResults(q);if(cached){searchController?.abort();searchSerial++;resultQuery={...q};Object.assign(S,q);response=cached.data;searchState='ready';resetFilters();return false}
+  Object.assign(S,q);resultQuery={...q};response=null;search(true);return true;
+}
+function prepareSearch(q){
+  const k=cacheKey(q);if(prepared?.key===k&&prepared.until>Date.now()&&!prepared.controller.signal.aborted)return prepared;
+  prepared?.controller.abort();const controller=new AbortController();
+  const promise=request(q.to==='ANY'?'anywhere':'search',q,controller.signal);promise.catch(()=>{});
+  prepared={key:k,until:Date.now()+5000,controller,promise};return prepared;
+}
+function prefetchSearch(){
+  resolveDestination();if(!S.out||!S.to||airportGroup(S.from).includes(S.to)||readResults(S))return;
+  prepareSearch({...S});warmStrip({...S});
+}
+document.addEventListener('pointerdown',e=>{keyboardInput=false;tapPoint={x:e.clientX,y:e.clientY};document.body.classList.remove('keyboard-motion')},true);
+document.addEventListener('keydown',()=>{keyboardInput=true;document.body.classList.add('keyboard-motion')},true);
+
+function savedFromCode(){try{const v=localStorage.getItem('flights.from.v1');return /^[A-Z]{3}$/.test(v||'')?v:'LON'}catch{return 'LON'}}
+function saveFromCode(c){try{localStorage.setItem('flights.from.v1',c)}catch{}}
+
 
 'use strict';
 const {CITY_GROUPS}=FlightCities;
@@ -403,7 +622,7 @@ const airportGroup=code=>{const group=Object.entries(AIRPORT_GROUPS).find(([city
 const CABINS={'Economy':'economy','Premium economy':'premium','Business':'business','First':'first'};
 const TODAY=new Date().toISOString().slice(0,10), LATEST=new Date(Date.now()+366*864e5).toISOString().slice(0,10);
 function savedEarningOnly(){try{return localStorage.getItem('flights.earningOnly.v1')!=='false'}catch{return true}}
-const S={earningOnly:savedEarningOnly(),from:'LON',to:'',out:'',back:'',cabin:'Economy',view:TODAY.slice(0,7),prices:false,hover:''};
+const S={earningOnly:savedEarningOnly(),from:savedFromCode(),to:'',out:'',back:'',cabin:'Economy',view:TODAY.slice(0,7),prices:false,hover:''};
 let calOpen=false,sugOpen=false,fromOpen=false,hint='',hintField='',draft='',selection=-1;
 let response=null,resultQuery=null,searchController=null,searchSerial=0,searchState='idle',retryAt=0,retryTimer;
 let flexController=null,flexSerial=0,flexState='',flexRows=[],flexKey='';
@@ -445,11 +664,12 @@ function whenText(q=S){
 function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('on');clearTimeout(toast.h);toast.h=setTimeout(()=>t.classList.remove('on'),2200)}
 function ring(size,stroke,pct){const r=(size-stroke)/2,c=2*Math.PI*r;return `<svg viewBox="0 0 ${size} ${size}" aria-hidden="true"><circle cx="${size/2}" cy="${size/2}" r="${r}" fill="none" stroke="var(--line)" stroke-width="${stroke}"/>${pct>0?`<circle cx="${size/2}" cy="${size/2}" r="${r}" fill="none" stroke="var(--text)" stroke-width="${stroke}" stroke-linecap="round" stroke-dasharray="${c*pct} ${c}"/>`: ""}</svg>`}
 function origins(q){return q.from}
-function params(action,q){const p=new URLSearchParams({action,origin:origins(q),departureDate:q.out,earningOnly:String(q.earningOnly!==false)});if(action==='search')p.set('limit','100');if(q.back)p.set('returnDate',q.back);if(action!=='anywhere')p.set('destination',q.to);if(action!=='flex')p.set('fareClass',CABINS[q.cabin]);else{p.set('mode','depart');p.set('sort','date')}return p}
+function params(action,q){const p=new URLSearchParams({action,origin:origins(q),departureDate:q.out,earningOnly:String(q.earningOnly!==false)});if(action==='search')p.set('limit','100');if(q.back)p.set('returnDate',q.back);if(action!=='anywhere')p.set('destination',q.to);p.set('fareClass',CABINS[q.cabin]);if(action==='flex'){p.set('mode','depart');p.set('sort','date')}return p}
+function retryDelay(value){const seconds=value&&String(value).trim()!==''?Number(value):NaN;return Math.max(1,Number.isFinite(seconds)?seconds:Number.isFinite(Date.parse(value))?(Date.parse(value)-Date.now())/1000:60)}
 async function request(action,q,signal){
-  const r=await fetch('/api/flights?'+params(action,q),{signal,cache:'no-store',headers:{Accept:'application/json'}});
-  if(!r.ok){const e=new Error('Flight search failed');e.status=r.status;e.retryAfter=Math.min(3600,Math.max(1,Number(r.headers.get('Retry-After'))||60));throw e}
-  const data=await r.json();if(!Array.isArray(data.results))throw new Error('Invalid response');return data;
+  const r=await fetch('/api/flights?'+params(action,q),{signal,headers:{Accept:'application/json'}});
+  if(!r.ok){const e=new Error('Flight search failed');e.status=r.status;e.retryAfter=retryDelay(r.headers?.get?.('Retry-After'));throw e}
+  const data=await r.json();if(!Array.isArray(data.results))throw new Error('Invalid response');if(data.partial)data.retryAfter=retryDelay(r.headers?.get?.('Retry-After'));return data;
 }
 function cacheKey(q){return JSON.stringify([q.from,q.to,q.out,q.back,q.cabin,q.earningOnly!==false])}
 function calendarQuote(k){const q={...S,out:k,back:S.back?key(new Date(D(k).getTime()+nights(S.out,S.back)*864e5)):''},v=verified.get(cacheKey(q));if(v)return{value:(v.priceGbp/v.estimate.tierPoints).toFixed(2),verified:true};const p=flexRows.filter(r=>r.departureDate===k).sort((a,b)=>a.priceGbp-b.priceGbp)[0];return p?{value:money(p.priceGbp),verified:false}:null}
@@ -471,6 +691,30 @@ function calHTML(){
   const foot=!S.out?'<span>Tap a date. Tap a second date for a return.</span>':`<span><b>${whenText()}</b> · ${S.back?nights(S.out,S.back)+' nights':'one way'}</span><button type="button" class="txtb" id="clr">Clear</button>`;
   return `<div class="cal" id="cal"><div class="calhd"><b>${first.toLocaleDateString('en-GB',{month:'long',year:'numeric',timeZone:'UTC'})}</b><div class="nav">${hasRoute?`<button type="button" class="chipg" id="pt" aria-label="Calendar price per tier point" aria-pressed="${S.prices}">£/TP</button>`:''}<button type="button" id="pm" aria-label="Previous month" ${S.view<=TODAY.slice(0,7)?'disabled':''}>‹</button><button type="button" id="nm" aria-label="Next month" ${S.view>=LATEST.slice(0,7)?'disabled':''}>›</button></div></div><div class="grid">${['M','T','W','T','F','S','S'].map(x=>`<span class="dow">${x}</span>`).join('')}${cells}</div><div class="calft">${foot}</div>${showP?`<div class="calnote" role="status">${flexState==='loading'?'Loading dates…':flexState==='throttled'?'Too many requests. Try dates again shortly.':flexState==='error'?'Dates unavailable. Toggle £/TP to try again.':'£ discovery prices · £/TP after search'}</div>`:''}</div>`;
 }
+function monthGrid(y,m,showP){
+  const first=new Date(Date.UTC(y,m-1,1)),n=new Date(Date.UTC(y,m,0)).getUTCDate(),lead=(first.getUTCDay()+6)%7;let cells='';
+  for(let i=0;i<lead;i++)cells+='<span></span>';
+  for(let d=1;d<=n;d++){
+    const k=key(new Date(Date.UTC(y,m-1,d))),past=k<TODAY||k>LATEST,isS=k===S.out,isE=S.back?k===S.back:isS,inR=S.out&&S.back&&k>S.out&&k<S.back;
+    const quote=showP&&!past?calendarQuote(k):null;
+    const cls=['d',past&&'past',k===TODAY&&'today',isS&&'s',isE&&'e',(inR||(S.back&&(isS||isE)))&&'in',showP&&!past&&'pr',quote?.verified&&'best'].filter(Boolean);
+    cells+=`<button type="button" class="${cls.join(' ')}" data-k="${k}" ${past?'disabled':''} aria-label="${dShort(k)}${isS?', outbound':''}${S.back&&isE?', return':''}${quote?', '+esc(quote.value)+(quote.verified?' per estimated tier point':' discovery price'):''}" aria-pressed="${!!(isS||(S.back&&isE))}"><span>${d}</span>${showP&&!past?`<i>${quote?quote.value:'—'}</i>`:''}</button>`;
+  }
+  return `<div class="mon"><div class="mname">${first.toLocaleDateString('en-GB',{month:'long',timeZone:'UTC'})}${y!==+TODAY.slice(0,4)?' '+y:''}</div><div class="grid">${['M','T','W','T','F','S','S'].map(x=>`<span class="dow">${x}</span>`).join('')}${cells}</div></div>`;
+}
+function calHTML2(){
+  const [y,m]=S.view.split('-').map(Number),nx=new Date(Date.UTC(y,m,1)),hasRoute=S.to&&S.to!=='ANY',showP=S.prices&&hasRoute;
+  const cur=TODAY.slice(0,7),curLeft=new Date(Date.UTC(+cur.slice(0,4),+cur.slice(5,7),0)).getUTCDate()-+TODAY.slice(8)+1,phone=matchMedia('(max-width:640px)').matches;
+  // phone shows one month: skip a current month with under a week left
+  if(phone&&S.view===cur&&curLeft<7&&!(S.out&&S.out.slice(0,7)===cur)){S.view=key(nx).slice(0,7);return calHTML2()}
+  const skip1=false,prevOff=S.view<=cur||(phone&&curLeft<7&&key(new Date(Date.UTC(y,m-2,1))).slice(0,7)===cur);
+  const foot=!S.out?'<span>Tap a date. Tap a second date for a return.</span>':`<span><b>${whenText()}</b> · ${S.back?nights(S.out,S.back)+' nights':'one way'}</span>`;
+  return `<div class="cal cal2${skip1?' skip1':''}" id="cal"><button type="button" class="cnav l" id="pm" aria-label="Previous month" ${prevOff?'disabled':''}>‹</button>
+    <div class="months">${monthGrid(y,m,showP)}${monthGrid(nx.getUTCFullYear(),nx.getUTCMonth()+1,showP)}</div>
+    <button type="button" class="cnav r" id="nm" aria-label="Next month" ${key(nx).slice(0,7)>=LATEST.slice(0,7)?'disabled':''}>›</button>
+    <div class="calft">${foot}<span class="cft-r">${hasRoute?`<button type="button" class="chipg" id="pt" aria-label="Calendar price per tier point" aria-pressed="${S.prices}">£/TP</button>`:''}${S.out?'<button type="button" class="txtb" id="clr">Clear</button>':''}</span></div>
+    ${showP?`<div class="calnote" role="status">${flexState==='loading'?'Loading dates…':flexState==='throttled'?'Too many requests. Try dates again shortly.':flexState==='error'?'Dates unavailable. Toggle £/TP to try again.':'£ discovery prices · £/TP after search'}</div>`:''}</div>`;
+}
 function tapDay(k){if(!S.out)S.out=k;else if(!S.back){if(k===S.out)S.out='';else if(k<S.out)S.out=k;else S.back=k}else{if(k===S.back)S.back='';else{S.out=k;S.back=''}}S.hover='';hint=''}
 function matches(q){q=q.trim().toLowerCase();let list=AIRPORTS.filter(a=>a[0].toLowerCase().startsWith(q)||a[1].toLowerCase().includes(q)).slice(0,6);if(/^[a-z]{3}$/.test(q)&&!list.some(a=>a[0]===q.toUpperCase()))list.push([q.toUpperCase(),q.toUpperCase(),'airport']);return list}
 function sugPop(q){q=(q||'').trim().toLowerCase();const list=q?matches(q):AIRPORTS.filter(a=>['MAD','JFK','DOH'].includes(a[0]));const any=!q||'anywhere'.startsWith(q);return `<div class="pop glass" id="destinations" role="listbox" aria-label="Destinations">${any?`<button type="button" class="opt" role="option" aria-selected="false" data-to="ANY" id="suggest-ANY"><span>Anywhere</span><span class="s">explore destinations</span></button>${list.length?'<div class="popsep"></div>':''}`:''}${list.map(a=>`<button type="button" class="opt" role="option" aria-selected="false" data-to="${a[0]}" id="suggest-${a[0]}"><span>${a[1]}${a[2]?` <span class="s">${a[2]}</span>`:''}</span><span class="c">${a[0]}</span></button>`).join('')}${!list.length&&!any?'<div class="opt s">Enter a city or three-letter airport code</div>':''}</div>`}
@@ -485,7 +729,7 @@ function plusDays(f){return f.arrival?.dateTime&&f.departure?.dateTime?Math.max(
 const flightNumber=n=>String(n).replace(/^([A-Z0-9]{2})\s*(\d+[A-Z]?)$/,'$1 $2');
 function flightGroups(f){if(f.legs?.length)return f.legs.map(l=>l.units.filter(u=>u.flown).flatMap(u=>u.flightNumbers));try{return new URLSearchParams(new URL(f.deepLink).hash.slice(1)).get('trip').split(',').map(g=>g.split('-'))}catch{return[f.flightNumbers||[]]}}
 function resultNote(){return 'Tier points and Avios are estimates; verify fare class, operator and earning before booking.'}
-function partialNote(){if(!response?.partial)return '';const codes=[...new Set((response.failures||[]).map(f=>f.origin))];return `<p class="left" role="status">${codes.length?esc(codes.length>1?codes.slice(0,-1).join(', ')+' and '+codes.at(-1):codes[0]):'Some airports'} didn't answer</p>`}
+function partialNote(){if(!response?.partial)return '';const codes=[...new Set((response.failures||[]).map(f=>f.airport||f.origin).filter(Boolean))];const airports=codes.filter(c=>!CITY_GROUPS[c]);const text=airports.length?esc(airports.length>1?airports.slice(0,-1).join(', ')+' and '+airports.at(-1):airports[0])+" didn't answer":codes.length?"Some direct flights didn't load":"Some airports didn't answer";return `<p class="left" role="status">${text}</p>`}
 function coverage(){const excluded=Object.values(response?.excluded||{}).reduce((a,b)=>a+b,0);return [excluded===1?'1 fare without a verified earning route is left out.':excluded?`${fmt(excluded)} fares without verified earning routes are left out.`:'',response?.pages?.some(p=>p.hasMoreResults)?'More fares may be available on Skiplagged.':''].filter(Boolean).join(' ')}
 function goldForFare(f){const y=+gold.ends.slice(0,4)-(gold.ends.slice(5)<'04-01'?1:0),start=y+'-04-01';return(f.estimate?.breakdown||[]).filter(s=>s.date>=start&&s.date<=gold.ends&&Number.isFinite(s.tierPoints)).reduce((a,s)=>a+s.tierPoints,0)}
 function vFare(id){
@@ -493,54 +737,82 @@ function vFare(id){
   const leg=(dep,arr,numbers,label)=>`<div><div class="legh">${label} · ${dShort(dep.dateTime.slice(0,10))}</div><div class="tl"><div class="st"><div class="t1">${time(dep)} <span class="ap">${esc(AIRPORTS.some(a=>a[0]===dep.airport)?placeName(dep.airport):cityName(dep.airport))} · ${esc(dep?.airport||units[0].from)}</span></div></div><div class="lg"><span class="fn">${esc(numbers.map(flightNumber).join(' · '))}</span>${numbers.length>1?' · connecting':''}${duration({departure:dep,arrival:arr})?' · '+duration({departure:dep,arrival:arr}):''}</div><div class="st"><div class="t1">${time(arr)} <span class="ap">${esc(AIRPORTS.some(a=>a[0]===arr.airport)?placeName(arr.airport):cityName(arr.airport))} · ${esc(arr?.airport||units.at(-1).to)}</span></div></div>${f.hiddenCity&&label==='One way'?`<div class="leave">You leave at ${esc(cityName(f.leaveAt))}. Skipping a sector can invalidate the ticket and credit.</div>${(f.legs?.[0].units||[]).filter(u=>!u.flown).map(u=>`<div class="lg ghost"><span class="fn">${esc(u.flightNumbers.map(flightNumber).join(' · '))}</span>${duration(u)?' · '+duration(u):''}</div><div class="st ghost"><div class="t1">${time(u.arrival)} <span class="ap">${esc(cityName(u.to))} · ${esc(u.to)}</span></div></div>`).join('')}`:''}</div></div>`;
   const credit=goldForFare(f),after=gold.tp+credit,pct=Math.min(1,gold.tp/gold.target),add=Math.min(1-pct,credit/gold.target);
   const booking=safeBooking(f.deepLink);
-  return `<a class="back glass press" href="#/results"><span class="ar">←</span><span class="t">${esc(placeName(resultQuery.from))} → ${esc(placeName(resultQuery.to))}</span></a><div class="hero"><div class="big">${money(f.priceGbp,true)}</div><div class="line">${f.earns===false?'No TP':earning(f)?`<b class="acc">${ppt(f)}</b> per tier point · ~${fmt(f.estimate.tierPoints)} TP · <span class="avios">${Number.isFinite(f.estimate.avios)?'~'+fmt(f.estimate.avios)+' Avios':'Avios unavailable'}</span>`:'TP estimate unavailable'}</div></div><div class="who">${esc(carrierName(carrierOf(f)))} · ${esc(resultQuery.cabin)}${f.hiddenCity?' · cabin bag only':''}</div><div class="legs">${leg(f.departure,f.arrival,groups[0],f.returnFlight?'Out':'One way')}${f.returnFlight?leg(f.returnFlight.departure,f.returnFlight.arrival,groups[1]||[],'Back'):''}</div><div class="gold1"><span>Gold</span><span class="gbar"><i style="width:${pct*100}%"></i><u style="left:${pct*100}%;width:${add*100}%"></u></span><span><b>${fmt(Math.min(after,gold.target))}</b> / ${fmt(gold.target)}</span></div>${f.earns!==false&&f.estimate?.tierPoints!==credit?'<p class="left">Gold progress includes only tier points in your collection year.</p>':''}${booking?`<div class="dock"><a class="book glass press" href="${esc(booking)}" id="book" target="_blank" rel="noopener noreferrer">Book on Skiplagged <span class="arr">↗</span></a></div>`:''}<p class="left" style="text-align:center">US$${esc(f.price.amount)}${response.meta?.fx?' at '+esc(response.meta.fx.usdToGbp)+' GBP/USD':''}</p>`;
+  return `<a class="back glass press" href="#/results"><span class="ar">←</span><span class="t">${esc(placeName(resultQuery.from))} → ${esc(placeName(resultQuery.to))}</span></a><div class="hero"><div class="big">${money(f.priceGbp,true)}</div><div class="line">${f.earns===false?'No TP':earning(f)?`<b class="acc">${ppt(f)}</b> per tier point · ~${fmt(f.estimate.tierPoints)} TP · <span class="avios">${Number.isFinite(f.estimate.avios)?'~'+fmt(f.estimate.avios)+' Avios':'Avios unavailable'}</span>`:'TP estimate unavailable'}</div></div><div class="who">${esc(carrierName(carrierOf(f)))} · ${esc(resultQuery.cabin)}${f.hiddenCity?' · cabin bag only':''}</div>${typeof f.starlink?.p==='number'?`<div class="slf"><b><svg class="sat" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M5 12.5a10 10 0 0 1 14 0M8.5 16a5 5 0 0 1 7 0"/><circle cx="12" cy="19.5" r="1.2" fill="currentColor" stroke="none"/><path d="M3 8.5a14.5 14.5 0 0 1 18 0"/></svg> Starlink ${Math.round(f.starlink.p*100)+'%'}${f.starlink.basis?' · '+esc({'fleet-share':'fleet estimate','lower-bound':'at least, from fleet data','route':'route estimate'}[f.starlink.basis]||f.starlink.basis):''}</b>${f.starlink.note?`<small>${esc(f.starlink.note)}</small>`:''}</div>`:''}<div class="legs">${leg(f.departure,f.arrival,groups[0],f.returnFlight?'Out':'One way')}${f.returnFlight?leg(f.returnFlight.departure,f.returnFlight.arrival,groups[1]||[],'Back'):''}</div><div class="gold1"><span>Gold</span><span class="gbar"><i style="width:${pct*100}%"></i><u style="left:${pct*100}%;width:${add*100}%"></u></span><span><b>${fmt(Math.min(after,gold.target))}</b> / ${fmt(gold.target)}</span></div>${f.earns!==false&&f.estimate?.tierPoints!==credit?'<p class="left">Gold progress includes only tier points in your collection year.</p>':''}${booking?`<div class="dock"><a class="book glass press" href="${esc(booking)}" id="book" target="_blank" rel="noopener noreferrer">Book on Skiplagged <span class="arr">↗</span></a></div>`:''}<p class="left" style="text-align:center">US$${esc(f.price.amount)}${response.meta?.fx?' at '+esc(response.meta.fx.usdToGbp)+' GBP/USD':''}</p>`;
 }
 function safeBooking(link){try{const u=new URL(link);return u.protocol==='https:'&&u.hostname==='skiplagged.com'&&!u.username&&!u.password&&!u.port?u.href:null}catch{return null}}
 function vGold(){document.title='Gold · Flights';const pct=Math.min(1,gold.tp/gold.target),left=Math.max(0,gold.target-gold.tp);return `<a class="back glass press" href="#/search"><span class="ar">←</span><span class="t">Search</span></a><div class="gwrap"><div class="gring">${ring(180,8,pct)}<div class="n">${left?fmt(left):'Kept'}<small>${left?'tier points to Gold':'Gold for next year'}</small></div></div><p style="color:var(--dim)">${fmt(gold.tp)} of ${fmt(gold.target)} · by ${D(gold.ends).toLocaleDateString('en-GB',{day:'numeric',month:'long',timeZone:'UTC'})}</p><form class="gform glass" id="gf" novalidate><label>Tier points so far<input id="gtp" inputmode="numeric" value="${gold.tp}" aria-describedby="gErr"></label><label>Target<input id="gtarget" inputmode="numeric" value="${gold.target}" aria-describedby="gErr"></label><label>Year ends<input id="gend" type="date" value="${gold.ends}" aria-describedby="gErr"></label></form><div class="hintline" id="gErr" role="status"></div><button class="go glass press save" form="gf" type="submit">Save</button><p class="left">Kept on this device.</p></div>`}
-function vLoading(){document.title='Searching · Flights';return `${backPill()}<p class="est" style="margin-top:28px" role="status"><span class="spin"></span>Searching Skiplagged</p><div class="list" aria-busy="true">${[0,1,2,3,4].map(i=>`<div class="sk"><div style="flex:1;display:grid;gap:9px"><i style="width:${42-i*3}%"></i><i style="width:${60-i*5}%"></i></div><i style="width:56px"></i></div>`).join('')}</div>`}
-function vEmpty(){document.title=(S.earningOnly?'No earning fares':'No flights')+' · Flights';return `${backPill()}<div class="state"><h1>${S.earningOnly?'No earning fares':'No flights found'}</h1><p>${S.earningOnly?'No fares with a positive tier-point estimate for these dates.':'Try another date or origin.'}</p>${partialNote()}<div class="acts"><a class="go glass press" href="#/search/when">Other dates <span class="arr">→</span></a><button class="txtb dark" id="anywhere">Anywhere from ${esc(placeName(S.from))}</button>${S.earningOnly?'<button type="button" class="txtb dark" id="allAirlines">All airlines</button>':''}</div></div>`}
+function vLoading(){document.title='Searching · Flights';return `${backPill()}${dateStrip()}<p class="est" style="margin-top:28px" role="status"><span class="spin"></span>Searching Skiplagged</p><div class="rgrid skeleton" aria-busy="true" aria-label="Loading flights"><aside class="fcol"><div class="fpanel glass skpanel">${[0,1,2,3].map(()=>'<div class="skline"></div>').join('')}</div></aside><div class="rcol"><div>${[0,1,2,3,4].map(()=>'<article class="fc glass skcard" aria-hidden="true"><div class="cl"><div class="skline"></div><div class="skline short"></div><div class="skline"></div></div><div class="cr"><div class="skline"></div><div class="skline"></div><div class="skline"></div></div></article>').join('')}</div></div></div>`}
+function vEmpty(){document.title=(S.earningOnly?'No earning fares':'No flights')+' · Flights';return `${backPill()}${dateStrip()}<div class="state"><h1>${S.earningOnly?'No earning fares':'No flights found'}</h1><p>${S.earningOnly?'No fares with a positive tier-point estimate for these dates.':'Try another date or origin.'}</p>${partialNote()}<div class="acts"><a class="go glass press" href="#/search/when">Other dates <span class="arr">→</span></a><button class="txtb dark" id="anywhere">Anywhere from ${esc(placeName(S.from))}</button>${S.earningOnly?'<button type="button" class="txtb dark" id="allAirlines">All airlines</button>':''}</div></div>`}
 function vError(){const throttled=searchState==='throttled',remaining=Math.max(0,Math.ceil((retryAt-Date.now())/1000));document.title=(throttled?'Too many requests':'Search failed')+' · Flights';return `${backPill()}<div class="state" role="status"><h1>${throttled?'A moment, please':"Skiplagged didn't answer"}</h1><p>${throttled?'Too many requests. '+(remaining?'Try again in '+remaining+' seconds.':'Ready to try again.'):'The search could not finish. Try again.'}</p><div class="acts"><button class="go glass press" id="retry" ${throttled&&remaining?'disabled':''}>Try again <span class="arr">→</span></button></div></div>`}
 function route(){return(location.hash||'#/search').slice(1).split('/').filter(Boolean)}
-function go(hash){history.replaceState(null,'',hash);render()}
-function renderLive(){
-  const p=route();if(p[0]==='search'&&p[1]==='when'&&!calOpen)S.view=calendarMonth();if(p[0]!=='loading'&&searchState==='loading'){searchController?.abort();searchSerial++;searchState='idle'}
+function go(hash,push=false){history[push?'pushState':'replaceState']({flightsQuery:resultQuery},'',hash);render()}
+function renderLive(refreshGold=false){
+  const p=route();if(restoreHistory(p))return;if(!['loading','results','fare'].includes(p[0])&&stripController){stripController.abort();stripController=null;stripRequestKey=''}if(p[0]==='search'&&p[1]==='when'&&!calOpen)S.view=calendarMonth();if(p[0]!=='loading'&&searchState==='loading'){searchController?.abort();searchSerial++;searchState='idle'}
   if(p[0]!=='search'){flexController?.abort();flexSerial++;if(flexState==='loading'){flexState='';flexKey=''}}
-  renderRing();let h;
+  if(['results','fare'].includes(p[0])&&resultQuery&&response&&!history.state?.flightsQuery)history.replaceState({flightsQuery:resultQuery},'',location.hash);
+  renderRing();
+  // popstate and hashchange can both render one navigation. Keep the live form,
+  // including focus and unsaved values, until Save explicitly refreshes it.
+  if(p[0]==='gold'&&$('#gf')&&!refreshGold)return;
+  let h;
   switch(p[0]){case 'results':h=vResults();break;case 'fare':try{h=vFare(decodeURIComponent(p.slice(1).join('/')))}catch{h=vSearch()}break;case 'gold':h=vGold();break;case 'loading':h=searchState==='loading'?vLoading():vSearch();break;case 'error':h=vError();break;default:calOpen=p[1]==='when';fromOpen=p[1]==='from';h=vSearch()}
-  $('#app').innerHTML=`<div class="fade">${h}</div>`;bind();window.scrollTo(0,0);
+  releaseGlides();$('#app').innerHTML=`<div class="fade">${h}</div>`;bind();animatePage();if(p[0]==='results')animateCards();window.scrollTo(0,0);
 }
-function redraw(){if($('#sf')){$('#app').innerHTML=vSearch();bind()}}
+function redraw(){if(route()[0]==='search'&&$('#sf')){releaseGlides();$('#app').innerHTML=vSearch();bind()}}
 function clearFlex(){flexController?.abort();flexSerial++;flexRows=[];flexState='';flexKey=''}
+// Price arrivals must preserve day buttons, focus and in-progress taps.
+function paintCalendarPrices(){
+  if(route()[0]!=='search')return;
+  const show=S.prices&&S.to&&S.to!=='ANY';
+  document.querySelectorAll('#cal [data-k]').forEach(b=>{
+    const k=b.dataset.k,quote=show&&!b.disabled?calendarQuote(k):null;
+    b.classList.toggle('pr',!!show&&!b.disabled);b.classList.toggle('best',!!quote?.verified);
+    const price=b.querySelector('i');if(price)price.textContent=quote?quote.value:'—';
+    b.setAttribute('aria-label',dShort(k)+(k===S.out?', outbound':'')+(S.back&&k===S.back?', return':'')+(quote?', '+quote.value+(quote.verified?' per estimated tier point':' discovery price'):''));
+  });
+  const note=$('#cal .calnote');if(note)note.textContent=flexState==='loading'?'Loading dates…':flexState==='throttled'?'Too many requests. Try dates again shortly.':flexState==='error'?'Dates unavailable. Toggle £/TP to try again.':'£ discovery prices · £/TP after search';
+}
 async function loadFlex(){
   if(!S.prices||!S.to||S.to==='ANY')return;
-  const q={...S,out:S.view+'-01'};if(q.out<TODAY)q.out=TODAY;if(S.back){const duration=nights(S.out,S.back);q.back=key(new Date(D(q.out).getTime()+duration*864e5));if(q.back>LATEST)q.back=LATEST}
+  const q={...S,out:S.out&&S.out.slice(0,7)===S.view?S.out:S.view+'-01'};if(q.out<TODAY)q.out=TODAY;if(S.back){const duration=nights(S.out,S.back);q.back=key(new Date(D(q.out).getTime()+duration*864e5));if(q.back>LATEST)q.back=LATEST}
   const k=params('flex',q).toString();if(k===flexKey&&flexState!=='error'&&flexState!=='throttled')return;
-  flexController?.abort();const serial=++flexSerial;flexController=new AbortController();flexKey=k;flexState='loading';redraw();
+  flexController?.abort();const serial=++flexSerial;flexController=new AbortController();flexKey=k;flexState='loading';paintCalendarPrices();
   try{const data=await request('flex',q,flexController.signal);if(serial!==flexSerial)return;flexRows=data.results;flexState='ready'}catch(e){if(e.name==='AbortError'||serial!==flexSerial)return;flexState=e.status===429?'throttled':'error'}
-  if(route()[0]==='search')redraw();
+  if(route()[0]==='search')paintCalendarPrices();
 }
 function chooseDestination(code){S.to=code;draft='';sugOpen=false;hint='';selection=-1;clearFlex();if(!S.out){S.view=calendarMonth();calOpen=true;history.replaceState(null,'','#/search/when')}redraw();if(calOpen&&S.prices)loadFlex()}
-function redrawSug(){const input=$('#to'),bar=input.parentNode;bar.querySelector('.pop')?.remove();input.setAttribute('aria-expanded',String(sugOpen));input.removeAttribute('aria-activedescendant');if(!calOpen)$('#cal')?.remove();if(sugOpen){bar.insertAdjacentHTML('beforeend',sugPop(draft));bindSug()}}
+function redrawSug(){const input=$('#to');if(route()[0]!=='search'||!input)return;const bar=input.parentNode;bar.querySelector('.pop')?.remove();input.setAttribute('aria-expanded',String(sugOpen));input.removeAttribute('aria-activedescendant');if(sugOpen){bar.insertAdjacentHTML('beforeend',sugPop(draft));bindSug()}}
 function bindSug(){document.querySelectorAll('.pop [data-to]').forEach(b=>{b.onmousedown=e=>e.preventDefault();b.onclick=()=>chooseDestination(b.dataset.to)})}
-function bindCal(){const cal=$('#cal');if(!cal)return;cal.querySelectorAll('.d[data-k]:not(.past)').forEach(b=>{b.onclick=()=>{tapDay(b.dataset.k);clearFlex();redraw();if(S.prices)loadFlex()};b.onmouseenter=()=>{if(S.out&&!S.back&&b.dataset.k>S.out){S.hover=b.dataset.k;paintHover()}}});cal.querySelector('.grid').onmouseleave=()=>{S.hover='';paintHover()};const sh=v=>{const[y,m]=S.view.split('-').map(Number);S.view=key(new Date(Date.UTC(y,m-1+v,1))).slice(0,7);clearFlex();redraw();if(S.prices)loadFlex()};$('#pm').onclick=()=>sh(-1);$('#nm').onclick=()=>sh(1);if($('#pt'))$('#pt').onclick=()=>{S.prices=!S.prices;redraw();if(S.prices)loadFlex()};if($('#clr'))$('#clr').onclick=()=>{S.out='';S.back='';clearFlex();redraw()}}
+function bindCal(){
+  const cal=$('#cal');if(!cal)return;
+  cal.querySelectorAll('.d[data-k]:not(.past)').forEach(b=>{
+    b.onclick=()=>{tapDay(b.dataset.k);clearFlex();redraw();if(S.prices)loadFlex()};
+    if(finePointer.matches)b.onmouseenter=()=>{if(S.out&&!S.back&&b.dataset.k>S.out){S.hover=b.dataset.k;paintHover()}};
+  });
+  cal.onmouseleave=()=>{S.hover='';paintHover()};
+  const sh=v=>{const[y,m]=S.view.split('-').map(Number);S.view=key(new Date(Date.UTC(y,m-1+v,1))).slice(0,7);clearFlex();redraw();motion($('#cal .months'),[{opacity:.25,transform:`translateX(${v*12}px)`},{opacity:1,transform:'translateX(0)'}],180);if(S.prices)loadFlex()};
+  $('#pm').onclick=()=>sh(-1);$('#nm').onclick=()=>sh(1);
+  if($('#pt'))$('#pt').onclick=()=>{S.prices=!S.prices;redraw();if(S.prices)loadFlex()};
+  if($('#clr'))$('#clr').onclick=()=>{S.out='';S.back='';clearFlex();redraw()};
+}
 function paintHover(){document.querySelectorAll('#cal .d[data-k]').forEach(b=>{const k=b.dataset.k,on=!!S.hover&&k>S.out&&k<=S.hover;b.classList.toggle('pv',on||(k===S.out&&!!S.hover));b.classList.toggle('e',k===S.out?!S.hover:on&&k===S.hover)})}
 function bindLive(){
   const sf=$('#sf');if(sf){
     const to=$('#to');to.onfocus=()=>{if(!sugOpen&&!hint){sugOpen=true;calOpen=false;fromOpen=false;selection=-1;draft=S.to?placeName(S.to):draft;redrawSug()}};
-    to.oninput=()=>{draft=to.value;S.to='';sugOpen=true;selection=-1;if(hintField==='to'){hint='';hintField='';$('#toError')?.remove();to.removeAttribute('aria-invalid');to.removeAttribute('aria-describedby')}clearFlex();redrawSug()};
+    to.oninput=()=>{draft=to.value;S.to='';sugOpen=true;selection=-1;if(hintField==='to'){hint='';hintField='';$('#toError')?.remove();to.removeAttribute('aria-invalid');to.removeAttribute('aria-describedby')}clearFlex();clearTimeout(suggestionTimer);redrawSug()};
     to.onkeydown=e=>{const options=[...document.querySelectorAll('[data-to]')];if(e.key==='Escape'){sugOpen=false;redrawSug()}if(['ArrowDown','ArrowUp'].includes(e.key)&&options.length){e.preventDefault();selection=(selection+(e.key==='ArrowDown'?1:-1)+options.length)%options.length;options.forEach((b,i)=>{b.classList.toggle('on',i===selection);b.setAttribute('aria-selected',String(i===selection))});if(options[selection])to.setAttribute('aria-activedescendant',options[selection].id)}if(e.key==='Enter'){e.preventDefault();return submitSearch(true)}};
-    bindSug();$('#whenBtn').onclick=()=>{if(!calOpen)S.view=calendarMonth();calOpen=!calOpen;sugOpen=false;fromOpen=false;go(calOpen?'#/search/when':'#/search');if(calOpen&&S.prices)loadFlex()};bindCal();
+    bindSug();if($('#whenBtn'))$('#whenBtn').onclick=()=>{if(!calOpen)S.view=calendarMonth();calOpen=!calOpen;sugOpen=false;fromOpen=false;go(calOpen?'#/search/when':'#/search');if(calOpen&&S.prices)loadFlex()};bindCal();
     $('#cabin').onchange=e=>{S.cabin=e.target.value;clearFlex();if(S.prices)loadFlex()};
-    $('#fromBtn').onclick=()=>{fromOpen=!fromOpen;sugOpen=false;go(fromOpen?'#/search/from':'#/search')};
-    const setFrom=code=>{S.from=code;fromOpen=false;clearFlex();go('#/search')};document.querySelectorAll('[data-from]').forEach(b=>b.onclick=()=>setFrom(b.dataset.from));
-    const fq=$('#fromQ');if(fq){fq.oninput=()=>{const list=fq.value.trim()?matches(fq.value,true):[];$('#fromRes').innerHTML=list.map(a=>`<button type="button" class="opt" data-from2="${a[0]}"><span>${esc(a[1])}${a[2]?` <span class="s">${esc(a[2])}</span>`:''}</span><span class="c">${a[0]}</span></button>`).join('');document.querySelectorAll('[data-from2]').forEach(b=>b.onclick=()=>setFrom(b.dataset.from2))};fq.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();const b=$('[data-from2]');if(b)setFrom(b.dataset.from2)}}}
+    if($('#fromBtn'))$('#fromBtn').onclick=()=>{fromOpen=!fromOpen;sugOpen=false;go(fromOpen?'#/search/from':'#/search')};
+    const setFrom=code=>{S.from=code;saveFromCode(code);fromOpen=false;clearTimeout(originTimer);clearFlex();go('#/search')};document.querySelectorAll('[data-from]').forEach(b=>b.onclick=()=>setFrom(b.dataset.from));
+    const fq=$('#fromQ');if(fq){fq.oninput=()=>{clearTimeout(originTimer);originTimer=setTimeout(()=>{if(route()[0]!=='search'||$('#fromQ')!==fq)return;const list=fq.value.trim()?matches(fq.value,true):[];$('#fromRes').innerHTML=list.map(a=>`<button type="button" class="opt" data-from2="${a[0]}"><span>${esc(a[1])}${a[2]?` <span class="s">${esc(a[2])}</span>`:''}</span><span class="c">${a[0]}</span></button>`).join('');document.querySelectorAll('[data-from2]').forEach(b=>{b.onmousedown=e=>e.preventDefault();b.onclick=()=>setFrom(b.dataset.from2)})},80)};fq.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();const b=$('[data-from2]');if(b)setFrom(b.dataset.from2)}}}
     if(fromOpen)$('#fromPop .opt.on')?.focus();
     sf.onsubmit=e=>{e.preventDefault();return submitSearch()};
   }
   document.querySelectorAll('[data-discover]').forEach(a=>a.onclick=e=>{e.preventDefault();const r=discoveries()[+a.dataset.discover];S.to=r.destination;clearFlex();search()});
   if($('#allAirlines'))$('#allAirlines').onclick=()=>setEarningOnly(false);
   if($('#anywhere'))$('#anywhere').onclick=()=>{S.to='ANY';search()};if($('#retry'))$('#retry').onclick=search;
-  const gf=$('#gf');if(gf)gf.onsubmit=e=>{e.preventDefault();const tp=$('#gtp').value.replace(/[,\s]/g,''),target=$('#gtarget').value.replace(/[,\s]/g,''),ends=$('#gend').value;const err=$('#gErr');if(!/^\d+$/.test(tp)||!Number.isSafeInteger(+tp)||!/^\d+$/.test(target)||!Number.isSafeInteger(+target)||+target<=0){err.textContent='Enter whole tier points and a target above zero.';return}if(!realDate(ends)){err.textContent='Enter a valid year-end date.';return}const saved=goldData({tp:+tp,target:+target,ends});if(!saved){err.textContent='Could not save on this device.';return}gold=saved;render();toast('Saved')};
+  const gf=$('#gf');if(gf)gf.onsubmit=e=>{e.preventDefault();const tp=$('#gtp').value.replace(/[,\s]/g,''),target=$('#gtarget').value.replace(/[,\s]/g,''),ends=$('#gend').value;const err=$('#gErr');if(!/^\d+$/.test(tp)||!Number.isSafeInteger(+tp)||!/^\d+$/.test(target)||!Number.isSafeInteger(+target)||+target<=0){err.textContent='Enter whole tier points and a target above zero.';return}if(!realDate(ends)){err.textContent='Enter a valid year-end date.';return}const saved=goldData({tp:+tp,target:+target,ends});if(!saved){err.textContent='Could not save on this device.';return}gold=saved;render(true);toast('Saved')};
 }
 function resolveDestination(useHighlighted=false){
   const selected=useHighlighted&&sugOpen&&selection>=0?[...document.querySelectorAll('[data-to]')][selection]?.dataset.to:null;
@@ -552,10 +824,10 @@ function resolveDestination(useHighlighted=false){
   if(code){S.to=code;draft=''}
 }
 function submitSearch(useHighlighted=false){
-  resolveDestination(useHighlighted);calOpen=false;sugOpen=false;fromOpen=false;selection=-1;hint='';hintField='';
+  clearTimeout(suggestionTimer);resolveDestination(useHighlighted);calOpen=false;sugOpen=false;fromOpen=false;selection=-1;hint='';hintField='';
   if(!S.to){const value=($('#to')?.value||draft).trim();hint=value?`No airport matches “${value}”.`:'Choose where to, or Anywhere.';hintField='to';go('#/search');$('#to')?.focus();return}
   if(airportGroup(S.from).includes(S.to)){hint='Choose a different destination.';hintField='to';go('#/search');$('#to')?.focus();return}
-  if(!S.out){hint='Pick a date.';hintField='when';S.view=calendarMonth();go('#/search/when');$('#whenBar')?.classList.add('shake');return}
+  if(!S.out){hint='Pick a date.';hintField='when';S.view=calendarMonth();go('#/search/when');$('#cal')?.classList.add('shake');return}
   return search();
 }
 function setEarningOnly(value){
@@ -564,15 +836,20 @@ function setEarningOnly(value){
   if(resultQuery){Object.assign(S,{from:resultQuery.from,to:resultQuery.to,out:resultQuery.out,back:resultQuery.back,cabin:resultQuery.cabin})}
   return submitSearch();
 }
-async function search(){
+async function search(replaceHistory=false){
   if(!S.out||!S.to)return submitSearch();
-  resetFilters();searchController?.abort();flexController?.abort();const serial=++searchSerial;searchController=new AbortController();const q={...S};resultQuery=q;response=null;searchState='loading';calOpen=false;sugOpen=false;fromOpen=false;clearTimeout(retryTimer);go('#/loading');
-  try{const data=await request(q.to==='ANY'?'anywhere':'search',q,searchController.signal);if(serial!==searchSerial||route()[0]!=='loading')return;response=data;searchState='ready';if(data.action==='search'){const best=allFares().find(earning);if(best){verified.set(cacheKey(q),best);if(verified.size>64)verified.delete(verified.keys().next().value)}}go('#/results')}
-  catch(e){if(e.name==='AbortError'||serial!==searchSerial)return;searchState=e.status===429?'throttled':'error';retryAt=Date.now()+e.retryAfter*1000;go('#/error');if(searchState==='throttled')retryTimer=setTimeout(()=>{if(route()[0]==='error'&&searchState==='throttled')render()},e.retryAfter*1000)}
+  resetFilters();searchController?.abort();flexController?.abort();const serial=++searchSerial,q={...S};resultQuery=q;response=null;calOpen=false;sugOpen=false;fromOpen=false;clearTimeout(retryTimer);
+  const cached=readResults(q);
+  if(cached){response=cached.data;searchState='ready';go('#/results',!replaceHistory&&route()[0]!=='loading');warmStrip(q,strip.for===q?strip.center:q.out);return}
+  searchState='loading';go('#/loading',!replaceHistory&&!['loading','error'].includes(route()[0]));
+  const pending=prepareSearch(q);searchController=pending.controller;warmStrip(q,strip.for===q?strip.center:q.out);
+  try{const data=await pending.promise;saveResults(q,data);if(serial!==searchSerial||route()[0]!=='loading')return;prepared=null;response=data;searchState='ready';if(data.action==='search'){const best=allFares().find(earning);if(best){verified.set(cacheKey(q),best);if(verified.size>64)verified.delete(verified.keys().next().value)}}go('#/results')}
+  catch(e){if(e.name==='AbortError'||serial!==searchSerial||route()[0]!=='loading')return;prepared=null;searchState=e.status===429?'throttled':'error';retryAt=Date.now()+(e.retryAfter||60)*1000;go('#/error');if(searchState==='throttled')retryTimer=setTimeout(()=>{if(route()[0]==='error'&&searchState==='throttled')render()},e.retryAfter*1000)}
 }
 window.addEventListener('hashchange',()=>render());
+window.addEventListener('popstate',()=>render());
 document.addEventListener('keydown',e=>{if(document.body.classList.contains('sheet')){if(e.key==='Escape'){document.body.classList.remove('sheet');$('#fopen')?.setAttribute('aria-expanded','false');$('#fcol')?.removeAttribute('aria-modal');$('#fcol')?.setAttribute('role','complementary');$('#fopen')?.focus()}if(e.key==='Tab'){const focusable=[...document.querySelectorAll('#fcol button, #fcol input')].filter(x=>!x.disabled);const first=focusable[0],last=focusable.at(-1);if(e.shiftKey&&document.activeElement===first){e.preventDefault();last?.focus()}else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first?.focus()}}}if(e.key==='Escape'&&fromOpen){fromOpen=false;go('#/search')}});
-document.addEventListener('click',e=>{if(document.body.classList.contains('sheet')&&!e.target.closest('#fcol, #fopen')){$('#fclose')?.click();return}if(fromOpen&&!e.target.closest('.fromwrap')){fromOpen=false;go('#/search')}if(sugOpen&&!e.target.closest('label.bar')){sugOpen=false;if($('#to'))redrawSug()}});
+document.addEventListener('click',e=>{if(document.body.classList.contains('sheet')&&!e.target.closest('#fcol, #fopen')){$('#fclose')?.click();return}if(fromOpen&&!e.target.closest('.fromwrap')){fromOpen=false;go('#/search')}if(sugOpen&&!e.target.closest('.bar')){sugOpen=false;if($('#to'))redrawSug()}});
 
 // ---- v3 view layer: flick.fan-inverse styling over the live behaviour above ----
 const PLANE='<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M21 16v-2l-8-5V3.5c0-.83-.67-1.5-1.5-1.5S10 2.67 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z"/></svg>';
@@ -603,26 +880,27 @@ function renderRing(){const pct=Math.min(1,gold.tp/gold.target),el=$('#ring');el
 
 function vSearch(){
   document.title='Flights';
+  const custom=!['LON','IBZ'].includes(S.from);
   return `<section class="hero"><h1>Where to?</h1>
   <form class="search" id="sf" novalidate autocomplete="off">
-    <label class="bar searchBox" for="to"><input class="where" id="to" placeholder="City or airport" value="${esc(S.to?placeName(S.to):draft)}" aria-label="Where to" ${hint&&hintField==='to'?'aria-invalid="true" aria-describedby="toError"':''} aria-autocomplete="list" aria-expanded="${sugOpen}" aria-controls="destinations" role="combobox"><button class="goC" id="go" type="submit" aria-label="Search">${ARROW}</button>${sugOpen?sugPop(draft):''}</label>
+    <div class="bar searchBox"><input class="where" id="to" placeholder="City or airport" value="${esc(S.to?placeName(S.to):draft)}" aria-label="Where to" ${hint&&hintField==='to'?'aria-invalid="true" aria-describedby="toError"':''} aria-autocomplete="list" aria-expanded="${sugOpen}" aria-controls="destinations" role="combobox"><button class="goC" id="go" type="submit" aria-label="Search">${ARROW}</button>${sugOpen?sugPop(draft):''}</div>
     ${hint&&hintField==='to'?`<div class="hintline err fieldHint" id="toError" role="status">${esc(hint)}</div>`:''}
   </form>
-  <div class="rows">
-    <div class="frow fromwrap"><span class="fl">From</span><button type="button" class="fv" id="fromBtn" aria-haspopup="true" aria-expanded="${fromOpen}">${esc(placeName(S.from))} ${CHEV}</button>${fromOpen?fromPop():''}</div>
-    <div class="frow" id="whenBar"><span class="fl">When</span><button type="button" class="fv ${S.out?'':'ph'}" id="whenBtn" ${hint&&hintField==='when'?'aria-invalid="true" aria-describedby="dateError"':''} aria-label="When" aria-expanded="${calOpen}">${S.out?whenText()+(S.back?'':' · one way'):'Add a date'} ${CHEV}</button></div>
-    ${hint&&hintField==='when'?`<div class="hintline err fieldHint" id="dateError" role="status">${esc(hint)}</div>`:''}
-    ${calOpen?calHTML():''}
-    <div class="frow"><label class="fl" for="cabin">Cabin</label><select class="fv cabin" id="cabin">${Object.keys(CABINS).map(c=>`<option ${S.cabin===c?'selected':''}>${c}</option>`).join('')}</select></div>
+  <div class="under">
+    <div class="prow"><button type="button" class="anyp" id="anyPill" aria-label="Search anywhere from ${esc(placeName(S.from))}">${GLOBE}<span>Anywhere</span></button>
+    <div class="orow" role="group" aria-label="From"><svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M2.5 19h19v2h-19v-2zm19.57-9.36c-.21-.8-1.04-1.28-1.84-1.06L14.92 10l-6.9-6.43-1.93.51 4.14 7.17-4.97 1.33-1.97-1.54-1.45.39 1.82 3.16.77 1.33 1.6-.43 5.31-1.42 4.35-1.16L21 11.49c.81-.23 1.28-1.05 1.07-1.85z"/></svg><button type="button" class="opill ${S.from==='LON'?'on':''}" data-from="LON" aria-pressed="${S.from==='LON'}">London</button><button type="button" class="opill ${S.from==='IBZ'?'on':''}" data-from="IBZ" aria-pressed="${S.from==='IBZ'}">Ibiza</button><span class="owrap"><input class="opin ${custom?'on':''}" id="fromQ" placeholder="Other city" value="${custom?esc(placeName(S.from)):''}" aria-label="From another city or airport"><div id="fromRes" role="listbox" aria-label="Origins"></div></span></div>
+    </div>
+    <label class="cabinw"><span class="clab">Cabin</span><select class="fv cabin" id="cabin" aria-label="Cabin">${Object.keys(CABINS).map(c=>`<option ${S.cabin===c?'selected':''}>${c}</option>`).join('')}</select></label>
   </div>
-  ${!hint?'<div class="hintline" aria-hidden="true"></div>':''}
-  <button type="button" class="actionPill" id="anyPill">${GLOBE} Anywhere</button></section>`;
+  ${hint&&hintField==='when'?`<div class="hintline err fieldHint" id="dateError" role="status">${esc(hint)}</div>`:''}
+  ${calHTML2()}
+  <button type="submit" form="sf" class="go gobig">Search</button></section>`;
 }
 
 /* ---------- results: Skiplagged-style cards, tier points first ---------- */
 const SORTS={value:['Best value','Best value'],cheap:['Cheapest','Cheapest'],fast:['Fastest','Fastest'],tp:['Most tier points','Most TP']};
 let SORT='value',F=null;
-function resetFilters(){SORT='value';F={stops:'any',dep:[0,24],arr:[0,24],air:null}}
+function resetFilters(){SORT='value';F={stops:'any',dep:[0,24],arr:[0,24],air:null,skip:'show',star:false}}
 resetFilters();
 const legUnits=(f,i)=>(f.legs?.[i]?.units||[]).filter(u=>u.flown);
 const stopsOf=f=>Math.max(0,...[0,1].map(i=>legUnits(f,i).reduce((n,u)=>n+u.flightNumbers.length,0)-1));
@@ -636,6 +914,9 @@ const carrierName=c=>response?.meta?.carriers?.find(x=>x.code===c)?.name||CARRIE
 const hh=h=>h>=24?'23:59':String(h).padStart(2,'0')+':00';
 const perTp=f=>earning(f)?f.priceGbp/f.estimate.tierPoints:Infinity;
 function passes(f,skip){
+  if(skip!=='star'&&F.star&&!(f.starlink?.p>=0.8))return false;
+  if(skip!=='skip'&&F.skip==='hide'&&f.hiddenCity)return false;
+  if(skip!=='skip'&&F.skip==='only'&&!f.hiddenCity)return false;
   if(skip!=='stops'&&F.stops!=='any'&&stopsOf(f)>+F.stops)return false;
   const d=hour(f.departure),a=hour(f.arrival);
   if(skip!=='dep'&&(d<F.dep[0]||d>F.dep[1]))return false;
@@ -652,15 +933,16 @@ function legRow(f,i){
   const endpoints=i===0?f:f.returnFlight,dep=endpoints?.departure||units[0].departure,arr=endpoints?.arrival||units.at(-1).arrival;
   const plus=dep?.dateTime&&arr?.dateTime?Math.max(0,nights(dep.dateTime.slice(0,10),arr.dateTime.slice(0,10))):0;
   const durs=units.length>1?units.map(u=>minsOf(u.departure,u.arrival)).filter(n=>n!==null).map(hm):[];
-  return `<div class="lrow"><div class="ep"><b>${time(dep)}</b><span>${esc(dep?.airport||units[0].from)}</span></div>
+  const sk=i===0&&f.hiddenCity?(f.legs?.[0]?.units||[]).filter(u=>!u.flown):[];
+  return `<div class="lrow${sk.length?' skipping':''}"><div class="ep"><b>${time(dep)}</b><span>${esc(dep?.airport||units[0].from)}</span></div>
     <div class="mid"><div class="durs">${durs.map(d=>`<span>${d}</span>`).join('')}</div><div class="line"><i></i>${PLANE}<i></i></div><div class="via">${units.slice(0,-1).map(u=>esc(u.to)).join(' · ')|| (units.some(u=>u.opaque)?'Connection':'')}</div></div>
-    <div class="ep r"><b>${time(arr)}${plus?`<sup>+${plus}</sup>`:''}</b><span>${esc(arr?.airport||units.at(-1).to)}</span></div></div>`;
+    <div class="ep r"><b>${time(arr)}${plus?`<sup>+${plus}</sup>`:''}</b><span>${esc(arr?.airport||units.at(-1).to)}</span></div>${sk.length?`<div class="skipx" aria-label="Skipped leg to ${esc(f.ticketedTo||sk.at(-1).to)}"><div class="sd"><i></i></div><div class="ep"><b>${time(sk.at(-1).arrival)}</b><span>${esc(f.ticketedTo||sk.at(-1).to)}</span></div></div>`:''}</div>`;
 }
 function card(f,i){
   const st=stopsOf(f),c=carrierOf(f);
-  return `<article class="fc glass">
-    <div class="cl">${i===0?`<span class="tag">${SORTS[SORT][0]}</span>`:''}${legRow(f,0)}${f.returnFlight?legRow(f,1):''}
-      <div class="air">${esc(carrierName(c))} <span>· ${esc(flightGroups(f).flat().map(flightNumber).join(' · '))}</span>${f.operatedBy?` <span>· operated by ${esc(f.operatedBy)}</span>`:''}${f.hiddenCity?`<span class="hc">ticketed to ${esc(f.ticketedTo)}, leave at ${esc(f.leaveAt)}</span>`:''}</div></div>
+  return `<article class="fc glass" data-fare-id="${esc(f.id)}">
+    <div class="cl">${i===0||f.hiddenCity?`<div class="tags">${i===0?`<span class="tag">${SORTS[SORT][0]}</span>`:''}${f.hiddenCity?'<span class="tag skip">Skip last leg</span>':''}</div>`:''}${legRow(f,0)}${f.returnFlight?legRow(f,1):''}
+      <div class="air">${esc(carrierName(c))} <span>· ${esc(flightGroups(f).flat().map(flightNumber).join(' · '))}</span>${f.operatedBy?` <span>· operated by ${esc(f.operatedBy)}</span>`:''}${f.starlink?.p>=0.5?`<span class="sl"><svg class="sat" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M5 12.5a10 10 0 0 1 14 0M8.5 16a5 5 0 0 1 7 0"/><circle cx="12" cy="19.5" r="1.2" fill="currentColor" stroke="none"/><path d="M3 8.5a14.5 14.5 0 0 1 18 0"/></svg> Starlink ${Math.round(f.starlink.p*100)}%</span>`:''}</div>${f.hiddenCity?`<div class="hcl">Ticketed to ${esc(f.ticketedTo)} · get off at ${esc(f.leaveAt)}</div>`:''}</div>
     <div class="cr"><div class="stp"><b>${st?st+(st>1?' stops':' stop'):'Direct'}</b><span>${hm(totalMins(f))}</span></div>
       <div class="money"><span class="prc">${money(f.priceGbp)}</span><span class="tpv${f.earns===false?' no-tp':''}">${f.earns===false?'No TP':earning(f)?'+'+fmt(f.estimate.tierPoints)+' TP':'TP unavailable'}</span></div>
       <div class="pt">${earning(f)?ppt(f)+'/TP':''}${f.earns!==false&&Number.isFinite(f.estimate?.avios)?(earning(f)?' · ':'')+'~'+fmt(f.estimate.avios)+' Avios':''}</div>
@@ -680,11 +962,12 @@ function rangeBlock(kind,label){
 }
 function filtersHTML(){
   const all=fares(),from=fn=>{const l=all.filter(fn);return l.length?'from '+money(Math.min(...l.map(f=>f.priceGbp))):'none'};
-  const carriers=[...new Set(all.map(carrierOf))];
+  const carriers=[...new Set(all.map(carrierOf))],starCount=all.filter(f=>f.starlink?.p>=0.8).length;
   return `<aside class="fcol" id="fcol" aria-label="Filters"><div class="fpanel glass">
-    <div class="fhd"><b>Filters</b><button type="button" class="txtb" id="freset">Reset</button><button type="button" class="fclose" id="fclose" aria-label="Close filters"><span aria-hidden="true">×</span></button></div><label class="earning-toggle" for="earningOnly"><span>oneworld only</span><input id="earningOnly" type="checkbox" role="switch" ${S.earningOnly?'checked':''}></label>
+    <div class="fhd"><b>Filters</b><button type="button" class="txtb" id="freset">Reset</button><button type="button" class="fclose" id="fclose" aria-label="Close filters"><span aria-hidden="true">×</span></button></div><label class="earning-toggle" for="earningOnly"><span>oneworld only</span><input id="earningOnly" type="checkbox" role="switch" ${S.earningOnly?'checked':''}></label>${starCount>0?`<label class="earning-toggle starlink-toggle" for="starlinkOnly"><span><svg class="sat" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M5 12.5a10 10 0 0 1 14 0M8.5 16a5 5 0 0 1 7 0"/><circle cx="12" cy="19.5" r="1.2" fill="currentColor" stroke="none"/><path d="M3 8.5a14.5 14.5 0 0 1 18 0"/></svg> Starlink likely<small title="At least 80% model probability; unknowns excluded">${starCount} of ${all.length}</small></span><input id="starlinkOnly" type="checkbox" role="switch" ${F.star?'checked':''}></label>`:''}
     <section class="fs"><div class="fsh"><h3>Stops</h3></div>${[['0','Direct'],['1','Up to 1 stop'],['any','2+ stops']].map(([v,l])=>`<label class="radio"><span><b>${l}</b><small>${from(f=>v==='any'||stopsOf(f)<=+v)}</small></span><input type="radio" name="stops" value="${v}" ${F.stops===v?'checked':''}><i></i></label>`).join('')}</section>
     ${rangeBlock('dep','Take-off')}${rangeBlock('arr','Landing')}
+    ${all.some(f=>f.hiddenCity)?`<section class="fs"><div class="fsh"><h3>Skip-last-leg fares</h3><span class="rv">${all.filter(f=>f.hiddenCity).length} of ${all.length}</span></div><div class="seg3" role="radiogroup" aria-label="Skip-last-leg fares">${[['show','Show'],['hide','Hide'],['only','Only']].map(([v,l])=>`<label><input type="radio" name="skip" value="${v}" ${F.skip===v?'checked':''}><span>${l}</span></label>`).join('')}</div></section>`:''}
     <section class="fs"><div class="fsh"><h3>Airlines</h3></div>${carriers.map(c=>`<label class="radio"><span><b>${esc(carrierName(c))}</b><small>${from(f=>carrierOf(f)===c)}</small></span><input type="checkbox" value="${c}" ${F.air===null||F.air.has(c)?'checked':''}><i class="sq"></i></label>`).join('')}</section>
     <button type="button" class="go fshow" id="fshow">Show flights</button>
   </div></aside>`;
@@ -700,12 +983,12 @@ function cardsHTML(){
   return list.length?list.map(card).join(''):`<div class="state"><div class="acts"><button type="button" class="txtb dark" id="freset2">Reset filters</button></div></div>`;
 }
 function countText(){const n=fares().filter(f=>passes(f)).length;return `${n} ${n===1?'flight':'flights'}`}
-function activeFilters(){return (F.stops!=='any')+(F.dep[0]>0||F.dep[1]<24)+(F.arr[0]>0||F.arr[1]<24)+(F.air!==null)+(!S.earningOnly)}
+function activeFilters(){return (F.stops!=='any')+(F.dep[0]>0||F.dep[1]<24)+(F.arr[0]>0||F.arr[1]<24)+(F.air!==null)+(!S.earningOnly)+(F.skip!=='show')+(F.star?1:0)}
 function vResults(){
   if(!response)return vSearch();if(response.action==='anywhere')return vAnywhere();
   const list=fares();if(!list.length)return vEmpty();
   document.title=`${placeName(resultQuery.from)} → ${placeName(resultQuery.to)} · Flights`;
-  return `${backPill()}<h1>${resultsTitle()}</h1>
+  return `${backPill()}${dateStrip()}<h1>${resultsTitle()}</h1>
   <p class="est">${resultNote()}</p>${partialNote()}
   <div class="rgrid">${filtersHTML()}<div class="rcol">
     <div class="tabs" role="tablist" aria-label="Sort">${Object.entries(SORTS).map(([k,[l,s]])=>`<button type="button" role="tab" aria-selected="${SORT===k}" data-sort="${k}"><span class="lg2">${l}</span><span class="sm2">${s}</span></button>`).join('')}</div>
@@ -714,16 +997,18 @@ function vResults(){
 }
 function refreshResults(){
   const title=$('#app h1');if(title)title.innerHTML=resultsTitle();
-  $('#cards').innerHTML=cardsHTML();$('#rcount').textContent=countText();
+  const positions=cardPositions();$('#cards').innerHTML=cardsHTML();animateCards(positions);$('#rcount').textContent=countText();
   $('#fopen').textContent='Filters'+(activeFilters()?' · '+activeFilters():'');
   $('#fshow').textContent=`Show ${countText()}`;
   document.querySelectorAll('.fs[data-kind]').forEach(s=>{const k=s.dataset.kind,[lo,hi]=F[k];s.querySelector('.rv').textContent=`${hh(lo)} – ${hh(hi)}`;
     s.querySelector('.hist').outerHTML=hist(k);const u=s.querySelector('.rng u');u.style.left=lo/24*100+'%';u.style.right=100-hi/24*100+'%'});
-  bindResults(true);
+  bindResults(true);applyGlides();
 }
 function bindResults(cardsOnly){
   const r2=$('#freset2');if(r2)r2.onclick=()=>{resetFilters();render()};
   if(cardsOnly)return;
+  document.querySelectorAll('input[name=skip]').forEach(r=>r.onchange=()=>{F.skip=r.value;refreshResults()});
+  if($('#starlinkOnly'))$('#starlinkOnly').onchange=e=>{F.star=e.target.checked;refreshResults()};
   document.querySelectorAll('[data-sort]').forEach(b=>b.onclick=()=>{SORT=b.dataset.sort;document.querySelectorAll('[data-sort]').forEach(x=>x.setAttribute('aria-selected',x===b));refreshResults()});
   document.querySelectorAll('input[name=stops]').forEach(r=>r.onchange=()=>{F.stops=r.value;refreshResults()});
   document.querySelectorAll('.fs input[type=checkbox]').forEach(c=>c.onchange=()=>{const all=[...document.querySelectorAll('.fs input[type=checkbox]')],on=all.filter(x=>x.checked).map(x=>x.value);F.air=on.length===all.length?null:new Set(on);refreshResults()});
@@ -735,17 +1020,129 @@ function bindResults(cardsOnly){
 }
 
 /* ---------- render + bind: the live versions plus the v3 hooks ---------- */
-function render(){
+function render(refreshGold=false){
   const p=route();
   document.body.classList.remove('sheet');
-  renderLive();
-  document.body.classList.toggle('wide',p[0]==='results'&&response?.action==='search'&&fares().length>0);
+  document.body.classList.toggle('wide',(p[0]==='loading'&&resultQuery?.to!=='ANY')||(p[0]==='results'&&response?.action==='search'));
+  renderLive(refreshGold);
+  const current=route();
+  document.body.classList.toggle('wide',(current[0]==='loading'&&resultQuery?.to!=='ANY')||(current[0]==='results'&&response?.action==='search'));
 }
 function bind(){
   bindLive();
-  const any=$('#anyPill');if(any)any.onclick=()=>chooseDestination('ANY');
-  if($('#cards'))bindResults(false);
+  const any=$('#anyPill');if(any)any.onclick=()=>{S.to='ANY';draft='';submitSearch()};
+  const goBtn=$('#go');if(goBtn){goBtn.onpointerdown=e=>{if(e.button===0)prefetchSearch()};goBtn.onclick=e=>{e.preventDefault();return submitSearch()}};
+  const big=$('.gobig');if(big)big.onpointerdown=e=>{if(e.button===0)prefetchSearch()};
+  const fq=$('#fromQ');if(fq){fq.addEventListener('focus',()=>fq.select());fq.addEventListener('blur',()=>setTimeout(()=>{if(route()[0]==='search'&&$('#fromQ')===fq&&document.activeElement!==fq&&$('#fromRes'))$('#fromRes').innerHTML=''},150));fq.addEventListener('keydown',e=>{if(e.key==='Escape'){fq.blur();redraw()}})}
+  if($('#cards'))bindResults(false);if($('#dstrip'))stripHook();if(typeof applyGlides==='function')applyGlides();
 }
+
+
+/* ---------- results date strip: ±3 days, cheapest earning £ per day (flex data) ---------- */
+let strip={for:null,key:'',center:'',rows:[],state:''};
+function stripDays(){if(strip.for!==resultQuery){const keep=strip.keep?.queryKey===cacheKey(resultQuery)?strip.keep:null;strip.for=resultQuery;strip.center=keep?keep.center:resultQuery.out;strip.key='';strip.rows=keep?keep.rows:[];strip.keep=null}
+  return [-3,-2,-1,0,1,2,3].map(n=>key(new Date(D(strip.center).getTime()+n*864e5)))}
+function stripPrice(k){
+  if(k===resultQuery.out&&response?.action==='search'){const l=fares().filter(f=>resultQuery.earningOnly===false||earning(f));if(l.length)return Math.min(...l.map(f=>f.priceGbp))}
+  const r=strip.rows.filter(x=>x.departureDate===k&&Number.isFinite(x.priceGbp));return r.length?Math.min(...r.map(x=>x.priceGbp)):null}
+function dateStrip(){
+  if(!resultQuery||resultQuery.to==='ANY'||!resultQuery.out)return '';
+  const days=stripDays(),prices=days.map(k=>k<TODAY||k>LATEST?null:stripPrice(k)),valid=prices.filter(v=>v!==null),min=valid.length>1?Math.min(...valid):null,max=valid.length?Math.max(...valid):null;
+  const label=k=>D(k).toLocaleDateString('en-GB',{weekday:'short',day:'numeric',timeZone:'UTC'});
+  return `<div class="dstrip" id="dstrip" role="group" aria-label="Nearby dates" title="Prices from returned cabin-filtered fares; estimates, not exhaustive"><button type="button" class="dnav" id="dprev" aria-label="Earlier dates" ${days[0]<=TODAY?'disabled':''}>‹</button><div class="ddays">${days.map((k,i)=>{
+    const off=k<TODAY||k>LATEST||(resultQuery.back&&stripQuery(resultQuery,k).back>LATEST),sel=k===resultQuery.out,p=prices[i],low=min<max&&p!==null&&p===min;
+    return `<button type="button" class="dday${sel?' on':''}${low?' low':''}" data-day="${k}" ${off?'disabled':''} ${sel?'aria-current="date"':''} aria-label="${dShort(k)}${p!==null?', from '+money(p):''}${low?', cheapest nearby':''}"><span>${label(k)}</span><b>${p!==null?(low?'↓ ':'')+money(p):strip.state==='loading'?'…':'—'}</b></button>`}).join('')}</div><button type="button" class="dnav" id="dnext" aria-label="Later dates" ${days[6]>=LATEST?'disabled':''}>›</button></div>`;
+}
+function paintStrip(){if(!['loading','results'].includes(route()[0]))return;const el=$('#dstrip');if(!el)return;el.outerHTML=dateStrip();bindStrip();applyGlides()}
+// Success freshness and retry admission are separate: partial rows stay visible
+// during a per-query cooldown, but are never treated as a cached success.
+const stripRequests=new Map(),stripRetries=new Map();let stripController=null,stripRequestKey='',stripLoadSerial=0;
+function stripQuery(q,center=q.out){const duration=q.back?nights(q.out,q.back):0;return {...q,out:center,back:q.back?key(new Date(D(center).getTime()+duration*864e5)):''}}
+function mergeStripRows(old,rows){return [...new Map([...old,...rows].map(r=>[JSON.stringify([r.origin,r.destination,r.departureDate,r.returnDate]),r])).values()]}
+function warmStrip(q,center=q.out){
+  if(q.to==='ANY')return Promise.resolve(null);q=stripQuery(q,center);const k=cacheKey(q),old=stripRequests.get(k),retry=stripRetries.get(k);
+  if(old&&(old.ready?old.until>Date.now():!old.signal.aborted))return old.promise;
+  if(retry?.retryAt>Date.now())return Promise.resolve(retry.data);
+  stripController?.abort();stripController=new AbortController();stripRequestKey=k;
+  const entry={signal:stripController.signal,ready:false};
+  entry.promise=request('flex',q,entry.signal).then(data=>{
+    if(stripRequests.get(k)!==entry)return data;
+    if(data.partial){data={...data,results:mergeStripRows(retry?.data?.results||[],data.results)};stripRequests.delete(k);stripRetries.set(k,{retryAt:Date.now()+data.retryAfter*1000,data})}
+    else{stripRetries.delete(k);entry.ready=true;entry.until=Number.isFinite(data.expiresAt)?data.expiresAt:0}
+    return data;
+  }).catch(e=>{
+    if(stripRequests.get(k)===entry){stripRequests.delete(k);if(e.name!=='AbortError')stripRetries.set(k,{retryAt:Date.now()+(e.retryAfter||60)*1000,data:retry?.data||null})}
+    return retry?.data||null;
+  });
+  stripRequests.set(k,entry);
+  while(stripRequests.size>12)stripRequests.delete(stripRequests.keys().next().value);
+  while(stripRetries.size>12)stripRetries.delete(stripRetries.keys().next().value);
+  return entry.promise;
+}
+async function loadStrip(){
+  if(!resultQuery||resultQuery.to==='ANY')return;stripDays();const q=stripQuery(resultQuery,strip.center),k=cacheKey(q);
+  const serial=++stripLoadSerial;strip.key=k;strip.state='loading';paintStrip();const data=await warmStrip(resultQuery,strip.center);if(strip.for!==resultQuery||strip.key!==k||serial!==stripLoadSerial)return;
+  if(Array.isArray(data?.results))strip.rows=data.partial?mergeStripRows(strip.rows,data.results):data.results;strip.state=data?(data.partial?'partial':'ready'):'error';paintStrip();
+}
+function bindStrip(){
+  document.querySelectorAll('#dstrip [data-day]').forEach(b=>b.onclick=()=>{const k=b.dataset.day;if(k===resultQuery.out)return;
+    const n=resultQuery.back?nights(resultQuery.out,resultQuery.back):0;
+    Object.assign(S,{from:resultQuery.from,to:resultQuery.to,cabin:resultQuery.cabin,out:k,back:resultQuery.back?key(new Date(D(k).getTime()+n*864e5)):''});
+    strip.keep={queryKey:cacheKey(S),center:strip.center,rows:strip.rows};search()});
+  const sh=v=>{let c=key(new Date(D(strip.center).getTime()+v*864e5));const min=key(new Date(D(TODAY).getTime()+3*864e5));if(c<min)c=min;strip.center=c;paintStrip();loadStrip()};
+  if($('#dprev'))$('#dprev').onclick=()=>sh(-7);if($('#dnext'))$('#dnext').onclick=()=>sh(7);
+  const box=$('#dstrip .ddays'),on=$('#dstrip .dday.on');if(box&&on&&box.scrollWidth>box.clientWidth)box.scrollLeft=on.offsetLeft-box.clientWidth/2+on.offsetWidth/2;
+}
+function stripHook(){bindStrip();loadStrip()}
+
+/* ---------- sliding highlight: one shared shape per pill group ----------
+   Sits behind the selected item (ink). On hover it follows the pointer in a light tint,
+   returns on leave, slides to a new selection on click/tap. Keyboard focus moves it without animation.
+   transform + width only, flick's easing; reduced motion = instant. */
+const GLIDE_MEM={},finePointer=matchMedia('(hover: hover) and (pointer: fine)'),reduceMotion=matchMedia('(prefers-reduced-motion: reduce)');
+reduceMotion.addEventListener?.('change',()=>{if(reduceMotion.matches){document.getAnimations?.().forEach(a=>a.cancel());applyGlides()}});
+function glide(id,box,items,isSel){
+  if(!box||!items.length)return;
+  box.classList.add('glider');let hl=box.querySelector(':scope>.glide');
+  if(!hl){hl=document.createElement('span');hl.className='glide';hl.setAttribute('aria-hidden','true');box.prepend(hl)}
+  const sel=()=>items.find(isSel);
+  const place=(el,mode,animate)=>{
+    if(!el||!el.isConnected)return;const b=box.getBoundingClientRect(),r=el.getBoundingClientRect();if(!r.width)return;
+    const x=r.left-b.left+box.scrollLeft,y=r.top-b.top+box.scrollTop;
+    hl.style.transition=animate&&!reduceMotion.matches&&!keyboardInput&&!document.activeElement?.matches?.(':focus-visible')?'':'none';
+    hl.style.width=r.width+'px';hl.style.height=r.height+'px';hl.style.transform=`translate(${x}px,${y}px)`;hl.dataset.mode=mode;
+    if(!animate)box.classList.add('gl-noanim');
+    items.forEach(i=>{i.classList.toggle('gl-under',i===el&&mode==='ink');i.classList.toggle('gl-hover',i===el&&mode==='tint')});
+    if(!animate){void box.offsetWidth;box.classList.remove('gl-noanim')}
+    box.classList.toggle('gl-away',el!==sel());
+    GLIDE_MEM[id]={x,y,w:r.width,h:r.height};if(!animate)void hl.offsetWidth;
+  };
+  const m=GLIDE_MEM[id];
+  if(!hl.dataset.init){hl.dataset.init='1';
+    if(m){hl.style.transition='none';hl.style.width=m.w+'px';hl.style.height=m.h+'px';hl.style.transform=`translate(${m.x}px,${m.y}px)`;void hl.offsetWidth}
+    const t0=sel(),tr=t0&&t0.getBoundingClientRect(),bx=box.getBoundingClientRect(),same=!m||!tr||(Math.abs(tr.left-bx.left-m.x)<1&&Math.abs(tr.width-m.w)<1&&Math.abs(tr.top-bx.top-m.y)<1);
+    // only slide when the selection actually moved; a re-render in place must not flicker
+    if(!same&&!reduceMotion.matches&&!keyboardInput)requestAnimationFrame(()=>place(sel(),'ink',true));else place(sel(),'ink',false);}
+  else {const target=sel(),r=target?.getBoundingClientRect(),b=box.getBoundingClientRect(),m=GLIDE_MEM[id];const moved=!!(r&&m&&(Math.abs(r.left-b.left+box.scrollLeft-m.x)>1||Math.abs(r.top-b.top+box.scrollTop-m.y)>1||Math.abs(r.width-m.w)>1));place(target,'ink',moved)};
+  const back=()=>{const a=document.activeElement;if(a&&items.some(i=>i===a||i.contains(a))&&(a.matches(':focus-visible')||(a.tagName==='INPUT'&&a.type!=='radio')))return;place(sel(),'ink',true)};
+  items.forEach(el=>{if(el._gl)return;el._gl=1;
+    if(finePointer.matches)el.addEventListener('pointerenter',()=>place(el,el===sel()&&el.tagName!=='INPUT'?'ink':el===sel()&&document.activeElement!==el?'ink':'tint',true));
+    el.addEventListener('focusin',()=>{const kb=el.matches(':focus-visible')||!!el.querySelector?.(':focus-visible');
+      if(el.tagName==='INPUT')place(el,'tint',!kb);else if(kb)place(el,el===sel()?'ink':'tint',false)});
+    el.addEventListener('focusout',()=>setTimeout(back,0));
+    el.addEventListener('click',()=>requestAnimationFrame(()=>{if(document.activeElement!==el||el.tagName!=='INPUT')place(sel(),'ink',true)}));
+    el.addEventListener('change',()=>requestAnimationFrame(()=>place(sel(),'ink',true)));
+  });
+  if(!box._gl){box._gl=1;box.addEventListener('pointerleave',back);const observer=new ResizeObserver(()=>place(sel(),'ink',false));observer.observe(box);glideObservers.add(observer)}
+  box._glPlace=()=>place(sel(),'ink',false);
+}
+function applyGlides(){
+  const o=$('.orow');if(o)glide('origin',o,[...o.querySelectorAll('[data-from]'),$('#fromQ')].filter(Boolean),el=>el.dataset.from?el.dataset.from===S.from:!['LON','IBZ'].includes(S.from));
+  const d=$('.ddays');if(d)glide('days',d,[...d.querySelectorAll('[data-day]')],el=>el.classList.contains('on'));
+  const t=$('.tabs');if(t)glide('sort',t,[...t.querySelectorAll('[data-sort]')],el=>el.getAttribute('aria-selected')==='true');
+  document.querySelectorAll('.seg3').forEach((s,i)=>glide('seg'+i,s,[...s.querySelectorAll('label')],el=>!!el.querySelector('input:checked')));
+}
+
 
 
 render();

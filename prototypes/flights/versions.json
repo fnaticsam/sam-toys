@@ -58,7 +58,9 @@
         "Long business and first fares (five-digit £ and TP) fit the card's right column at 1440 and 390 (matches the flights-card-fit hotfix).",
         "sliding highlight: one shared shape glides behind the origin pills, the sort tabs and the skip-last-leg control; it follows the pointer in a light tint, slides and fills ink on a new selection, returns on leave; keyboard focus moves it without animation; reduced motion is instant; phone slides on tap only.",
         "Calendar shows two months side by side (current and next), month names centred, past days greyed, round arrows at the far edges move both by a month; one month on phone.",
-        "Starlink likely: a switch under 'oneworld only' with a count (e.g. 2 of 4), a quiet 'Starlink 95%' in the card's airline line when 50% or more, and one line on the fare page with the basis and a note."
+        "Starlink likely: a switch under 'oneworld only' with a count (e.g. 2 of 4), a quiet 'Starlink 95%' in the card's airline line when 50% or more, and one line on the fare page with the basis and a note.",
+        "fix: go always searches or says why. The origin row had been stacked above the destination suggestions, so tapping a suggestion that overlapped it hit London, Ibiza or the city field instead; the suggestions now sit on top, and the go button runs the same search as Enter. On phone the typed-city list now opens on screen instead of past the right edge.",
+        "Anywhere now leads the pill row under the search box ([Anywhere] then the take-off glyph and London · Ibiza · city); it searches anywhere from the selected origin. The separate Anywhere pill at the bottom is gone; on phone, Cabin moves to a row above Search."
       ],
       "fixed": []
     }

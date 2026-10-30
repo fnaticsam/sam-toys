@@ -43,9 +43,12 @@ async function main() {
   // Geometric checks intentionally use the visible centre. Locator.click's
   // fallback point can conceal an overlay covering the actual go button.
   const centre = async (page, selector, touch = false) => {
-    const point = await page.locator(selector).evaluate(el => {
-      const b = el.getBoundingClientRect(); return { x: b.left + b.width / 2, y: b.top + b.height / 2 };
-    });
+    const handle = await page.waitForFunction(selector => {
+      const el = document.querySelector(selector);if(!el)return false;
+      const b = el.getBoundingClientRect();
+      return b.width > 0 && b.height > 0 ? { x: b.left + b.width / 2, y: b.top + b.height / 2 } : false;
+    }, selector);
+    const point = await handle.jsonValue();await handle.dispose();
     assert(await page.evaluate(({ selector, x, y }) => !!document.elementFromPoint(x, y)?.closest(selector), { ...point, selector }), `${selector} is covered at its visible centre`);
     if (touch) await page.touchscreen.tap(point.x, point.y); else await page.mouse.click(point.x, point.y);
   };
@@ -150,7 +153,7 @@ async function main() {
           return opts.every(el => { const r = el.getBoundingClientRect(); return document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2)?.closest('.pop') === pop; });
         });
         assert(layers, 'suggestions must be clickable above the origin row');
-        await home(); await dates(); await page.locator('#to').fill('London Heathrow'); await origin('IBZ'); await search();
+        await home(); await dates(); await page.locator('#to').fill('London Heathrow'); await centre(page,'.pop [data-to="LHR"]',touch); await origin('IBZ'); await search();
         assert.equal(searchParams().get('destination'), 'LHR'); assert.equal(searchParams().get('origin'), 'IBZ');
       });
       await check(`${name}: origin pill slide, custom city, persistence and phone suggestions fit`, async () => {
@@ -213,7 +216,9 @@ async function main() {
         assert.deepEqual(await page.locator('#dstrip .dday').evaluateAll(els => els.map(el => el.dataset.day)), ['2026-11-15','2026-11-16','2026-11-17','2026-11-18','2026-11-19','2026-11-20','2026-11-21']);
         const flex = fixture.requests.slice(before).map(r => new URL(r.url, fixture.url)).find(u => u.searchParams.get('action') === 'flex');
         assert(flex); assert.equal(flex.searchParams.get('fareClass'), 'business'); assert.equal(flex.searchParams.get('returnDate'), '2026-11-21');
-        assert(await page.locator('#dstrip .dday.low').count() > 0);
+        const prices=(await page.locator('#dstrip .dday b').allTextContents()).map(t=>Number(t.replace(/[^0-9.]/g,''))).filter(n=>n>0);
+        const min=Math.min(...prices),max=Math.max(...prices);
+        assert.equal(await page.locator('#dstrip .dday.low').count(),min<max?prices.filter(p=>p===min).length:0);
         await page.locator('#dstrip [data-day="2026-11-19"]').click(); await page.locator('#cards .fc').first().waitFor();
         assert.equal(searchParams().get('departureDate'), '2026-11-19'); assert.equal(searchParams().get('returnDate'), '2026-11-22');
         assert.equal(searchParams().get('fareClass'), 'business');
@@ -356,7 +361,8 @@ async function main() {
           assert(actions.includes('search')&&actions.includes('flex'),'search and flex must start while provider is held');
           assert.equal(actions.filter(a=>a==='search').length,1);
           await page.mouse.up(); await page.locator('[aria-busy="true"]').waitFor();
-          assert(await page.locator('.sk,.skeleton').count()>0); assert.equal(await page.locator('.spin').count(),0);
+          assert(await page.locator('.sk,.skeleton').count()>0); assert.equal(await page.locator('.loading-title,.sktabs,.skeleton .rbar').count(),0);
+          assert.match(await page.locator('[role="status"]').filter({hasText:'Searching Skiplagged'}).innerText(),/Searching Skiplagged/);
           assert.match(await page.evaluate(()=>location.hash), /loading|results/);
           await page.waitForFunction(()=>window.__flightMetrics.inputs.some(x=>x.type==='click'&&x.target==='go'));
           const clickTiming=await page.evaluate(()=>window.__flightMetrics.inputs.filter(x=>x.type==='click'&&x.target==='go').at(-1).ms);

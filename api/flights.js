@@ -42,7 +42,9 @@ function createCache({ now, ttlMs = 600000, capacity = 64 }) {
       entries.delete(key);
       if (capacity <= 0) return;
       if (entries.size >= capacity) entries.delete(entries.keys().next().value);
-      entries.set(key, { body, until: now() + ttlMs });
+      const until = now() + ttlMs;
+      body.expiresAt = until;
+      entries.set(key, { body, until });
     },
   };
 }
@@ -225,6 +227,7 @@ function createHandler({ callTool = createClient(), now = Date.now,
         } };
       // Retry incomplete responses on the next request; never cache failures.
       if (!body.partial) cache.set(key, body);
+      else res.setHeader('Retry-After', '60');
       return send(res, 200, body, !body.partial ? cache.get(key)?.maxAge : undefined);
     } finally {
       clearTimeout(timer); req.removeListener?.('aborted', onAborted); active--;

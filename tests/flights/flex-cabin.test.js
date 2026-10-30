@@ -153,3 +153,14 @@ test('response cache freshness never outlives the in-memory entry and errors sta
   assert.equal(s.calls.length, 14);
   assert.match((await s.call(url + '&unknown=x')).headers['cache-control'], /no-store/);
 });
+
+test('API exposes the entry absolute expiry unchanged on late hits and omits expiry on partials', async () => {
+  let time=NOW;
+  const s=setup({now:()=>time}),url=URL+'&cabin=business';
+  const first=await s.call(url);assert.equal(first.body.expiresAt,NOW+600000);
+  time+=599999;const hit=await s.call(url);assert.equal(hit.body.expiresAt,first.body.expiresAt);assert.equal(hit.headers['cache-control'],'private, max-age=0, must-revalidate');
+  time++;const renewed=await s.call(url);assert.equal(renewed.body.expiresAt,time+600000);
+  const partial=setup({callTool:async(_name,args)=>{if(args.departureDate==='2026-11-17')throw new UpstreamError('upstream-timeout');return {flights:[candidate(args)]};}});
+  const response=await partial.call(url);assert.equal(response.body.partial,true);assert.equal(response.body.expiresAt,undefined);
+  assert.equal(response.headers['retry-after'],'60');assert.match(response.headers['cache-control'],/no-store/);
+});

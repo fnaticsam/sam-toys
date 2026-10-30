@@ -76,7 +76,7 @@ async function createFixtureServer({ port = 0, approvedPath = path.join(ROOT, 'p
   function setMode(next) {
     if (!allowed.has(next)) throw new Error('Unknown fixture scenario');
     release(); mode = next; holding = next === 'loading';
-    handler = createHandler({ now: () => NOW, cacheOptions: { capacity: 0 },
+    handler = createHandler({ now: () => NOW, cacheOptions: { capacity: 64 },
       throttleOptions: { max: next === 'throttled' ? 0 : 10000 }, maxConcurrentRequests: 100,
       callTool: async (name, args, signal) => {
         const thisMode = mode;

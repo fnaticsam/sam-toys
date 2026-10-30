@@ -16,7 +16,7 @@ function page({ saved, liveSaved, earningOnly, origin, sessionSaved, initialHash
   if (earningOnly !== undefined) storage.set('flights.earningOnly.v1', earningOnly);
   if (origin !== undefined) storage.set('flights.from.v1', origin);
   const session = new Map(sessionSaved === undefined ? [] : [['flights.results.v1', sessionSaved]]), windowEvents = {}, frames = [], timers = new Map();
-  let timerId = 0;
+  let timerId = 0, time = NOW;
   const historyCalls = [];
   function classList() {
     const values = new Set();
@@ -30,8 +30,8 @@ function page({ saved, liveSaved, earningOnly, origin, sessionSaved, initialHash
   const location = { hash: initialHash };
   const lists = {};
   class FixedDate extends Date {
-    constructor(...args) { super(...(args.length ? args : [NOW])); }
-    static now() { return NOW; }
+    constructor(...args) { super(...(args.length ? args : [time])); }
+    static now() { return time; }
   }
   const media = query => ({ matches: query.includes('reduced-motion') ? reducedMotion : query.includes('max-width') ? phone : finePointer, addEventListener() {} });
   const context = vm.createContext({
@@ -56,6 +56,7 @@ function page({ saved, liveSaved, earningOnly, origin, sessionSaved, initialHash
     json: code => JSON.parse(vm.runInContext(`JSON.stringify(${code})`, context)),
     put(name, value) { context[name] = value; },
     elements, lists, storage, session, location, events, windowEvents, historyCalls,
+    advanceTime(ms) { time += ms; },
     flushFrames() { for (const callback of frames.splice(0)) callback(); },
     flushTimers(maxDelay = Infinity) { for (const [id, timer] of [...timers]) if (timer.delay <= maxDelay) { timers.delete(id); timer.callback(); } },
   };
@@ -77,7 +78,7 @@ function deferredFetch() {
   const calls = [];
   return { calls, get searches() { return calls.filter(call => new URL(call.url, 'https://sam.toys').searchParams.get('action') !== 'flex'); }, get flexes() { return calls.filter(call => new URL(call.url, 'https://sam.toys').searchParams.get('action') === 'flex'); }, fetch(url, options) { return new Promise(resolve => calls.push({ url, signal: options?.signal, resolve })); } };
 }
-const ok = results => ({ ok: true, json: async () => ({ action: 'search', results, meta: {} }) });
+const ok = results => ({ ok: true, json: async () => ({ action: 'search', results, meta: {}, expiresAt: NOW + 600000 }) });
 
 function searchControls(p, value) {
   for (const name of ['#sf', '#whenBtn', '#cabin', '#fromBtn']) p.elements[name] = {};
@@ -842,9 +843,9 @@ test('Starlink card threshold is 50%, likely filter is 80%, and unknown predicti
     if(shown)assert(card.includes('Starlink '+Math.round(probability*100)+'%'));
     p.run('response.results=[fare]');
     const detail=p.run('vFare(fare.id)');
+    if(probability===null){assert.doesNotMatch(detail,/class="slf"|Starlink/);continue;}
     assert.match(detail,/class="slf"/);
     assert.match(detail,/based on fleet &lt;plan&gt;/);assert.match(detail,/Tail &amp; aircraft can change/);
-    if(probability===null)assert.match(detail,/Starlink unknown/);
   }
 });
 
@@ -940,7 +941,7 @@ test('search paints its skeleton shell immediately and warms cabin-specific flex
   const pending=deferredFetch(),p=page({fetch:pending.fetch});query(p,{cabin:'First'});
   const completion=p.run('search()');
   assert.equal(p.location.hash,'#/loading');assert.equal(pending.searches.length,1);assert.equal(pending.flexes.length,1);
-  const html=p.elements['#app'].innerHTML;assert.match(html,/aria-busy="true"/);assert.match(html,/class="fc glass skcard"/);assert.doesNotMatch(html,/class="spin"|spinner/);
+  const html=p.elements['#app'].innerHTML;assert.match(html,/aria-busy="true"/);assert.match(html,/class="fc glass skcard"/);assert.match(html,/<p[^>]*role="status"><span class="spin"><\/span>Searching Skiplagged<\/p>/);assert.doesNotMatch(html,/<h1|class="rbar"|class="tabs sktabs"|verify fare/);
   assert.equal(new URL(pending.flexes[0].url,'https://sam.toys').searchParams.get('fareClass'),'first');
   pending.searches[0].resolve(ok([]));await completion;assert.equal(p.location.hash,'#/results');
   pending.flexes[0].resolve({ok:true,json:async()=>({results:[]})});await Promise.resolve();
@@ -954,16 +955,17 @@ test('pointerdown prefetch and direct Go share one fare and flex request', async
   pending.searches[0].resolve(ok([]));pending.flexes[0].resolve({ok:true,json:async()=>({results:[]})});await completion;
 });
 
-test('typed suggestions debounce at 80ms while input state updates immediately', () => {
-  const p=page();query(p);const controls=searchControls(p,'M');let updates=0;
-  controls.input.parentNode.insertAdjacentHTML=()=>{updates++;};
+test('typed suggestions redraw synchronously for every input before date or origin actions', () => {
+  const p=page();query(p);const controls=searchControls(p,'M');let updates=0,lastPop='';
+  controls.input.parentNode.insertAdjacentHTML=(_position,html)=>{updates++;lastPop=html;};
   controls.input.oninput();controls.input.value='Madrid';controls.input.oninput();
-  assert.equal(p.run('draft'),'Madrid');assert.equal(p.run('S.to'),'');assert.equal(updates,0);
-  p.flushTimers(79);assert.equal(updates,0);p.flushTimers(80);assert.equal(updates,1);
+  assert.equal(p.run('draft'),'Madrid');assert.equal(p.run('S.to'),'');assert.equal(updates,2);
+  assert.match(lastPop,/data-to="MAD"/);assert.doesNotMatch(lastPop,/data-to="DOH"/);
+  p.flushTimers();assert.equal(updates,2);
 });
 
 test('session results restore query history immediately without a fare request and expire after ten minutes', async () => {
-  const p=page();query(p);p.run("saveResults(S,{action:'search',results:[],meta:{}})");
+  const p=page();query(p);p.run("saveResults(S,{action:'search',results:[],meta:{},expiresAt:Date.now()+600000})");
   const saved=p.session.get('flights.results.v1');assert(saved);
   const pending=deferredFetch(),restored=page({sessionSaved:saved,fetch:pending.fetch});query(restored);
   await restored.run('search()');assert.equal(restored.location.hash,'#/results');assert.equal(pending.searches.length,0);
@@ -974,10 +976,10 @@ test('session results restore query history immediately without a fare request a
 });
 
 test('query cache bounds tab storage, excludes partial replies and isolates dates, cabin and oneworld', () => {
-  const p=page();query(p);p.run("saveResults(S,{action:'search',results:[],meta:{}})");
+  const p=page();query(p);p.run("saveResults(S,{action:'search',results:[],meta:{},expiresAt:Date.now()+600000})");
   for(const change of ["S.cabin='Business'","S.out='2026-11-19'","S.back='2026-11-21'","S.earningOnly=false"]){query(p);p.run(change);assert.equal(p.run('readResults(S)'),null);}
   p.run("sessionResults.clear();saveResults(S,{action:'search',results:[],partial:true})");assert.equal(p.run('sessionResults.size'),0);
-  p.run("for(let i=0;i<8;i++)saveResults({...S,out:'2026-11-'+String(10+i)},{action:'search',results:[],meta:{}})");
+  p.run("for(let i=0;i<8;i++)saveResults({...S,out:'2026-11-'+String(10+i)},{action:'search',results:[],meta:{},expiresAt:Date.now()+600000})");
   assert.equal(p.run('sessionResults.size'),6);assert.equal(JSON.parse(p.session.get('flights.results.v1')).length,6);
   assert.equal(page({sessionSaved:'{'}).run('readResults(S)'),null);
 });
@@ -1085,7 +1087,7 @@ test('Back to an uncached partial or expired query refetches its own rows withou
   for(const missing of ['partial','expired']){
     const pending=deferredFetch(),p=page({fetch:pending.fetch});
     query(p,{from:'IBZ',to:'MAD',out:'2026-11-18'});const oldSearch=p.run('search()');
-    pending.searches[0].resolve({ok:true,json:async()=>({action:'search',results:[{...structuredClone(data.results[0]),id:'old-'+missing}],meta:{},...(missing==='partial'?{partial:true}:{})})});
+    pending.searches[0].resolve({ok:true,json:async()=>({action:'search',results:[{...structuredClone(data.results[0]),id:'old-'+missing}],meta:{},expiresAt:NOW+600000,...(missing==='partial'?{partial:true}:{})})});
     pending.flexes[0].resolve({ok:true,json:async()=>({results:[]})});await oldSearch;
     const oldHistory=p.json('history.state');
     if(missing==='expired')p.run('sessionResults.get(cacheKey(S)).until=Date.now()-1');
@@ -1106,5 +1108,104 @@ test('Back to an uncached partial or expired query refetches its own rows withou
     assert.equal(p.location.hash,'#/results');assert.equal(p.run('response.results[0].id'),'refetched-'+missing);
     assert.equal(p.run('resultQuery.from'),'IBZ');assert.equal(p.run('resultQuery.out'),'2026-11-18');
     assert.equal(p.historyCalls.filter(call=>call.method==='push').length,pushes);
+  }
+});
+
+test('Starlink filter chrome requires qualifying fares and detail requires a numeric prediction including zero', async () => {
+  const data=await backend('/api/flights?origin=LHR&destination=MAD&departureDate=2026-11-18',searchFixture({origin:'LHR',destination:'MAD',departureDate:'2026-11-18'}));
+  const p=page();query(p);const fare=data.results[0];p.put('fare',fare);
+  for(const prediction of [undefined,{}, {p:null}, {p:0}, {p:0.799}, {p:0.8}]){
+    fare.starlink=prediction;p.put('data',{...data,results:[fare]});p.run('response=data');
+    assert.equal(p.run('filtersHTML()').includes('id="starlinkOnly"'),prediction?.p>=0.8);
+    assert.equal(p.run('vFare(fare.id)').includes('class="slf"'),typeof prediction?.p==='number');
+  }
+});
+
+test('nearby prices mark only tied cheapest days when at least one price is higher', () => {
+  const p=page();query(p);p.run('response={action:"search",results:[]};stripDays()');
+  for(const [prices,cheapest] of [[[100,100,100],[]],[[100],[]],[[100,120,100],[15,17]],[[],[]]]){
+    p.put('rows',prices.map((priceGbp,i)=>({departureDate:'2026-11-'+(15+i),priceGbp})));p.run('strip.rows=rows');
+    const html=p.run('dateStrip()');const marked=[...html.matchAll(/class="dday[^\"]* low" data-day="2026-11-(\d+)"/g)].map(m=>Number(m[1]));
+    assert.deepEqual(marked,cheapest);assert.equal((html.match(/cheapest nearby/g)||[]).length,cheapest.length);
+  }
+});
+
+test('partial warnings use the failed airport even when the search and metadata name its city', () => {
+  const p=page();query(p,{from:'LON'});
+  p.run("response={partial:true,failures:[{origin:'LGW'},{origin:'LGW'}],meta:{airports:{LGW:'London'}}}");
+  assert.match(p.run('partialNote()'),/LGW didn't answer/);assert.doesNotMatch(p.run('partialNote()'),/LON|London/);
+  p.run("response.failures=[{origin:'LON'}]");assert.match(p.run('partialNote()'),/London didn't answer/);
+});
+
+test('calendar flex completion updates prices and accessible labels without replacing day nodes or handlers', async () => {
+  const pending=deferredFetch(),p=page({fetch:pending.fetch});query(p);
+  p.run("S.prices=true;S.view='2026-11';location.hash='#/search/when'");p.elements['#sf']={};
+  const price={textContent:'—'},attributes=new Map(),classes=new Set(),click=()=>{};
+  const day={dataset:{k:'2026-11-18'},disabled:false,onclick:click,querySelector:()=>price,setAttribute:(k,v)=>attributes.set(k,v),classList:{toggle:(k,on)=>on?classes.add(k):classes.delete(k)}};
+  p.lists['#cal [data-k]']=[day];const note=p.elements['#cal .calnote']={textContent:''};
+  const before=p.elements['#app'].innerHTML,completion=p.run('loadFlex()');
+  assert.equal(note.textContent,'Loading dates…');assert.equal(p.elements['#app'].innerHTML,before);
+  pending.flexes[0].resolve({ok:true,json:async()=>({results:[{departureDate:'2026-11-18',priceGbp:99}]})});await completion;
+  assert.equal(p.lists['#cal [data-k]'][0],day);assert.equal(day.onclick,click);assert.equal(price.textContent,'£99');
+  assert.match(attributes.get('aria-label'),/outbound, £99 discovery price/);assert(classes.has('pr'));
+  assert.match(note.textContent,/£ discovery prices/);assert.equal(p.elements['#app'].innerHTML,before);
+});
+
+test('partial day strips preserve rows across navigation and retries, with query-specific cooldowns', async () => {
+  const pending=deferredFetch(),p=page({fetch:pending.fetch});query(p);p.run('response={action:"search",results:[]}');
+  const first=p.run('loadStrip()');pending.flexes[0].resolve({ok:true,headers:{get:()=> '90'},json:async()=>({partial:true,results:[{departureDate:'2026-11-17',priceGbp:88}]})});await first;
+  assert.equal(p.run('strip.state'),'partial');assert.equal(p.run('stripRequests.size'),0);assert.equal(p.session.size,0);
+  p.run("go('#/gold');go('#/results')");await p.run('loadStrip()');assert.equal(pending.flexes.length,1);assert.equal(p.run("stripPrice('2026-11-17')"),88);
+  const other=p.run("warmStrip({...S,cabin:'Business'})");assert.equal(pending.flexes.length,2);
+  pending.flexes[1].resolve({ok:true,json:async()=>({results:[],expiresAt:NOW+600000})});await other;
+  p.advanceTime(89999);await p.run('loadStrip()');assert.equal(pending.flexes.length,2);
+  p.advanceTime(1);const retry=p.run('loadStrip()');assert.equal(pending.flexes.length,3);assert.equal(p.run("stripPrice('2026-11-17')"),88);
+  pending.flexes[2].resolve({ok:false,status:429,headers:{get:()=> '120'}});await retry;
+  assert.equal(p.run("stripPrice('2026-11-17')"),88);await p.run('loadStrip()');assert.equal(pending.flexes.length,3);
+  p.advanceTime(120000);const partialRetry=p.run('loadStrip()');
+  pending.flexes[3].resolve({ok:true,json:async()=>({partial:true,results:[{departureDate:'2026-11-19',priceGbp:77}]})});await partialRetry;
+  assert.equal(p.run("stripPrice('2026-11-17')"),88);assert.equal(p.run("stripPrice('2026-11-19')"),77);
+  p.advanceTime(60000);const complete=p.run('loadStrip()');
+  pending.flexes[4].resolve({ok:true,json:async()=>({results:[],expiresAt:NOW+600000})});await complete;
+  assert.deepEqual(p.json('strip.rows'),[]);assert.equal(p.run('stripRetries.size'),0);
+});
+
+test('day strip errors honor numeric and HTTP-date Retry-After without capping the server delay', async () => {
+  for(const delay of ['7200',new Date(NOW+120000).toUTCString()]){
+    const pending=deferredFetch(),p=page({fetch:pending.fetch});query(p);
+    const first=p.run('loadStrip()');pending.flexes[0].resolve({ok:false,status:429,headers:{get:()=>delay}});await first;
+    const ms=delay==='7200'?7200000:120000;assert.equal(p.run('stripRetries.get(cacheKey(S)).retryAt'),NOW+ms);
+    p.advanceTime(ms-1);await p.run('loadStrip()');assert.equal(pending.flexes.length,1);
+    p.advanceTime(1);const retry=p.run('loadStrip()');assert.equal(pending.flexes.length,2);
+    pending.flexes[1].resolve({ok:true,json:async()=>({results:[],expiresAt:NOW+ms+600000})});await retry;
+  }
+});
+
+test('fare and session caches preserve server absolute expiry after late delivery and repeated saves', () => {
+  const p=page();query(p);p.put('data',{action:'search',results:[],expiresAt:NOW+600000});
+  p.advanceTime(599000);p.run('saveResults(S,data)');assert.equal(p.run('readResults(S).until'),NOW+600000);
+  const sessionSaved=p.session.get('flights.results.v1'),restored=page({sessionSaved});query(restored);restored.advanceTime(599999);
+  assert.equal(restored.run('readResults(S).until'),NOW+600000);p.advanceTime(1000);p.run('saveResults(S,data)');
+  assert.equal(p.run('readResults(S)'),null);restored.advanceTime(1);assert.equal(restored.run('readResults(S)'),null);
+  for(const expiresAt of [undefined,null,'600000',NOW,NOW-1]){const fresh=page();query(fresh);fresh.put('data',{action:'search',results:[],expiresAt});fresh.run('saveResults(S,data)');assert.equal(fresh.run('readResults(S)'),null);}
+  const forged=JSON.parse(sessionSaved);forged[0].until+=600000;
+  const invalid=page({sessionSaved:JSON.stringify(forged)});query(invalid);assert.equal(invalid.run('readResults(S)'),null);
+});
+
+test('day strip success cache expires at the server instant, including late hits', async () => {
+  const pending=deferredFetch(),p=page({fetch:pending.fetch});query(p);const first=p.run('warmStrip(S)');
+  p.advanceTime(599000);pending.flexes[0].resolve({ok:true,json:async()=>({results:[],expiresAt:NOW+600000})});await first;
+  p.advanceTime(999);await p.run('warmStrip(S)');assert.equal(pending.flexes.length,1);
+  p.advanceTime(1);const next=p.run('warmStrip(S)');assert.equal(pending.flexes.length,2);
+  pending.flexes[1].resolve({ok:true,json:async()=>({results:[],expiresAt:NOW+1200000})});await next;
+});
+
+test('nearby day selection preserves same-day and longer returns, and leaves one-way trips one way', async () => {
+  for(const back of ['', '2026-11-18','2026-11-21']){
+    const pending=deferredFetch(),p=page({fetch:pending.fetch});query(p,{back});p.run('stripDays()');
+    const button={dataset:{day:'2026-11-19'}};p.lists['#dstrip [data-day]']=[button];p.run('bindStrip()');button.onclick();
+    const expected=back?back==='2026-11-18'?'2026-11-19':'2026-11-22':'';
+    assert.equal(p.run('S.back'),expected);assert.equal(new URL(pending.searches[0].url,'https://sam.toys').searchParams.get('returnDate'),expected||null);
+    const completion=p.run('prepared.promise');pending.searches[0].resolve(ok([]));pending.flexes[0].resolve({ok:true,json:async()=>({results:[]})});await completion;
   }
 });

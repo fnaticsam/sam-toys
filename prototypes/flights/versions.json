@@ -47,7 +47,7 @@
     {
       "n": 4,
       "file": "proto-v4.html",
-      "date": "2026-10-29",
+      "date": "2026-10-30",
       "title": "Home: origin pills, open calendar; skip-last-leg; nearby dates",
       "notes": [
         "Built on live sam.toys/flights (sam-toys main d06ada5) with sample data; screens other than home and results are unchanged from live.",
@@ -55,7 +55,10 @@
         "The calendar is always open under that row, compact and without its own panel: one tap one way, a second tap return, Clear, £/TP toggle. On phone a full-width Search button sits under the calendar.",
         "Skip-last-leg fares: a 'Skip last leg' chip in the card's tag slot, the skipped final leg drawn dashed and greyed to the ticketed city, 'Ticketed to BCN · get off at MAD' under the airline, and a Show · Hide · Only filter.",
         "Results: a ±3-day strip under the route header with the cheapest price per day from flex data in the searched cabin; the cheapest nearby day is ringed with ↓; tapping a day re-searches and keeps the trip length; arrows move a week.",
-        "Long business and first fares (five-digit £ and TP) fit the card's right column at 1440 and 390 (matches the flights-card-fit hotfix)."
+        "Long business and first fares (five-digit £ and TP) fit the card's right column at 1440 and 390 (matches the flights-card-fit hotfix).",
+        "sliding highlight: one shared shape glides behind the origin pills, the sort tabs and the skip-last-leg control; it follows the pointer in a light tint, slides and fills ink on a new selection, returns on leave; keyboard focus moves it without animation; reduced motion is instant; phone slides on tap only.",
+        "Calendar shows two months side by side (current and next), month names centred, past days greyed, round arrows at the far edges move both by a month; one month on phone.",
+        "Starlink likely: a switch under 'oneworld only' with a count (e.g. 2 of 4), a quiet 'Starlink 95%' in the card's airline line when 50% or more, and one line on the fare page with the basis and a note."
       ],
       "fixed": []
     }

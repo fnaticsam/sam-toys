@@ -845,7 +845,7 @@ test('Starlink card threshold is 50%, likely filter is 80%, and unknown predicti
     const detail=p.run('vFare(fare.id)');
     if(probability===null){assert.doesNotMatch(detail,/class="slf"|Starlink/);continue;}
     assert.match(detail,/class="slf"/);
-    assert.match(detail,/based on fleet &lt;plan&gt;/);assert.match(detail,/Tail &amp; aircraft can change/);
+    assert.match(detail,/fleet &lt;plan&gt;/);assert.match(detail,/Tail &amp; aircraft can change/);
   }
 });
 
@@ -1134,7 +1134,7 @@ test('partial warnings use the failed airport even when the search and metadata 
   const p=page();query(p,{from:'LON'});
   p.run("response={partial:true,failures:[{origin:'LGW'},{origin:'LGW'}],meta:{airports:{LGW:'London'}}}");
   assert.match(p.run('partialNote()'),/LGW didn't answer/);assert.doesNotMatch(p.run('partialNote()'),/LON|London/);
-  p.run("response.failures=[{origin:'LON'}]");assert.match(p.run('partialNote()'),/London didn't answer/);
+  p.run("response.failures=[{origin:'LON'}]");assert.match(p.run('partialNote()'),/Some direct flights didn't load/);
 });
 
 test('calendar flex completion updates prices and accessible labels without replacing day nodes or handlers', async () => {

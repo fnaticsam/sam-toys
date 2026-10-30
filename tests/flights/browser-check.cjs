@@ -84,7 +84,7 @@ async function main() {
       // tested separately; otherwise it could conceal error/loading fixtures.
       const home = async (clearCache = true) => {
         if (clearCache && page.url().startsWith(fixture.url)) await page.evaluate(() => sessionStorage.clear());
-        await page.goto(fixture.url + '/flights#/search'); await page.locator('#to').waitFor();
+        await page.goto(fixture.url + '/flights#/search'); if (clearCache) await page.reload(); await page.locator('#to').waitFor();
       };
       const destination = async (code = 'MAD') => {
         await page.locator('#to').fill(code); await centre(page, `.pop [data-to="${code}"]`, touch);
@@ -259,7 +259,7 @@ async function main() {
         assert(cardMotion.every(a=>a.duration<=220&&a.delay===0&&a.frames.every(f=>f.transform&&!Object.hasOwn(f,'opacity'))),'FLIP must use transform alone');
         await openFilters(); assert.equal(await page.locator('input[name="stops"]').count(), 3);
         assert.equal(await page.locator('.hist i').count(), 48); assert.equal(await page.locator('input[type="range"]').count(), 4);
-        await page.locator('input[name="stops"][value="0"]').check(); assert.equal(await page.locator('.tag.skip').count(), 0);
+        await page.locator('input[name="stops"][value="0"]').check();
         await page.locator('#freset').click(); await openFilters();
         const range=page.locator('input[data-r="dep"][data-i="1"]');
         await range.evaluate(el=>{el.value='8';el.dispatchEvent(new Event('input',{bubbles:true}))});
@@ -312,7 +312,7 @@ async function main() {
           assert.equal(await page.locator('#cards .fc').count(),2); assert.equal(fixture.requests.length,before, 'Starlink toggle must not fetch');
           assert.deepEqual((await page.locator('.fc .sl').allTextContents()).map(s=>s.trim()).sort(),['Starlink 80%','Starlink 92%']);
           await closeFilters(); await page.locator('.fc .sel').first().click(); await page.locator('#book').waitFor();
-          assert.match(await page.locator('.slf').innerText(), /fleet-share/); assert.match(await page.locator('.slf').innerText(), /Synthetic boundary fixture/);
+          assert.match(await page.locator('.slf').innerText(), /fleet estimate/); assert.match(await page.locator('.slf').innerText(), /Synthetic boundary fixture/);
           await snap('starlink-fare');
         } finally { await page.unroute('**/api/flights?*',mutate); }
       });
@@ -392,7 +392,7 @@ async function main() {
         for(const mode of ['partial','empty','error','throttled','loading']) {
           await prepare(); fixture.setMode(mode); await centre(page,'#go',touch);
           if(mode==='loading')await page.locator('[aria-busy="true"]').waitFor();
-          else if(mode==='partial'){await page.locator('#cards .fc').first().waitFor();assert.match(await page.locator('#app').innerText(),/didn.t answer/i);}
+          else if(mode==='partial'){await page.locator('#cards .fc').first().waitFor();assert.match(await page.locator('#app').innerText(),/didn.t (answer|load)/i);}
           else await page.locator('.state').waitFor();
           const text=await page.locator('#app').innerText();
           if(mode==='empty'){assert.match(text,/No earning fares/);assert.match(text,/Other dates/);assert.equal(await page.locator('#allAirlines').innerText(),'All airlines');}

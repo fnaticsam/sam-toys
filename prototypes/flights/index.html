@@ -522,6 +522,26 @@ section.hero .cal2{position:relative;padding:0 44px}
 .under{position:relative;z-index:11}
 .gl-noanim,.gl-noanim *{transition:none!important}
 
+/* v4.1: Anywhere leads the pill row (a destination action), origin pills follow the take-off glyph */
+.search{z-index:12}
+.prow{display:flex;align-items:center;gap:12px;min-width:0}
+.anyp{display:inline-flex;align-items:center;gap:6px;height:30px;padding:0 12px 0 10px;border:0;border-radius:var(--radius-control);background:rgba(0,0,0,.04);box-shadow:inset 0 0 0 1px rgba(0,0,0,.1);color:var(--ink);font-size:var(--text-sm);white-space:nowrap;transition:transform .2s var(--ease),background .2s}
+.anyp:hover{background:rgba(0,0,0,.07)}
+.anyp svg{color:var(--soft)}
+.clab{display:none}
+@media (max-width:640px){
+  .under{display:contents}
+  .prow{gap:8px;margin-top:12px;width:100%}
+  .opin{width:76px}
+  .cabinw{order:5;display:flex;align-items:center;justify-content:space-between;width:100%;min-height:40px;margin-top:10px}
+  .clab{display:inline;color:var(--soft-home);font-size:var(--text-sm)}
+  .gobig{order:6}
+  .cabinw .cabin{margin-right:-10px}
+}
+@media (max-width:640px){.opin{width:84px;padding:0 9px}}
+@media (max-width:640px){.prow{position:relative;z-index:11}}
+@media (max-width:640px){#fromRes{left:auto;right:0;min-width:0;width:min(240px,calc(100vw - 48px))}}
+
 </style>
 </head>
 <body>
@@ -585,7 +605,7 @@ function savedFromCode(){try{const v=localStorage.getItem('flights.from.v1');ret
 function saveFromCode(c){try{localStorage.setItem('flights.from.v1',c)}catch{}}
 // ---- Prototype only: sample data stands in for /api/flights (no network). ----
 (function(){
-  try{if(!localStorage.getItem('flights.gold.v2'))localStorage.setItem('flights.gold.v2',JSON.stringify({tp:12480,target:20000,ends:'2027-03-31'}))}catch{}
+  try{if(!localStorage.getItem('flights.proto.gold'))localStorage.setItem('flights.proto.gold',JSON.stringify({tp:12480,target:20000,ends:'2027-03-31'}))}catch{}
   const TZ={LHR:'+00:00',LGW:'+00:00',LCY:'+00:00',STN:'+00:00',LTN:'+00:00',SEN:'+00:00',DUB:'+00:00',LIS:'+00:00',
     MAD:'+01:00',BCN:'+01:00',VLC:'+01:00',IBZ:'+01:00',FRA:'+01:00',MUC:'+01:00',FLR:'+01:00',FCO:'+01:00',MXP:'+01:00',CDG:'+01:00',
     JFK:'-05:00',BOS:'-05:00',PHL:'-05:00',CLT:'-05:00',HEL:'+02:00',DOH:'+03:00',AMM:'+03:00'};
@@ -1000,13 +1020,14 @@ function vSearch(){
     ${hint&&hintField==='to'?`<div class="hintline err fieldHint" id="toError" role="status">${esc(hint)}</div>`:''}
   </form>
   <div class="under">
+    <div class="prow"><button type="button" class="anyp" id="anyPill" aria-label="Search anywhere from ${esc(placeName(S.from))}">${GLOBE}<span>Anywhere</span></button>
     <div class="orow" role="group" aria-label="From"><svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M2.5 19h19v2h-19v-2zm19.57-9.36c-.21-.8-1.04-1.28-1.84-1.06L14.92 10l-6.9-6.43-1.93.51 4.14 7.17-4.97 1.33-1.97-1.54-1.45.39 1.82 3.16.77 1.33 1.6-.43 5.31-1.42 4.35-1.16L21 11.49c.81-.23 1.28-1.05 1.07-1.85z"/></svg><button type="button" class="opill ${S.from==='LON'?'on':''}" data-from="LON" aria-pressed="${S.from==='LON'}">London</button><button type="button" class="opill ${S.from==='IBZ'?'on':''}" data-from="IBZ" aria-pressed="${S.from==='IBZ'}">Ibiza</button><span class="owrap"><input class="opin ${custom?'on':''}" id="fromQ" placeholder="Other city" value="${custom?esc(placeName(S.from)):''}" aria-label="From another city or airport"><div id="fromRes" role="listbox" aria-label="Origins"></div></span></div>
-    <label><span class="sr">Cabin</span><select class="fv cabin" id="cabin">${Object.keys(CABINS).map(c=>`<option ${S.cabin===c?'selected':''}>${c}</option>`).join('')}</select></label>
+    </div>
+    <label class="cabinw"><span class="clab">Cabin</span><select class="fv cabin" id="cabin" aria-label="Cabin">${Object.keys(CABINS).map(c=>`<option ${S.cabin===c?'selected':''}>${c}</option>`).join('')}</select></label>
   </div>
   ${hint&&hintField==='when'?`<div class="hintline err fieldHint" id="dateError" role="status">${esc(hint)}</div>`:''}
   ${calHTML2()}
-  <button type="submit" form="sf" class="go gobig">Search</button>
-  <button type="button" class="actionPill" id="anyPill">${GLOBE} Anywhere</button></section>`;
+  <button type="submit" form="sf" class="go gobig">Search</button></section>`;
 }
 
 /* ---------- results: Skiplagged-style cards, tier points first ---------- */
@@ -1138,7 +1159,8 @@ function render(){
 }
 function bind(){
   bindLive();
-  const any=$('#anyPill');if(any)any.onclick=()=>chooseDestination('ANY');
+  const any=$('#anyPill');if(any)any.onclick=()=>{S.to='ANY';draft='';submitSearch()};
+  const goBtn=$('#go');if(goBtn)goBtn.onclick=e=>{e.preventDefault();submitSearch()};
   const fq=$('#fromQ');if(fq){fq.addEventListener('focus',()=>fq.select());fq.addEventListener('blur',()=>setTimeout(()=>{if(document.activeElement!==fq&&$('#fromRes'))$('#fromRes').innerHTML=''},150));fq.addEventListener('keydown',e=>{if(e.key==='Escape'){fq.blur();redraw()}})}
   if($('#cards'))bindResults(false);if($('#dstrip'))stripHook();if(typeof applyGlides==='function')applyGlides();
 }
@@ -1167,7 +1189,7 @@ async function runDemo(name){
     case 'loading':set('JFK',dPlus(15));MOCK.delay=6e8;search();break;
     case 'empty':set('MAD',dPlus(15));MOCK.mode='empty';MOCK.delay=300;search();break;
     case 'error':set('MAD',dPlus(15));MOCK.mode='error';MOCK.delay=300;search();break;
-    default:S.from='LON';saveFromCode('LON');set('');go('#/search');
+    default:S.from='LON';saveFromCode('LON');set('');S.view=TODAY.slice(0,7);go('#/search');
   }
 }
 window.addEventListener('hashchange',()=>{if(route()[0]==='demo')runDemo(route()[1])});

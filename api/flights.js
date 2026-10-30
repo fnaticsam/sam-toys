@@ -8,6 +8,7 @@ const { normalizeFlight, safeLink } = require('./_lib/flights/normalize');
 const airports = require('./_lib/flights/airports.json');
 const { CITY_GROUPS } = require('./_lib/flights/cities');
 const { rank } = require('./_lib/flights/rank');
+const { starlinkProbability } = require('./_lib/flights/starlink');
 
 // Open API. Origin is browser defence in depth, not authentication. Vercel
 // supplies x-forwarded-proto; other proxies must overwrite it themselves.
@@ -177,7 +178,12 @@ function createHandler({ callTool = createClient(), now = Date.now,
       const seen = new Set();
       for (const batch of batches) for (const item of batch || []) {
         if (item.flight) {
-          if (!seen.has(item.flight.id)) { seen.add(item.flight.id); results.push(item.flight); }
+          if (!seen.has(item.flight.id)) {
+            seen.add(item.flight.id);
+            const { p, basis, note } = starlinkProbability(item.flight);
+            const flight = { ...item.flight, starlink: { p, basis, note } };
+            if (query.starlinkMin === undefined || (p !== null && p >= query.starlinkMin)) results.push(flight);
+          }
         } else excluded[item.excluded] = (excluded[item.excluded] || 0) + 1;
       }
       if (!pages.length) {

@@ -14,7 +14,7 @@ function parseInput(rawUrl, now = Date.now()) {
   const action = params.get('action') || 'search';
   if (!['search', 'anywhere', 'flex'].includes(action)) bad('action must be search, anywhere or flex.');
   const shared = ['action','origin','departureDate','returnDate','earningOnly'];
-  const allowed = new Set([...shared, ...(action === 'search' ? ['destination','fareClass','limit','offset','maxStops','includeHiddenCity','airlines'] :
+  const allowed = new Set([...shared, ...(action === 'search' ? ['destination','fareClass','limit','offset','maxStops','includeHiddenCity','airlines','starlinkMin'] :
     action === 'anywhere' ? ['fareClass'] : ['destination','mode','sort'])]);
   for (const key of params.keys()) {
     if (!allowed.has(key) || params.getAll(key).length !== 1 || params.get(key) === '') bad('Unknown, duplicate or empty parameter.');
@@ -38,6 +38,12 @@ function parseInput(rawUrl, now = Date.now()) {
     return Number(text);
   };
   const limit = integer('limit', 100, 1, 100), offset = integer('offset', 0, 0, 99);
+  let starlinkMin;
+  if (params.has('starlinkMin')) {
+    const text = params.get('starlinkMin');
+    if (!/^(?:\d+(?:\.\d+)?|\.\d+)$/.test(text) || Number(text) > 1) bad('starlinkMin must be a number between 0 and 1.');
+    starlinkMin = Number(text);
+  }
   const maxStops = params.get('maxStops') || 'many';
   if (!['none', 'one', 'many'].includes(maxStops)) bad('Invalid maxStops.');
   const hidden = params.get('includeHiddenCity');
@@ -51,7 +57,7 @@ function parseInput(rawUrl, now = Date.now()) {
   if (!['depart','return'].includes(mode) || !['date','price'].includes(sort)) bad('Invalid calendar mode or sort.');
   if (action === 'flex' && mode === 'return' && !returnDate) bad('returnDate is required for a return calendar.');
   return { action, origins, destination, departureDate, returnDate, fareClass, limit, offset,
-    maxStops, includeHiddenCity: !returnDate && hidden !== 'false', earningOnly, airlines, mode, sort };
+    maxStops, includeHiddenCity: !returnDate && hidden !== 'false', earningOnly, airlines, mode, sort, starlinkMin };
 }
 function toolInput(query, origin) {
   const q = query;

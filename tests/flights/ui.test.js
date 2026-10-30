@@ -638,9 +638,18 @@ test('live Gold ignores the exact prototype sample and migrates other legacy bal
   assert.equal(page({saved:JSON.stringify(sample),liveSaved:JSON.stringify({...sample,tp:42})}).run('gold.tp'),42);
   assert.equal(page({liveSaved:JSON.stringify(sample)}).run('gold.tp'),12480,'an explicitly saved live balance is preserved');
   const prototype=fs.readFileSync(path.join(__dirname,'../../prototypes/flights/proto-v3.html'),'utf8');
-  assert.equal(prototype,fs.readFileSync(path.join(__dirname,'../../prototypes/flights/index.html'),'utf8'));
   assert.doesNotMatch(prototype,/flights.gold.v2|flights.gold.live.v1/);
   assert.equal((prototype.match(/flights.proto.gold/g)||[]).length,4);
+});
+
+test('the prototype index equals the newest version listed last in versions.json', () => {
+  const prototypeDir=path.join(__dirname,'../../prototypes/flights');
+  const { versions }=JSON.parse(fs.readFileSync(path.join(prototypeDir,'versions.json'),'utf8'));
+  const latest=versions.at(-1);
+  assert.match(latest.file,/^proto-v\d+\.html$/);
+  assert.equal(latest.file,`proto-v${latest.n}.html`);
+  const prototype=fs.readFileSync(path.join(prototypeDir,latest.file),'utf8');
+  assert.equal(prototype,fs.readFileSync(path.join(prototypeDir,'index.html'),'utf8'));
 });
 
 test('empty searches stand alone and All airlines retries the same route without oneworld', async () => {

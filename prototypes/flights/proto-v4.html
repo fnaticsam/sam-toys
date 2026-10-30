@@ -465,6 +465,62 @@ section.hero .fieldHint{margin:10px 0 0}
   .skipx .ep{padding-top:28px}
 }
 @media (max-width:640px){.ddays{mask-image:linear-gradient(90deg,transparent 0,#000 14px,#000 calc(100% - 14px),transparent);-webkit-mask-image:linear-gradient(90deg,transparent 0,#000 14px,#000 calc(100% - 14px),transparent)}}
+/* sliding highlight */
+.glider{position:relative;isolation:isolate}
+.glide{position:absolute;left:0;top:0;z-index:0;border-radius:var(--radius-control);background:var(--ink);pointer-events:none;
+  transition:transform .26s var(--ease),width .26s var(--ease),height .26s var(--ease),background-color .26s var(--ease)}
+.glide[data-mode=tint]{background:rgba(0,0,0,.07)}
+.glider>:not(.glide){position:relative;z-index:1}
+.glider .opill,.glider .opin,.glider [data-sort],.glider label span{transition:color .26s var(--ease),background-color .26s var(--ease),box-shadow .2s,width .25s var(--ease)}
+/* the shape replaces each item's own fill */
+.glider .opill.on,.glider .opill:hover,.glider [data-sort][aria-selected=true],.glider [data-sort]:hover,.seg3.glider input:checked+span{background:transparent}
+.glider .opin.on:not(:focus){background:transparent;box-shadow:none}
+.glider .opin.gl-hover:not(:focus):not(.on){background:transparent}
+/* text cross-fades as the ink passes under it */
+.glider .opill.on,.glider [data-sort][aria-selected=true],.glider .opin.on:not(:focus){color:var(--ink)}
+.seg3.glider input:checked+span{color:var(--ink)}
+.glider .opill.gl-under,.glider [data-sort].gl-under,.glider .opin.gl-under:not(:focus),.seg3.glider .gl-under span{color:var(--paper)}
+.glider .gl-hover{color:var(--ink)}
+.seg3.glider span{background:transparent}
+/* oneworld switch: same easing */
+.earning-toggle input,.earning-toggle input::after{transition:background-color .26s var(--ease),transform .26s var(--ease)}
+.seg3.glider .gl-under input:checked+span{color:var(--paper)}
+
+/* Starlink */
+.sat{display:inline-block;vertical-align:-2px}
+.sl{display:inline-flex;align-items:center;gap:4px;margin-left:10px;color:var(--dim-home);white-space:nowrap}
+.sl svg{color:var(--faint)}
+.starlink-toggle{margin-top:0;border-top:0;padding-top:0}
+.starlink-toggle>span{display:inline-flex;align-items:center;gap:6px}
+.starlink-toggle small{color:var(--dim-home);font-size:var(--text-xs);margin-left:4px}
+.slf{display:flex;flex-direction:column;gap:2px;margin-top:10px;color:var(--body);font-size:var(--text-sm)}
+.slf small{color:var(--dim-home);font-size:var(--text-xs)}
+.slf b{font-weight:500;display:inline-flex;align-items:center;gap:6px}
+
+/* two-month calendar */
+section.hero .cal2{position:relative;padding:0 44px}
+.cal2 .months{display:grid;grid-template-columns:1fr 1fr;gap:36px}
+.cal2 .mname{text-align:center;font-size:var(--text-meta);font-weight:500;letter-spacing:-.01em;padding:2px 0 8px}
+.cal2 .cnav{position:absolute;top:50%;transform:translateY(-50%);width:36px;height:36px;border:0;border-radius:50%;display:grid;place-items:center;
+  background:var(--menu);box-shadow:inset 0 0 0 1px var(--hair),0 6px 16px -8px rgba(0,0,0,.25);color:var(--ink);font-size:var(--text-input);transition:transform .2s var(--ease)}
+.cal2 .cnav:hover:not(:disabled){transform:translateY(-50%) scale(1.04)}
+.cal2 .cnav:disabled{opacity:.35;box-shadow:inset 0 0 0 1px var(--hair)}
+.cal2 .cnav.l{left:0}.cal2 .cnav.r{right:0}
+.cal2 .calft{margin-left:-44px;margin-right:-44px}
+.cal2 .calnote{margin:0 -44px}
+.cft-r{display:inline-flex;align-items:center;gap:14px}
+.cal2 .chipg{height:28px;padding:0 10px;border:0;border-radius:999px;background:transparent;color:var(--soft);font-size:var(--text-sm)}
+@media (max-width:640px){
+  section.hero .cal2{padding:0}
+  .cal2 .months{grid-template-columns:1fr}
+  .cal2 .mon+.mon{display:none}
+  .cal2.skip1 .mon:first-child{display:none}.cal2.skip1 .mon+.mon{display:block}
+  .cal2 .cnav{top:0;transform:none;width:32px;height:32px}
+  .cal2 .cnav:hover:not(:disabled){transform:scale(1.04)}
+  .cal2 .calft,.cal2 .calnote{margin-left:0;margin-right:0}
+}
+.under{position:relative;z-index:11}
+.gl-noanim,.gl-noanim *{transition:none!important}
 
 </style>
 </head>
@@ -536,7 +592,7 @@ function saveFromCode(c){try{localStorage.setItem('flights.from.v1',c)}catch{}}
   const NAMES={LHR:'London Heathrow',LGW:'London Gatwick',LCY:'London City',MAD:'Madrid',VLC:'Valencia',BCN:'Barcelona',JFK:'New York JFK',BOS:'Boston',
     PHL:'Philadelphia',CLT:'Charlotte',DUB:'Dublin',DOH:'Doha',AMM:'Amman',IBZ:'Ibiza',HEL:'Helsinki'};
   const CARRIERS=[{code:'BA',name:'British Airways'},{code:'IB',name:'Iberia'},{code:'AA',name:'American Airlines'},{code:'EI',name:'Aer Lingus'},
-    {code:'QR',name:'Qatar Airways'},{code:'RJ',name:'Royal Jordanian'},{code:'AY',name:'Finnair'},{code:'JL',name:'Japan Airlines'},{code:'CX',name:'Cathay Pacific'},{code:'QF',name:'Qantas'}];
+    {code:'QR',name:'Qatar Airways'},{code:'RJ',name:'Royal Jordanian'},{code:'AY',name:'Finnair'},{code:'AS',name:'Alaska Airlines'},{code:'HA',name:'Hawaiian Airlines'},{code:'JL',name:'Japan Airlines'},{code:'CX',name:'Cathay Pacific'},{code:'QF',name:'Qantas'}];
   // [flight, from, dep, to, arr, +days]; h = index of the first unflown (hidden-city) segment
   const T={
     JFK:{ex:9,out:[
@@ -592,8 +648,8 @@ function saveFromCode(c){try{localStorage.setItem('flights.from.v1',c)}catch{}}
     IBZ:[38.87,1.37,1],MAD:[40.47,-3.56,1],BCN:[41.3,2.08,1],VLC:[39.49,-0.48,1],PMI:[39.55,2.73,1],SVQ:[37.42,-5.9,1],CDG:[49.01,2.55,1],FRA:[50.03,8.57,1],MUC:[48.35,11.79,1],
     FCO:[41.8,12.25,1],FLR:[43.81,11.2,1],MXP:[45.63,8.72,1],PRG:[50.1,14.26,1],VIE:[48.11,16.57,1],HEL:[60.32,24.96,2],AMM:[31.72,35.99,3],DOH:[25.27,51.61,3],DXB:[25.25,55.36,4],
     BKK:[13.69,100.75,7],SIN:[1.36,103.99,8],HKG:[22.31,113.91,8],HND:[35.55,139.78,9],NRT:[35.77,140.39,9],SYD:[-33.94,151.18,11],
-    JFK:[40.64,-73.78,-5],NYC:[40.64,-73.78,-5],BOS:[42.36,-71.01,-5],PHL:[39.87,-75.24,-5],CLT:[35.21,-80.94,-5],MIA:[25.79,-80.29,-5],ORD:[41.97,-87.9,-6],DFW:[32.9,-97.04,-6],LAX:[33.94,-118.41,-8]};
-  const HUBS={BA:['LHR'],AA:['JFK','PHL','CLT','DFW','MIA','ORD','LAX','BOS'],IB:['MAD'],AY:['HEL'],QR:['DOH'],EI:['DUB'],JL:['HND','NRT'],CX:['HKG'],QF:['SYD'],RJ:['AMM']};
+    JFK:[40.64,-73.78,-5],NYC:[40.64,-73.78,-5],BOS:[42.36,-71.01,-5],PHL:[39.87,-75.24,-5],CLT:[35.21,-80.94,-5],MIA:[25.79,-80.29,-5],ORD:[41.97,-87.9,-6],DFW:[32.9,-97.04,-6],LAX:[33.94,-118.41,-8],SEA:[47.45,-122.31,-8],HNL:[21.32,-157.92,-10]};
+  const HUBS={AS:['SEA'],HA:['HNL'],BA:['LHR'],AA:['JFK','PHL','CLT','DFW','MIA','ORD','LAX','BOS'],IB:['MAD'],AY:['HEL'],QR:['DOH'],EI:['DUB'],JL:['HND','NRT'],CX:['HKG'],QF:['SYD'],RJ:['AMM']};
   const LONDON_SET=['LON','LHR','LGW','LCY','STN','LTN','SEN'];
   const geo=c=>GEO[c==='LON'?'LHR':c==='NYC'?'JFK':c];
   const km=(a,b)=>{const A=geo(a),B=geo(b);if(!A||!B)return 1800;const r=Math.PI/180,h=Math.sin((B[0]-A[0])*r/2)**2+Math.cos(A[0]*r)*Math.cos(B[0]*r)*Math.sin((B[1]-A[1])*r/2)**2;return 12742*Math.asin(Math.sqrt(h))};
@@ -623,7 +679,7 @@ function saveFromCode(c){try{localStorage.setItem('flights.from.v1',c)}catch{}}
     for(const car of Object.keys(HUBS)){
       if(hubOf(car,o)||hubOf(car,d)){const n=car==='BA'||car==='AA'?3:2;for(let i=0;i<n;i++)paths.push({p:[[car,o,d]],c:car})}
     }
-    for(const car of ['IB','AY','EI','QR','BA','AA','RJ','JL','CX']){
+    for(const car of ['IB','AY','EI','QR','BA','AA','RJ','JL','CX','AS']){
       for(const h of HUBS[car]){if(h===o||h===d)continue;const ratio=(km(o,h)+km(h,d))/Math.max(dist,1);
         if(ratio<1.3&&km(o,h)>250&&km(h,d)>250){paths.push({p:[[car,o,h],[car,h,d]],c:car});break}}
     }
@@ -659,6 +715,10 @@ function saveFromCode(c){try{localStorage.setItem('flights.from.v1',c)}catch{}}
     return{id:fns.join('-').replace(/ /g,'')+'_'+out+(back?'_'+back:''),priceGbp:gbp,price:{amount:(gbp/0.79).toFixed(2),currency:'USD'},
       estimate:{tierPoints:tp,avios:t.av*(back?2:1),breakdown:[{date:out,tierPoints:t.tp},...(back?[{date:back,tierPoints:t.tp}]:[])]},
       departure:flown[0].departure,arrival:flown.at(-1).arrival,flightNumbers:fns,legs,returnFlight,operatedBy:t.op||'',
+      starlink:(()=>{const cs=t.s.filter((g,i)=>t.h==null||i<t.h).map(g=>g[0].slice(0,2));
+        if(cs.includes('QR'))return{p:0.95,basis:"Qatar's 777/A350 fleet",note:'Starlink is fitted across Qatar Airways 777s and A350s; a few A380 and narrow-body flights may not have it yet.'};
+        if(cs.includes('AS')||cs.includes('HA'))return{p:0.9,basis:cs.includes('HA')?"Hawaiian's A330/A321neo fleet":"Alaska's mainline fleet",note:'Starlink is rolling out fleet-wide; regional aircraft may still have older Wi-Fi.'};
+        return{p:null,basis:'',note:''}})(),
       hiddenCity:t.h!=null,ticketedTo:t.h!=null?t.s.at(-1)[3]:undefined,leaveAt:t.h!=null?t.s[t.h][1]:undefined,
       departureAirportGroup:origin,deepLink:`https://skiplagged.com/flights/${t.s[0][1]}/${t.s.at(-1)[3]}/${out}${back?'/'+back:''}#trip=${fns.join('-').replace(/ /g,'')}`}
   }
@@ -776,6 +836,30 @@ function calHTML(){
   const foot=!S.out?'<span>Tap a date. Tap a second date for a return.</span>':`<span><b>${whenText()}</b> · ${S.back?nights(S.out,S.back)+' nights':'one way'}</span><button type="button" class="txtb" id="clr">Clear</button>`;
   return `<div class="cal" id="cal"><div class="calhd"><b>${first.toLocaleDateString('en-GB',{month:'long',year:'numeric',timeZone:'UTC'})}</b><div class="nav">${hasRoute?`<button type="button" class="chipg" id="pt" aria-label="Calendar price per tier point" aria-pressed="${S.prices}">£/TP</button>`:''}<button type="button" id="pm" aria-label="Previous month" ${S.view<=TODAY.slice(0,7)?'disabled':''}>‹</button><button type="button" id="nm" aria-label="Next month" ${S.view>=LATEST.slice(0,7)?'disabled':''}>›</button></div></div><div class="grid">${['M','T','W','T','F','S','S'].map(x=>`<span class="dow">${x}</span>`).join('')}${cells}</div><div class="calft">${foot}</div>${showP?`<div class="calnote" role="status">${flexState==='loading'?'Loading dates…':flexState==='throttled'?'Too many requests. Try dates again shortly.':flexState==='error'?'Dates unavailable. Toggle £/TP to try again.':'£ discovery prices · £/TP after search'}</div>`:''}</div>`;
 }
+function monthGrid(y,m,showP){
+  const first=new Date(Date.UTC(y,m-1,1)),n=new Date(Date.UTC(y,m,0)).getUTCDate(),lead=(first.getUTCDay()+6)%7;let cells='';
+  for(let i=0;i<lead;i++)cells+='<span></span>';
+  for(let d=1;d<=n;d++){
+    const k=key(new Date(Date.UTC(y,m-1,d))),past=k<TODAY||k>LATEST,isS=k===S.out,isE=S.back?k===S.back:isS,inR=S.out&&S.back&&k>S.out&&k<S.back;
+    const quote=showP&&!past?calendarQuote(k):null;
+    const cls=['d',past&&'past',k===TODAY&&'today',isS&&'s',isE&&'e',(inR||(S.back&&(isS||isE)))&&'in',showP&&!past&&'pr',quote?.verified&&'best'].filter(Boolean);
+    cells+=`<button type="button" class="${cls.join(' ')}" data-k="${k}" ${past?'disabled':''} aria-label="${dShort(k)}${isS?', outbound':''}${S.back&&isE?', return':''}${quote?', '+esc(quote.value):''}" aria-pressed="${!!(isS||(S.back&&isE))}"><span>${d}</span>${showP&&!past?`<i>${quote?quote.value:'—'}</i>`:''}</button>`;
+  }
+  return `<div class="mon"><div class="mname">${first.toLocaleDateString('en-GB',{month:'long',timeZone:'UTC'})}${y!==+TODAY.slice(0,4)?' '+y:''}</div><div class="grid">${['M','T','W','T','F','S','S'].map(x=>`<span class="dow">${x}</span>`).join('')}${cells}</div></div>`;
+}
+function calHTML2(){
+  const [y,m]=S.view.split('-').map(Number),nx=new Date(Date.UTC(y,m,1)),hasRoute=S.to&&S.to!=='ANY',showP=S.prices&&hasRoute;
+  const cur=TODAY.slice(0,7),curLeft=new Date(Date.UTC(+cur.slice(0,4),+cur.slice(5,7),0)).getUTCDate()-+TODAY.slice(8)+1,phone=matchMedia('(max-width:640px)').matches;
+  // phone shows one month: skip a current month with under a week left
+  if(phone&&S.view===cur&&curLeft<7&&!(S.out&&S.out.slice(0,7)===cur)){S.view=key(nx).slice(0,7);return calHTML2()}
+  const skip1=false,prevOff=S.view<=cur||(phone&&curLeft<7&&key(new Date(Date.UTC(y,m-2,1))).slice(0,7)===cur);
+  const foot=!S.out?'<span>Tap a date. Tap a second date for a return.</span>':`<span><b>${whenText()}</b> · ${S.back?nights(S.out,S.back)+' nights':'one way'}</span>`;
+  return `<div class="cal cal2${skip1?' skip1':''}" id="cal"><button type="button" class="cnav l" id="pm" aria-label="Previous month" ${prevOff?'disabled':''}>‹</button>
+    <div class="months">${monthGrid(y,m,showP)}${monthGrid(nx.getUTCFullYear(),nx.getUTCMonth()+1,showP)}</div>
+    <button type="button" class="cnav r" id="nm" aria-label="Next month" ${key(nx).slice(0,7)>=LATEST.slice(0,7)?'disabled':''}>›</button>
+    <div class="calft">${foot}<span class="cft-r">${hasRoute?`<button type="button" class="chipg" id="pt" aria-label="Calendar price per tier point" aria-pressed="${S.prices}">£/TP</button>`:''}${S.out?'<button type="button" class="txtb" id="clr">Clear</button>':''}</span></div>
+    ${showP?`<div class="calnote" role="status">${flexState==='loading'?'Loading dates…':flexState==='throttled'?'Too many requests. Try dates again shortly.':flexState==='error'?'Dates unavailable. Toggle £/TP to try again.':'£ discovery prices · £/TP after search'}</div>`:''}</div>`;
+}
 function tapDay(k){if(!S.out)S.out=k;else if(!S.back){if(k===S.out)S.out='';else if(k<S.out)S.out=k;else S.back=k}else{if(k===S.back)S.back='';else{S.out=k;S.back=''}}S.hover='';hint=''}
 function matches(q){q=q.trim().toLowerCase();let list=AIRPORTS.filter(a=>a[0].toLowerCase().startsWith(q)||a[1].toLowerCase().includes(q)).slice(0,6);if(/^[a-z]{3}$/.test(q)&&!list.some(a=>a[0]===q.toUpperCase()))list.push([q.toUpperCase(),q.toUpperCase(),'airport']);return list}
 function sugPop(q){q=(q||'').trim().toLowerCase();const list=q?matches(q):AIRPORTS.filter(a=>['MAD','JFK','DOH'].includes(a[0]));const any=!q||'anywhere'.startsWith(q);return `<div class="pop glass" id="destinations" role="listbox" aria-label="Destinations">${any?`<button type="button" class="opt" role="option" aria-selected="false" data-to="ANY" id="suggest-ANY"><span>Anywhere</span><span class="s">explore destinations</span></button>${list.length?'<div class="popsep"></div>':''}`:''}${list.map(a=>`<button type="button" class="opt" role="option" aria-selected="false" data-to="${a[0]}" id="suggest-${a[0]}"><span>${a[1]}${a[2]?` <span class="s">${a[2]}</span>`:''}</span><span class="c">${a[0]}</span></button>`).join('')}${!list.length&&!any?'<div class="opt s">Enter a city or three-letter airport code</div>':''}</div>`}
@@ -798,7 +882,7 @@ function vFare(id){
   const leg=(dep,arr,numbers,label)=>`<div><div class="legh">${label} · ${dShort(dep.dateTime.slice(0,10))}</div><div class="tl"><div class="st"><div class="t1">${time(dep)} <span class="ap">${esc(AIRPORTS.some(a=>a[0]===dep.airport)?placeName(dep.airport):cityName(dep.airport))} · ${esc(dep?.airport||units[0].from)}</span></div></div><div class="lg"><span class="fn">${esc(numbers.map(flightNumber).join(' · '))}</span>${numbers.length>1?' · connecting':''}${duration({departure:dep,arrival:arr})?' · '+duration({departure:dep,arrival:arr}):''}</div><div class="st"><div class="t1">${time(arr)} <span class="ap">${esc(AIRPORTS.some(a=>a[0]===arr.airport)?placeName(arr.airport):cityName(arr.airport))} · ${esc(arr?.airport||units.at(-1).to)}</span></div></div>${f.hiddenCity&&label==='One way'?`<div class="leave">You leave at ${esc(cityName(f.leaveAt))}. Skipping a sector can invalidate the ticket and credit.</div>${(f.legs?.[0].units||[]).filter(u=>!u.flown).map(u=>`<div class="lg ghost"><span class="fn">${esc(u.flightNumbers.map(flightNumber).join(' · '))}</span>${duration(u)?' · '+duration(u):''}</div><div class="st ghost"><div class="t1">${time(u.arrival)} <span class="ap">${esc(cityName(u.to))} · ${esc(u.to)}</span></div></div>`).join('')}`:''}</div></div>`;
   const credit=goldForFare(f),after=gold.tp+credit,pct=Math.min(1,gold.tp/gold.target),add=Math.min(1-pct,credit/gold.target);
   const booking=safeBooking(f.deepLink);
-  return `<a class="back glass press" href="#/results"><span class="ar">←</span><span class="t">${esc(placeName(resultQuery.from))} → ${esc(placeName(resultQuery.to))}</span></a><div class="hero"><div class="big">${money(f.priceGbp,true)}</div><div class="line">${f.earns===false?'No TP':earning(f)?`<b class="acc">${ppt(f)}</b> per tier point · ~${fmt(f.estimate.tierPoints)} TP · <span class="avios">${Number.isFinite(f.estimate.avios)?'~'+fmt(f.estimate.avios)+' Avios':'Avios unavailable'}</span>`:'TP estimate unavailable'}</div></div><div class="who">${esc(carrierName(carrierOf(f)))} · ${esc(resultQuery.cabin)}${f.hiddenCity?' · cabin bag only':''}</div><div class="legs">${leg(f.departure,f.arrival,groups[0],f.returnFlight?'Out':'One way')}${f.returnFlight?leg(f.returnFlight.departure,f.returnFlight.arrival,groups[1]||[],'Back'):''}</div><div class="gold1"><span>Gold</span><span class="gbar"><i style="width:${pct*100}%"></i><u style="left:${pct*100}%;width:${add*100}%"></u></span><span><b>${fmt(Math.min(after,gold.target))}</b> / ${fmt(gold.target)}</span></div>${f.earns!==false&&f.estimate?.tierPoints!==credit?'<p class="left">Gold progress includes only tier points in your collection year.</p>':''}${booking?`<div class="dock"><a class="book glass press" href="${esc(booking)}" id="book" target="_blank" rel="noopener noreferrer">Book on Skiplagged <span class="arr">↗</span></a></div>`:''}<p class="left" style="text-align:center">US$${esc(f.price.amount)}${response.meta?.fx?' at '+esc(response.meta.fx.usdToGbp)+' GBP/USD':''}</p>`;
+  return `<a class="back glass press" href="#/results"><span class="ar">←</span><span class="t">${esc(placeName(resultQuery.from))} → ${esc(placeName(resultQuery.to))}</span></a><div class="hero"><div class="big">${money(f.priceGbp,true)}</div><div class="line">${f.earns===false?'No TP':earning(f)?`<b class="acc">${ppt(f)}</b> per tier point · ~${fmt(f.estimate.tierPoints)} TP · <span class="avios">${Number.isFinite(f.estimate.avios)?'~'+fmt(f.estimate.avios)+' Avios':'Avios unavailable'}</span>`:'TP estimate unavailable'}</div></div><div class="who">${esc(carrierName(carrierOf(f)))} · ${esc(resultQuery.cabin)}${f.hiddenCity?' · cabin bag only':''}</div>${f.starlink?.p>=0.5?`<div class="slf"><b><svg class="sat" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M5 12.5a10 10 0 0 1 14 0M8.5 16a5 5 0 0 1 7 0"/><circle cx="12" cy="19.5" r="1.2" fill="currentColor" stroke="none"/><path d="M3 8.5a14.5 14.5 0 0 1 18 0"/></svg> Starlink Wi-Fi likely (${Math.round(f.starlink.p*100)}%)${f.starlink.basis?' · based on '+esc(f.starlink.basis):''}</b>${f.starlink.note?`<small>${esc(f.starlink.note)}</small>`:''}</div>`:''}<div class="legs">${leg(f.departure,f.arrival,groups[0],f.returnFlight?'Out':'One way')}${f.returnFlight?leg(f.returnFlight.departure,f.returnFlight.arrival,groups[1]||[],'Back'):''}</div><div class="gold1"><span>Gold</span><span class="gbar"><i style="width:${pct*100}%"></i><u style="left:${pct*100}%;width:${add*100}%"></u></span><span><b>${fmt(Math.min(after,gold.target))}</b> / ${fmt(gold.target)}</span></div>${f.earns!==false&&f.estimate?.tierPoints!==credit?'<p class="left">Gold progress includes only tier points in your collection year.</p>':''}${booking?`<div class="dock"><a class="book glass press" href="${esc(booking)}" id="book" target="_blank" rel="noopener noreferrer">Book on Skiplagged <span class="arr">↗</span></a></div>`:''}<p class="left" style="text-align:center">US$${esc(f.price.amount)}${response.meta?.fx?' at '+esc(response.meta.fx.usdToGbp)+' GBP/USD':''}</p>`;
 }
 function safeBooking(link){try{const u=new URL(link);return u.protocol==='https:'&&u.hostname==='skiplagged.com'&&!u.username&&!u.password&&!u.port?u.href:null}catch{return null}}
 function vGold(){document.title='Gold · Flights';const pct=Math.min(1,gold.tp/gold.target),left=Math.max(0,gold.target-gold.tp);return `<a class="back glass press" href="#/search"><span class="ar">←</span><span class="t">Search</span></a><div class="gwrap"><div class="gring">${ring(180,8,pct)}<div class="n">${left?fmt(left):'Kept'}<small>${left?'tier points to Gold':'Gold for next year'}</small></div></div><p style="color:var(--dim)">${fmt(gold.tp)} of ${fmt(gold.target)} · by ${D(gold.ends).toLocaleDateString('en-GB',{day:'numeric',month:'long',timeZone:'UTC'})}</p><form class="gform glass" id="gf" novalidate><label>Tier points so far<input id="gtp" inputmode="numeric" value="${gold.tp}" aria-describedby="gErr"></label><label>Target<input id="gtarget" inputmode="numeric" value="${gold.target}" aria-describedby="gErr"></label><label>Year ends<input id="gend" type="date" value="${gold.ends}" aria-describedby="gErr"></label></form><div class="hintline" id="gErr" role="status"></div><button class="go glass press save" form="gf" type="submit">Save</button><p class="left">Kept on this device.</p></div>`}
@@ -908,7 +992,7 @@ function vAnywhere(){
 function renderRing(){const pct=Math.min(1,gold.tp/gold.target),el=$('#ring');el.innerHTML=`<span>Gold</span><span class="mini"><i style="width:${pct*100}%"></i></span>`;el.setAttribute('aria-label',`Gold: ${fmt(gold.tp)} of ${fmt(gold.target)} tier points`);el.title=`${fmt(Math.max(0,gold.target-gold.tp))} tier points to Gold`}
 
 function vSearch(){
-  document.title='Flights';if(!S.out&&!vSearch.seen){S.view=calendarMonth();vSearch.seen=1}
+  document.title='Flights';if(!vSearch.seen){S.view=TODAY.slice(0,7);vSearch.seen=1}if(S.out){const o=S.out.slice(0,7),nx=key(new Date(Date.UTC(+S.view.slice(0,4),+S.view.slice(5,7),1))).slice(0,7);if(o<S.view||o>nx)S.view=o}
   const custom=!['LON','IBZ'].includes(S.from);
   return `<section class="hero"><h1>Where to?</h1>
   <form class="search" id="sf" novalidate autocomplete="off">
@@ -920,7 +1004,7 @@ function vSearch(){
     <label><span class="sr">Cabin</span><select class="fv cabin" id="cabin">${Object.keys(CABINS).map(c=>`<option ${S.cabin===c?'selected':''}>${c}</option>`).join('')}</select></label>
   </div>
   ${hint&&hintField==='when'?`<div class="hintline err fieldHint" id="dateError" role="status">${esc(hint)}</div>`:''}
-  ${calHTML()}
+  ${calHTML2()}
   <button type="submit" form="sf" class="go gobig">Search</button>
   <button type="button" class="actionPill" id="anyPill">${GLOBE} Anywhere</button></section>`;
 }
@@ -928,7 +1012,7 @@ function vSearch(){
 /* ---------- results: Skiplagged-style cards, tier points first ---------- */
 const SORTS={value:['Best value','Best value'],cheap:['Cheapest','Cheapest'],fast:['Fastest','Fastest'],tp:['Most tier points','Most TP']};
 let SORT='value',F=null;
-function resetFilters(){SORT='value';F={stops:'any',dep:[0,24],arr:[0,24],air:null,skip:'show'}}
+function resetFilters(){SORT='value';F={stops:'any',dep:[0,24],arr:[0,24],air:null,skip:'show',star:false}}
 resetFilters();
 const legUnits=(f,i)=>(f.legs?.[i]?.units||[]).filter(u=>u.flown);
 const stopsOf=f=>Math.max(0,...[0,1].map(i=>legUnits(f,i).reduce((n,u)=>n+u.flightNumbers.length,0)-1));
@@ -942,6 +1026,7 @@ const carrierName=c=>response?.meta?.carriers?.find(x=>x.code===c)?.name||CARRIE
 const hh=h=>h>=24?'23:59':String(h).padStart(2,'0')+':00';
 const perTp=f=>earning(f)?f.priceGbp/f.estimate.tierPoints:Infinity;
 function passes(f,skip){
+  if(skip!=='star'&&F.star&&!(f.starlink?.p>=0.8))return false;
   if(skip!=='skip'&&F.skip==='hide'&&f.hiddenCity)return false;
   if(skip!=='skip'&&F.skip==='only'&&!f.hiddenCity)return false;
   if(skip!=='stops'&&F.stops!=='any'&&stopsOf(f)>+F.stops)return false;
@@ -969,7 +1054,7 @@ function card(f,i){
   const st=stopsOf(f),c=carrierOf(f);
   return `<article class="fc glass">
     <div class="cl">${i===0||f.hiddenCity?`<div class="tags">${i===0?`<span class="tag">${SORTS[SORT][0]}</span>`:''}${f.hiddenCity?'<span class="tag skip">Skip last leg</span>':''}</div>`:''}${legRow(f,0)}${f.returnFlight?legRow(f,1):''}
-      <div class="air">${esc(carrierName(c))} <span>· ${esc(flightGroups(f).flat().map(flightNumber).join(' · '))}</span>${f.operatedBy?` <span>· operated by ${esc(f.operatedBy)}</span>`:''}</div>${f.hiddenCity?`<div class="hcl">Ticketed to ${esc(f.ticketedTo)} · get off at ${esc(f.leaveAt)}</div>`:''}</div>
+      <div class="air">${esc(carrierName(c))} <span>· ${esc(flightGroups(f).flat().map(flightNumber).join(' · '))}</span>${f.operatedBy?` <span>· operated by ${esc(f.operatedBy)}</span>`:''}${f.starlink?.p>=0.5?`<span class="sl"><svg class="sat" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M5 12.5a10 10 0 0 1 14 0M8.5 16a5 5 0 0 1 7 0"/><circle cx="12" cy="19.5" r="1.2" fill="currentColor" stroke="none"/><path d="M3 8.5a14.5 14.5 0 0 1 18 0"/></svg> Starlink ${Math.round(f.starlink.p*100)}%</span>`:''}</div>${f.hiddenCity?`<div class="hcl">Ticketed to ${esc(f.ticketedTo)} · get off at ${esc(f.leaveAt)}</div>`:''}</div>
     <div class="cr"><div class="stp"><b>${st?st+(st>1?' stops':' stop'):'Direct'}</b><span>${hm(totalMins(f))}</span></div>
       <div class="money"><span class="prc">${money(f.priceGbp)}</span><span class="tpv${f.earns===false?' no-tp':''}">${f.earns===false?'No TP':earning(f)?'+'+fmt(f.estimate.tierPoints)+' TP':'TP unavailable'}</span></div>
       <div class="pt">${earning(f)?ppt(f)+'/TP':''}${f.earns!==false&&Number.isFinite(f.estimate?.avios)?(earning(f)?' · ':'')+'~'+fmt(f.estimate.avios)+' Avios':''}</div>
@@ -991,7 +1076,7 @@ function filtersHTML(){
   const all=fares(),from=fn=>{const l=all.filter(fn);return l.length?'from '+money(Math.min(...l.map(f=>f.priceGbp))):'none'};
   const carriers=[...new Set(all.map(carrierOf))];
   return `<aside class="fcol" id="fcol" aria-label="Filters"><div class="fpanel glass">
-    <div class="fhd"><b>Filters</b><button type="button" class="txtb" id="freset">Reset</button><button type="button" class="fclose" id="fclose" aria-label="Close filters"><span aria-hidden="true">×</span></button></div><label class="earning-toggle" for="earningOnly"><span>oneworld only</span><input id="earningOnly" type="checkbox" role="switch" ${S.earningOnly?'checked':''}></label>
+    <div class="fhd"><b>Filters</b><button type="button" class="txtb" id="freset">Reset</button><button type="button" class="fclose" id="fclose" aria-label="Close filters"><span aria-hidden="true">×</span></button></div><label class="earning-toggle" for="earningOnly"><span>oneworld only</span><input id="earningOnly" type="checkbox" role="switch" ${S.earningOnly?'checked':''}></label>${all.some(f=>f.starlink?.p>=0.8)?`<label class="earning-toggle starlink-toggle" for="starlinkOnly"><span><svg class="sat" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M5 12.5a10 10 0 0 1 14 0M8.5 16a5 5 0 0 1 7 0"/><circle cx="12" cy="19.5" r="1.2" fill="currentColor" stroke="none"/><path d="M3 8.5a14.5 14.5 0 0 1 18 0"/></svg> Starlink likely<small>${all.filter(f=>f.starlink?.p>=0.8).length} of ${all.length}</small></span><input id="starlinkOnly" type="checkbox" role="switch" ${F.star?'checked':''}></label>`:''}
     <section class="fs"><div class="fsh"><h3>Stops</h3></div>${[['0','Direct'],['1','Up to 1 stop'],['any','2+ stops']].map(([v,l])=>`<label class="radio"><span><b>${l}</b><small>${from(f=>v==='any'||stopsOf(f)<=+v)}</small></span><input type="radio" name="stops" value="${v}" ${F.stops===v?'checked':''}><i></i></label>`).join('')}</section>
     ${rangeBlock('dep','Take-off')}${rangeBlock('arr','Landing')}
     ${all.some(f=>f.hiddenCity)?`<section class="fs"><div class="fsh"><h3>Skip-last-leg fares</h3><span class="rv">${all.filter(f=>f.hiddenCity).length} of ${all.length}</span></div><div class="seg3" role="radiogroup" aria-label="Skip-last-leg fares">${[['show','Show'],['hide','Hide'],['only','Only']].map(([v,l])=>`<label><input type="radio" name="skip" value="${v}" ${F.skip===v?'checked':''}><span>${l}</span></label>`).join('')}</div></section>`:''}
@@ -1010,7 +1095,7 @@ function cardsHTML(){
   return list.length?list.map(card).join(''):`<div class="state"><div class="acts"><button type="button" class="txtb dark" id="freset2">Reset filters</button></div></div>`;
 }
 function countText(){const n=fares().filter(f=>passes(f)).length;return `${n} ${n===1?'flight':'flights'}`}
-function activeFilters(){return (F.stops!=='any')+(F.dep[0]>0||F.dep[1]<24)+(F.arr[0]>0||F.arr[1]<24)+(F.air!==null)+(!S.earningOnly)+(F.skip!=='show')}
+function activeFilters(){return (F.stops!=='any')+(F.dep[0]>0||F.dep[1]<24)+(F.arr[0]>0||F.arr[1]<24)+(F.air!==null)+(!S.earningOnly)+(F.skip!=='show')+(F.star?1:0)}
 function vResults(){
   if(!response)return vSearch();if(response.action==='anywhere')return vAnywhere();
   const list=fares();if(!list.length)return vEmpty();
@@ -1055,7 +1140,7 @@ function bind(){
   bindLive();
   const any=$('#anyPill');if(any)any.onclick=()=>chooseDestination('ANY');
   const fq=$('#fromQ');if(fq){fq.addEventListener('focus',()=>fq.select());fq.addEventListener('blur',()=>setTimeout(()=>{if(document.activeElement!==fq&&$('#fromRes'))$('#fromRes').innerHTML=''},150));fq.addEventListener('keydown',e=>{if(e.key==='Escape'){fq.blur();redraw()}})}
-  if($('#cards'))bindResults(false);if($('#dstrip'))stripHook();
+  if($('#cards'))bindResults(false);if($('#dstrip'))stripHook();if(typeof applyGlides==='function')applyGlides();
 }
 
 
@@ -1063,7 +1148,7 @@ render();
 </script>
 <script>
 // ---- v4 prototype layer: home redesign + skip-last-leg; screen index (not product) ----
-const DEMOS=[['Home','home'],['Home · dates picked','dates'],['Home · other city','other'],['Results · skip-last-leg mix','mad'],['Results · New York','jfk'],['Fare · skip last leg','hidden'],
+const DEMOS=[['Home','home'],['Home · dates picked','dates'],['Home · other city','other'],['Results · skip-last-leg mix','mad'],['Results · New York','jfk'],['Results · Doha (Starlink)','doh'],['Results · Los Angeles (Starlink)','lax'],['Fare · Starlink','slfare'],['Fare · skip last leg','hidden'],
   ['Gold','gold'],['Loading','loading'],['No earning fares','empty'],['Error','error']];
 const dPlus=n=>key(new Date(D(TODAY).getTime()+n*864e5));
 async function runDemo(name){
@@ -1073,6 +1158,9 @@ async function runDemo(name){
     case 'dates':set('MAD',dPlus(15),dPlus(18));S.view=calendarMonth();go('#/search');break;
     case 'other':S.from='BCN';saveFromCode('BCN');set('');go('#/search');break;
     case 'mad':S.from='LON';set('MAD',dPlus(15));MOCK.delay=300;search();break;
+    case 'doh':S.from='LON';set('DOH',dPlus(15));MOCK.delay=300;search();break;
+    case 'lax':S.from='LON';set('LAX',dPlus(15));MOCK.delay=300;search();break;
+    case 'slfare':S.from='LON';set('DOH',dPlus(15));MOCK.delay=300;await search();{const f=fares().find(f=>f.starlink?.p>=0.5);if(f)go('#/fare/'+encodeURIComponent(f.id))}break;
     case 'jfk':S.from='LON';set('JFK',dPlus(15));MOCK.delay=300;search();break;
     case 'hidden':S.from='LON';set('MAD',dPlus(15));MOCK.delay=300;await search();{const f=fares().find(f=>f.hiddenCity);if(f)go('#/fare/'+encodeURIComponent(f.id))}break;
     case 'gold':go('#/gold');break;
@@ -1087,7 +1175,6 @@ document.addEventListener('change',e=>{if(e.target.name==='skip'&&F){F.skip=e.ta
 {const idx=$('#idx'),ib=idx.querySelector('button');idx.querySelector('nav').innerHTML=DEMOS.map(([l,k])=>`<a href="#/demo/${k}">${l}</a>`).join('');
   ib.onclick=()=>{const o=idx.classList.toggle('open');ib.setAttribute('aria-expanded',o)};
   idx.addEventListener('click',e=>{if(e.target.tagName==='A'){idx.classList.remove('open');ib.setAttribute('aria-expanded',false)}});}
-if(route()[0]==='demo')runDemo(route()[1]);
 
 /* ---------- results date strip: ±3 days, cheapest earning £ per day (flex data) ---------- */
 let strip={for:null,key:'',center:'',rows:[],state:''};
@@ -1122,6 +1209,58 @@ function bindStrip(){
   const box=$('#dstrip .ddays'),on=$('#dstrip .dday.on');if(box&&on&&box.scrollWidth>box.clientWidth)box.scrollLeft=on.offsetLeft-box.clientWidth/2+on.offsetWidth/2;
 }
 function stripHook(){bindStrip();loadStrip()}
+
+/* ---------- sliding highlight: one shared shape per pill group ----------
+   Sits behind the selected item (ink). On hover it follows the pointer in a light tint,
+   returns on leave, slides to a new selection on click/tap. Keyboard focus moves it without animation.
+   transform + width only, flick's easing; reduced motion = instant. */
+const GLIDE_MEM={},finePointer=matchMedia('(hover: hover) and (pointer: fine)'),reduceMotion=matchMedia('(prefers-reduced-motion: reduce)');
+function glide(id,box,items,isSel){
+  if(!box||!items.length)return;
+  box.classList.add('glider');let hl=box.querySelector(':scope>.glide');
+  if(!hl){hl=document.createElement('span');hl.className='glide';hl.setAttribute('aria-hidden','true');box.prepend(hl)}
+  const sel=()=>items.find(isSel);
+  const place=(el,mode,animate)=>{
+    if(!el||!el.isConnected)return;const b=box.getBoundingClientRect(),r=el.getBoundingClientRect();if(!r.width)return;
+    const x=r.left-b.left+box.scrollLeft,y=r.top-b.top+box.scrollTop;
+    hl.style.transition=animate&&!reduceMotion.matches?'':'none';
+    hl.style.width=r.width+'px';hl.style.height=r.height+'px';hl.style.transform=`translate(${x}px,${y}px)`;hl.dataset.mode=mode;
+    if(!animate)box.classList.add('gl-noanim');
+    items.forEach(i=>{i.classList.toggle('gl-under',i===el&&mode==='ink');i.classList.toggle('gl-hover',i===el&&mode==='tint')});
+    if(!animate){void box.offsetWidth;box.classList.remove('gl-noanim')}
+    box.classList.toggle('gl-away',el!==sel());
+    GLIDE_MEM[id]={x,y,w:r.width,h:r.height};if(!animate)void hl.offsetWidth;
+  };
+  const m=GLIDE_MEM[id];
+  if(!hl.dataset.init){hl.dataset.init='1';
+    if(m){hl.style.transition='none';hl.style.width=m.w+'px';hl.style.height=m.h+'px';hl.style.transform=`translate(${m.x}px,${m.y}px)`;void hl.offsetWidth}
+    const t0=sel(),tr=t0&&t0.getBoundingClientRect(),bx=box.getBoundingClientRect(),same=!m||!tr||(Math.abs(tr.left-bx.left-m.x)<1&&Math.abs(tr.width-m.w)<1&&Math.abs(tr.top-bx.top-m.y)<1);
+    // only slide when the selection actually moved; a re-render in place must not flicker
+    if(!same&&!reduceMotion.matches)requestAnimationFrame(()=>place(sel(),'ink',true));else place(sel(),'ink',false);}
+  else place(sel(),'ink',false);
+  const back=()=>{const a=document.activeElement;if(a&&items.some(i=>i===a||i.contains(a))&&(a.matches(':focus-visible')||(a.tagName==='INPUT'&&a.type!=='radio')))return;place(sel(),'ink',true)};
+  items.forEach(el=>{if(el._gl)return;el._gl=1;
+    if(finePointer.matches)el.addEventListener('pointerenter',()=>place(el,el===sel()&&el.tagName!=='INPUT'?'ink':el===sel()&&document.activeElement!==el?'ink':'tint',true));
+    el.addEventListener('focusin',()=>{const kb=el.matches(':focus-visible')||!!el.querySelector?.(':focus-visible');
+      if(el.tagName==='INPUT')place(el,'tint',!kb);else if(kb)place(el,el===sel()?'ink':'tint',false)});
+    el.addEventListener('focusout',()=>setTimeout(back,0));
+    el.addEventListener('click',()=>requestAnimationFrame(()=>{if(document.activeElement!==el||el.tagName!=='INPUT')place(sel(),'ink',true)}));
+    el.addEventListener('change',()=>requestAnimationFrame(()=>place(sel(),'ink',true)));
+  });
+  if(!box._gl){box._gl=1;box.addEventListener('pointerleave',back);new ResizeObserver(()=>place(sel(),'ink',false)).observe(box)}
+  box._glPlace=()=>place(sel(),'ink',false);
+}
+function applyGlides(){
+  const o=$('.orow');if(o)glide('origin',o,[...o.querySelectorAll('[data-from]'),$('#fromQ')].filter(Boolean),el=>el.dataset.from?el.dataset.from===S.from:!['LON','IBZ'].includes(S.from));
+  const t=$('.tabs');if(t)glide('sort',t,[...t.querySelectorAll('[data-sort]')],el=>el.getAttribute('aria-selected')==='true');
+  document.querySelectorAll('.seg3').forEach((s,i)=>glide('seg'+i,s,[...s.querySelectorAll('label')],el=>!!el.querySelector('input:checked')));
+}
+applyGlides();
+
+if(route()[0]==='demo')runDemo(route()[1]);
+
+/* Starlink filter (client-side over loaded results; the API also takes starlinkMin=0.8) */
+document.addEventListener('change',e=>{if(e.target.id==='starlinkOnly'&&F){F.star=e.target.checked;refreshResults()}});
 
 </script>
 </body>

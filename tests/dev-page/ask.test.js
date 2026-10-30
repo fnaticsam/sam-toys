@@ -7,7 +7,14 @@ const fs = require("fs");
 const path = require("path");
 
 const REPO = process.env.REPO_DIR || path.resolve(__dirname, "..", "..");
-const PASS = process.env.DEV_PASSWORD || "test-pass-123";
+
+// The private guide is deliberately absent from public checkouts and CI.
+if (!fs.existsSync(path.join(REPO, "api", "_lib", "dev.html"))) {
+  require("node:test").test("dev-page: ask", {
+    skip: "api/_lib/dev.html is private and absent from this checkout",
+  }, () => {});
+} else {
+const PASS = "test-pass-123";
 const KEY = "test-gemini-key-not-real";
 process.env.DEV_PASSWORD = PASS;
 process.env.GEMINI_API_KEY = KEY;
@@ -319,3 +326,5 @@ const check = (name, cond) => { results.push([name, !!cond]); if (!cond) process
   console.log(results.filter((x) => x[1]).length + "/" + results.length + " checks passed");
   if (results.some((x) => !x[1])) process.exit(1);
 })().catch((e) => { console.error(e); process.exit(1); });
+
+}

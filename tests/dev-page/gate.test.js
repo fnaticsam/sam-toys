@@ -1,10 +1,21 @@
 // Acceptance test for api/dev.js: drives the handler with mock req/res objects.
-// Usage: DEV_PASSWORD=<dummy> node gate.test.js
+// Usage: node gate.test.js (uses dummy credentials)
 const assert = require("assert");
 const crypto = require("crypto");
 const { EventEmitter } = require("events");
 const path = require("path");
 
+const fs = require("fs");
+const REPO = process.env.REPO_DIR || path.resolve(__dirname, "..", "..");
+
+// The private guide is deliberately absent from public checkouts and CI.
+if (!fs.existsSync(path.join(REPO, "api", "_lib", "dev.html"))) {
+  require("node:test").test("dev-page: gate", {
+    skip: "api/_lib/dev.html is private and absent from this checkout",
+  }, () => {});
+} else {
+process.env.DEV_PASSWORD = "test-dev-password-not-real";
+delete process.env.DEV_TRUSTED_IPS;
 const handler = require(path.join(process.env.REPO_DIR || path.resolve(__dirname, "..", ".."), "api", "dev.js"));
 
 function makeReq({ method = "GET", url = "/dev", headers = {}, body = null }) {
@@ -164,3 +175,5 @@ const TOKEN_RE = /^dev_session=(\d+\.[0-9a-f]{64}); Max-Age=31536000; Path=\/dev
   for (const [name, ok] of results) console.log((ok ? "PASS" : "FAIL") + "  " + name);
   console.log(results.filter((x) => x[1]).length + "/" + results.length + " checks passed");
 })().catch((e) => { console.error(e); process.exit(1); });
+
+}

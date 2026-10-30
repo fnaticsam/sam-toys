@@ -7,6 +7,13 @@ const path = require("path");
 const crypto = require("crypto");
 
 const REPO = process.env.REPO_DIR || path.resolve(__dirname, "..", "..");
+
+// The private guide is deliberately absent from public checkouts and CI.
+if (!fs.existsSync(path.join(REPO, "api", "_lib", "dev.html"))) {
+  require("node:test").test("dev-page: body", {
+    skip: "api/_lib/dev.html is private and absent from this checkout",
+  }, () => {});
+} else {
 const FILE = path.join(REPO, "api", "_lib", "dev.html");
 const EXPECTED_SECTIONS = 34;
 // Parts 1 and 2 (the first 27 sections) are pinned byte for byte; Part 3 (added
@@ -186,3 +193,5 @@ check("the search index skips diagram text", /tagName === 'FIGURE'/.test(html));
 for (const [name, ok] of results) console.log((ok ? "PASS" : "FAIL") + "  " + name);
 console.log(results.filter((x) => x[1]).length + "/" + results.length + " checks passed");
 if (results.some((x) => !x[1])) process.exit(1);
+
+}

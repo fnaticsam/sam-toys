@@ -68,20 +68,20 @@ function searchFixture(args) {
   return out;
 }
 
-async function createFixtureServer({ port = 0, approvedPath = path.join(ROOT, 'prototypes/flights/proto-v3.html') } = {}) {
-  let mode = 'normal', handler;
+async function createFixtureServer({ port = 0, approvedPath = path.join(ROOT, 'prototypes/flights/proto-v4.html'), baselinePath = process.env.FLIGHTS_BASELINE_PAGE || null } = {}) {
+  let mode = 'normal', handler, holding = false;
   const requests = [], toolCalls = [], waiting = new Set();
   const allowed = new Set(['normal', 'empty', 'error', 'throttled', 'partial', 'loading']);
-  function release() { for (const resolve of waiting) resolve(); waiting.clear(); }
+  function release() { holding = false; for (const resolve of waiting) resolve(); waiting.clear(); }
   function setMode(next) {
     if (!allowed.has(next)) throw new Error('Unknown fixture scenario');
-    release(); mode = next;
+    release(); mode = next; holding = next === 'loading';
     handler = createHandler({ now: () => NOW, cacheOptions: { capacity: 0 },
       throttleOptions: { max: next === 'throttled' ? 0 : 10000 }, maxConcurrentRequests: 100,
       callTool: async (name, args, signal) => {
         const thisMode = mode;
         toolCalls.push({ name, args: structuredClone(args), mode: thisMode });
-        if (thisMode === 'loading') await new Promise((resolve) => {
+        if (thisMode === 'loading' && holding) await new Promise((resolve) => {
           waiting.add(resolve);
           signal.addEventListener('abort', () => { waiting.delete(resolve); resolve(); }, { once: true });
         });
@@ -116,7 +116,7 @@ async function createFixtureServer({ port = 0, approvedPath = path.join(ROOT, 'p
         return await handler(req, res);
       }
       // Explicit allowlist: never expose .env, private API pages or repo files.
-      const file = ['/flights', '/flights/', '/flights/index.html'].includes(url.pathname) ? path.join(ROOT, 'flights/index.html') : url.pathname === '/approved' ? approvedPath : null;
+      const file = ['/flights', '/flights/', '/flights/index.html'].includes(url.pathname) ? path.join(ROOT, 'flights/index.html') : url.pathname === '/approved' ? approvedPath : url.pathname === '/baseline' ? baselinePath : null;
       if (/^\/flights\/fonts\/[a-zA-Z0-9._-]+\.woff2$/.test(url.pathname)) {
         res.setHeader('content-type', 'font/woff2');
         return res.end(await fs.readFile(path.join(ROOT, url.pathname)));
@@ -132,7 +132,7 @@ async function createFixtureServer({ port = 0, approvedPath = path.join(ROOT, 'p
     } catch { res.statusCode = 500; res.end('Fixture server error'); }
   });
   await new Promise((resolve, reject) => { server.once('error', reject); server.listen(port, '127.0.0.1', resolve); });
-  return { server, url: `http://127.0.0.1:${server.address().port}`, setMode, requests, toolCalls,
+  return { server, url: `http://127.0.0.1:${server.address().port}`, setMode, release, requests, toolCalls,
     close: async () => { release(); server.closeAllConnections(); await new Promise(resolve => server.close(resolve)); } };
 }
 module.exports = { createFixtureServer, searchFixture, NOW };

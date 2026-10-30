@@ -24,7 +24,9 @@ test('open API allows no Origin and same-origin browsers without authentication'
     const r=await s.call(URL,{headers});
     assert.equal(r.statusCode,200);
     assert.equal(r.headers['www-authenticate'],undefined);
-    assert.match(r.headers['cache-control'],/no-store/);
+    assert.equal(r.headers['cache-control'],'private, max-age=600, must-revalidate');
+    assert.equal(r.headers['vercel-cdn-cache-control'],'no-store');
+    assert.equal(r.headers.vary,'Origin');
     assert.match(r.headers['x-robots-tag'],/noindex/);
   }
   assert.equal(s.calls.length,1);
@@ -333,6 +335,8 @@ test('cache shares normalised queries across IPs and expires at exactly ten minu
   time+=599999;
   const cached=await s.call(equivalent,{ip:'203.0.113.2'});
   assert.deepEqual(cached.body,first.body);assert.equal(s.calls.length,1);
+  assert.equal(first.headers['cache-control'],'private, max-age=600, must-revalidate');
+  assert.equal(cached.headers['cache-control'],'private, max-age=0, must-revalidate');
   assert.match(cached.headers['x-robots-tag'],/noindex/);
   time++;
   assert.equal((await s.call()).statusCode,200);assert.equal(s.calls.length,2);

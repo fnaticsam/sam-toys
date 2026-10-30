@@ -10,10 +10,14 @@ const script = fs.readFileSync(path.join(__dirname, '../../flights/index.html'),
 
 // Exercise the shipping inline script without a browser or external packages.
 // DOM layout, actual events and viewport appearance belong to browser-check.cjs.
-function page({ saved, liveSaved, earningOnly, storageFailure = false, fetch } = {}) {
+function page({ saved, liveSaved, earningOnly, origin, sessionSaved, initialHash = '#/search', initialHistoryState = null, reducedMotion = false, finePointer = true, phone = false, storageFailure = false, fetch } = {}) {
   const storage = new Map(saved === undefined ? [] : [['flights.gold.v2', saved]]);
   if (liveSaved !== undefined) storage.set('flights.gold.live.v1', liveSaved);
   if (earningOnly !== undefined) storage.set('flights.earningOnly.v1', earningOnly);
+  if (origin !== undefined) storage.set('flights.from.v1', origin);
+  const session = new Map(sessionSaved === undefined ? [] : [['flights.results.v1', sessionSaved]]), windowEvents = {}, frames = [], timers = new Map();
+  let timerId = 0;
+  const historyCalls = [];
   function classList() {
     const values = new Set();
     return { add: value => values.add(value), remove: value => values.delete(value), contains: value => values.has(value),
@@ -22,23 +26,27 @@ function page({ saved, liveSaved, earningOnly, storageFailure = false, fetch } =
   const elements = Object.fromEntries(['#app', '#ring', '#toast'].map(k => [k, {
     innerHTML: '', textContent: '', classList: classList(), setAttribute() {},
   }]));
-  const events = {};
-  const location = { hash: '#/search' };
+  const events = {}, documentHandlers = {};
+  const location = { hash: initialHash };
   const lists = {};
   class FixedDate extends Date {
     constructor(...args) { super(...(args.length ? args : [NOW])); }
     static now() { return NOW; }
   }
+  const media = query => ({ matches: query.includes('reduced-motion') ? reducedMotion : query.includes('max-width') ? phone : finePointer, addEventListener() {} });
   const context = vm.createContext({
+    matchMedia: media, requestAnimationFrame: callback => { frames.push(callback); return frames.length; }, cancelAnimationFrame() {},
+    performance: { now: () => 0 }, ResizeObserver: class { observe() {} disconnect() {} },
     URL, URLSearchParams, AbortController, Date: FixedDate, location,
-    history: { replaceState(_state, _title, hash) { location.hash = hash; } },
-    document: { title: '', body: { classList: classList() }, querySelector: s => elements[s] || null, querySelectorAll: s => lists[s] || [], addEventListener(name, handler) { events[name] = handler; } },
-    window: { scrollTo() {}, addEventListener() {} },
+    history: { state: initialHistoryState, replaceState(state, _title, hash) { historyCalls.push({method:'replace',state,hash}); this.state = state; if (hash) location.hash = hash; }, pushState(state, _title, hash) { historyCalls.push({method:'push',state,hash}); this.state = state; if (hash) location.hash = hash; } },
+    document: { title: '', body: { classList: classList() }, querySelector: s => elements[s] || null, querySelectorAll: s => lists[s] || [], addEventListener(name, handler) { (documentHandlers[name] ||= []).push(handler); events[name] = event => { for (const listener of documentHandlers[name]) listener(event); }; } },
+    window: { scrollTo() {}, addEventListener(name, callback) { windowEvents[name] = callback; }, matchMedia: media },
+    sessionStorage: { getItem: k => session.get(k) ?? null, setItem: (k, value) => session.set(k, value), removeItem: k => session.delete(k) },
     localStorage: {
       getItem(k) { if (storageFailure) throw new Error('Storage unavailable'); return storage.get(k) ?? null; },
       setItem(k, v) { if (storageFailure) throw new Error('Storage unavailable'); storage.set(k, v); },
     },
-    setTimeout: () => 1, clearTimeout() {},
+    setTimeout(callback, delay) { const id = ++timerId; timers.set(id, {callback, delay}); return id; }, clearTimeout(id) { timers.delete(id); },
     fetch: fetch || (() => { throw new Error('Live network forbidden in flights UI tests'); }),
   });
   vm.runInContext(fs.readFileSync(path.join(__dirname,'../../flights/cities.js'),'utf8'), context, { filename:'flights/cities.js' });
@@ -47,7 +55,9 @@ function page({ saved, liveSaved, earningOnly, storageFailure = false, fetch } =
     run: code => vm.runInContext(code, context),
     json: code => JSON.parse(vm.runInContext(`JSON.stringify(${code})`, context)),
     put(name, value) { context[name] = value; },
-    elements, lists, storage, location, events,
+    elements, lists, storage, session, location, events, windowEvents, historyCalls,
+    flushFrames() { for (const callback of frames.splice(0)) callback(); },
+    flushTimers(maxDelay = Infinity) { for (const [id, timer] of [...timers]) if (timer.delay <= maxDelay) { timers.delete(id); timer.callback(); } },
   };
 }
 
@@ -65,7 +75,7 @@ function query(p, overrides = {}) {
 }
 function deferredFetch() {
   const calls = [];
-  return { calls, fetch(url, options) { return new Promise(resolve => calls.push({ url, signal: options.signal, resolve })); } };
+  return { calls, get searches() { return calls.filter(call => new URL(call.url, 'https://sam.toys').searchParams.get('action') !== 'flex'); }, get flexes() { return calls.filter(call => new URL(call.url, 'https://sam.toys').searchParams.get('action') === 'flex'); }, fetch(url, options) { return new Promise(resolve => calls.push({ url, signal: options?.signal, resolve })); } };
 }
 const ok = results => ({ ok: true, json: async () => ({ action: 'search', results, meta: {} }) });
 
@@ -101,7 +111,7 @@ test('UI API parameters use city codes once with the maximum provider limit, cab
   assert.equal(params('anywhere').has('limit'), false);
   p.run("S.to='MAD'");
   assert.equal(params('search').get('returnDate'), '2026-11-21');
-  assert.equal(params('flex').has('fareClass'), false);
+  assert.equal(params('flex').get('fareClass'), 'first');
   assert.equal(params('flex').has('limit'), false);
 });
 
@@ -163,7 +173,7 @@ test('hidden-city detail preserves flown and ticketed endpoints and the actual s
   assert.match(detail, /Skipping a sector can invalidate the ticket and credit\./);
   assert.doesNotMatch(detail, /Tier points and Avios are estimates|connecting/);
   const rows = p.run('vResults()');
-  assert.match(rows, /ticketed to BCN, leave at MAD/);
+  assert.match(rows, /Ticketed to BCN · get off at MAD/);
   assert.doesNotMatch(rows, /IB411|hidden city ·/);
   assert(detail.includes(`href="${fare.deepLink.replaceAll('&','&amp;')}"`));
   assert.match(detail, /Book on Skiplagged/);
@@ -215,9 +225,9 @@ test('calendar verified ratios are isolated by route, dates, return duration and
 test('navigation aborts an in-flight search and ignores a provider that resolves after cancellation', async () => {
   const pending = deferredFetch(), p = page({ fetch: pending.fetch }); query(p);
   const completion = p.run('search()');
-  assert.equal(p.location.hash, '#/loading'); assert.equal(pending.calls.length, 1);
-  p.run("go('#/gold')"); assert.equal(pending.calls[0].signal.aborted, true);
-  pending.calls[0].resolve(ok([])); await completion;
+  assert.equal(p.location.hash, '#/loading'); assert.equal(pending.searches.length, 1);
+  p.run("go('#/gold')"); assert.equal(pending.searches[0].signal.aborted, true);
+  pending.searches[0].resolve(ok([])); await completion;
   assert.equal(p.location.hash, '#/gold'); assert.equal(p.run('response'), null);
 });
 
@@ -226,8 +236,8 @@ test('a late search reply preserves navigation before the hashchange handler ren
   const completion = p.run('search()');
   // Native link navigation changes the hash before its hashchange event runs.
   p.location.hash = '#/search';
-  assert.equal(pending.calls[0].signal.aborted, false);
-  pending.calls[0].resolve(ok([])); await completion;
+  assert.equal(pending.searches[0].signal.aborted, false);
+  pending.searches[0].resolve(ok([])); await completion;
   assert.equal(p.location.hash, '#/search'); assert.equal(p.run('response'), null);
 });
 
@@ -235,10 +245,10 @@ test('a newer search aborts and supersedes an older result regardless of respons
   const pending = deferredFetch(), p = page({ fetch: pending.fetch }); query(p);
   const first = p.run('search()');
   p.run("S.to='JFK'"); const second = p.run('search()');
-  assert.equal(pending.calls[0].signal.aborted, true);
-  pending.calls[1].resolve(ok([])); await second;
+  assert.equal(pending.searches[0].signal.aborted, true);
+  pending.searches[1].resolve(ok([])); await second;
   assert.equal(p.run('resultQuery.to'), 'JFK'); assert.equal(p.location.hash, '#/results');
-  pending.calls[0].resolve(ok([{id:'stale'}])); await first;
+  pending.searches[0].resolve(ok([{id:'stale'}])); await first;
   assert.equal(p.run('response.results.length'), 0); assert.equal(p.run('resultQuery.to'), 'JFK');
 });
 
@@ -359,9 +369,9 @@ test('changing oneworld persists and repeats the route search with the new flag'
   const completion = p.run('setEarningOnly(false)');
   assert.equal(p.storage.get('flights.earningOnly.v1'), 'false');
   assert.equal(p.run('S.earningOnly'), false);
-  assert.equal(pending.calls.length, 1);
-  assert.equal(new URL(pending.calls[0].url, 'https://sam.toys').searchParams.get('earningOnly'), 'false');
-  pending.calls[0].resolve(ok([])); await completion;
+  assert.equal(pending.searches.length, 1);
+  assert.equal(new URL(pending.searches[0].url, 'https://sam.toys').searchParams.get('earningOnly'), 'false');
+  pending.searches[0].resolve(ok([])); await completion;
 });
 
 test('all-airline cards keep non-earning TP neutral and omit a tier-point ratio', async () => {
@@ -398,7 +408,7 @@ test('four result sorts put earning fares first only for value and tier points',
   assert.deepEqual(p.json('rows.map(f=>f.id)'), rows.map(f => f.id), 'sorting preserves source order');
 });
 
-test('v3 filters expose stops prices, hour histograms, two handles, and airline choices', async () => {
+test('v4 filters expose stops prices, hour histograms, two handles, and airline choices', async () => {
   const args = { origin:'LHR', destination:'MAD', departureDate:'2026-11-18' };
   const data = await backend('/api/flights?origin=LHR&destination=MAD&departureDate=2026-11-18&earningOnly=false', searchFixture(args));
   const p = page(); query(p, { earningOnly:false }); p.put('data',data); p.run('response=data');
@@ -425,9 +435,9 @@ test('v3 filters expose stops prices, hour histograms, two handles, and airline 
 test('go closes an open calendar and performs a real route search', async () => {
   const pending = deferredFetch(), p = page({fetch:pending.fetch}); query(p);
   p.run('calOpen=true'); const completion = p.run('submitSearch()');
-  assert.equal(p.run('calOpen'),false); assert.equal(pending.calls.length,1);
-  assert.equal(new URL(pending.calls[0].url,'https://sam.toys').searchParams.get('destination'),'MAD');
-  pending.calls[0].resolve(ok([])); await completion;
+  assert.equal(p.run('calOpen'),false); assert.equal(pending.searches.length,1);
+  assert.equal(new URL(pending.searches[0].url,'https://sam.toys').searchParams.get('destination'),'MAD');
+  pending.searches[0].resolve(ok([])); await completion;
 });
 
 test('go without a destination focuses the field and makes the missing choice explicit', () => {
@@ -445,10 +455,10 @@ test('Enter in Where-to dispatches a search for a typed airport and closes the c
   let prevented = false;
   p.elements['#to'].onkeydown({key:'Enter',preventDefault(){prevented=true;}});
   assert.equal(prevented,true);
-  assert.equal(pending.calls.length,1);
-  assert.equal(new URL(pending.calls[0].url,'https://sam.toys').searchParams.get('destination'),'JFK');
+  assert.equal(pending.searches.length,1);
+  assert.equal(new URL(pending.searches[0].url,'https://sam.toys').searchParams.get('destination'),'JFK');
   assert.equal(p.run('calOpen'),false);
-  p.run("go('#/gold')"); pending.calls[0].resolve(ok([])); await Promise.resolve();
+  p.run("go('#/gold')"); pending.searches[0].resolve(ok([])); await Promise.resolve();
 });
 
 test('deselecting every airline shows no fares, while reset restores all carriers', async () => {
@@ -522,14 +532,14 @@ test('go and Enter resolve typed city names and IATA codes without choosing a su
       controls.input.oninput();
       p.run('calOpen=true;fromOpen=true');
       const completion = controls[method]();
-      assert.equal(pending.calls.length, 1, `${method}: ${value}`);
-      const params = new URL(pending.calls[0].url, 'https://sam.toys').searchParams;
+      assert.equal(pending.searches.length, 1, `${method}: ${value}`);
+      const params = new URL(pending.searches[0].url, 'https://sam.toys').searchParams;
       assert.equal(params.get('action'), expected === 'ANY' ? 'anywhere' : 'search');
       assert.equal(params.get('destination'), expected === 'ANY' ? null : expected);
       assert.deepEqual(p.json('[calOpen,sugOpen,fromOpen]'), [false, false, false]);
       assert.equal(p.location.hash, '#/loading');
       // Stop rendering into the deliberately minimal DOM when the response arrives.
-      p.run("go('#/gold')"); pending.calls[0].resolve(ok([])); await completion;
+      p.run("go('#/gold')"); pending.searches[0].resolve(ok([])); await completion;
     }
   }
 });
@@ -543,8 +553,8 @@ test('Enter uses the keyboard-highlighted suggestion; go resolves the typed text
     for (let n = 0; n < 2; n++) controls.input.onkeydown({ key: 'ArrowDown', preventDefault() {} });
     assert.equal(controls.input.attributes.get('aria-activedescendant'), 'suggest-NRT');
     const completion = controls[method]();
-    assert.equal(new URL(pending.calls[0].url, 'https://sam.toys').searchParams.get('destination'), method === 'enter' ? 'NRT' : 'TYO');
-    p.run("go('#/gold')"); pending.calls[0].resolve(ok([])); await completion;
+    assert.equal(new URL(pending.searches[0].url, 'https://sam.toys').searchParams.get('destination'), method === 'enter' ? 'NRT' : 'TYO');
+    p.run("go('#/gold')"); pending.searches[0].resolve(ok([])); await completion;
   }
 });
 
@@ -553,7 +563,7 @@ test('unmatched text is explained next to the destination and never sends an API
     const pending = deferredFetch(), p = page({ fetch: pending.fetch }); query(p, { to: '' });
     const controls = searchControls(p, 'zzqq'); controls.input.oninput();
     p.run('calOpen=true'); controls[method]();
-    assert.equal(pending.calls.length, 0);
+    assert.equal(pending.searches.length, 0);
     assert.equal(p.run('hint'), 'No airport matches “zzqq”.');
     assert.deepEqual(p.json('[calOpen,sugOpen]'), [false, false]);
     const html = p.run('vSearch()');
@@ -573,17 +583,17 @@ test('unmatched text is explained next to the destination and never sends an API
   assert.doesNotMatch(p.run('vSearch()'), /<img/);
 });
 
-test('missing dates open the calendar and explain the problem beside When for go and Enter', () => {
+test('missing dates keep the always-open calendar and explain the problem for go and Enter', () => {
   for (const method of ['submit', 'enter']) {
     const pending = deferredFetch(), p = page({ fetch: pending.fetch }); query(p, { to: '', out: '' });
     const controls = searchControls(p, 'Madrid'); controls.input.oninput(); controls[method]();
-    assert.equal(pending.calls.length, 0); assert.equal(p.run('S.to'), 'MAD');
+    assert.equal(pending.searches.length, 0); assert.equal(p.run('S.to'), 'MAD');
     assert.equal(p.location.hash, '#/search/when');
     assert.deepEqual(p.json('[calOpen,sugOpen]'), [true, false]);
     const html = p.run('vSearch()');
-    assert.match(html, /id="whenBtn"[^>]*aria-describedby="dateError"/);
-    assert.match(html, /id="dateError" role="status">Pick a date\.<\/div>\s*<div class="cal"/);
-    assert(html.indexOf('id="dateError"') < html.indexOf('id="cabin"'));
+    assert.match(html, /id="cal"/);
+    assert.match(html, /id="dateError" role="status">Pick a date\.<\/div>\s*<div class="cal cal2"/);
+    assert(html.indexOf('id="dateError"') < html.indexOf('id="cal"'));
   }
 });
 
@@ -592,7 +602,7 @@ test('same-city groups reject London and New York destinations before requesting
     for (const method of ['enter', 'submit']) {
       const pending = deferredFetch(), p = page({ fetch: pending.fetch }); query(p, { from, to: '' });
       const controls = searchControls(p, value); controls.input.oninput(); controls[method]();
-      assert.equal(pending.calls.length, 0, `${from} → ${value}`);
+      assert.equal(pending.searches.length, 0, `${from} → ${value}`);
       assert.equal(p.run('hint'), 'Choose a different destination.');
       assert.match(p.run('vSearch()'), /id="toError" role="status">Choose a different destination\./);
       assert.deepEqual(p.json('[calOpen,sugOpen]'), [false, false]);
@@ -661,11 +671,11 @@ test('empty searches stand alone and All airlines retries the same route without
   assert.doesNotMatch(html,/id="fcol"|class="tabs"|class="rbar"|id="fopen"|Reset filters/);
   p.elements['#allAirlines']={};p.run('bind()');
   const completion=p.elements['#allAirlines'].onclick();
-  assert.equal(pending.calls.length,1);
-  const params=new URL(pending.calls[0].url,'https://sam.toys').searchParams;
+  assert.equal(pending.searches.length,1);
+  const params=new URL(pending.searches[0].url,'https://sam.toys').searchParams;
   assert.equal(params.get('earningOnly'),'false');assert.equal(params.get('destination'),'MAD');
   assert.equal(params.get('origin'),'LON');
-  pending.calls[0].resolve(ok([]));await completion;
+  pending.searches[0].resolve(ok([]));await completion;
   assert.doesNotMatch(p.run('vResults()'),/id="allAirlines"|id="fcol"/);
 });
 
@@ -738,13 +748,13 @@ test('new searches clear airline, stop and time filters while keeping the onewor
     const pending=deferredFetch(),p=page({fetch:pending.fetch});query(p,{earningOnly});
     p.run("F.stops='0';F.dep=[8,11];F.arr=[13,16];F.air=new Set(['EI']);SORT='cheap'");
     const completion=p.run('search()');
-    assert.deepEqual(p.json('F'),{stops:'any',dep:[0,24],arr:[0,24],air:null});
+    assert.deepEqual(p.json('F'),{stops:'any',dep:[0,24],arr:[0,24],air:null,skip:'show',star:false});
     assert.equal(p.run('S.earningOnly'),earningOnly);
-    const request=new URL(pending.calls[0].url,'https://sam.toys').searchParams;
+    const request=new URL(pending.searches[0].url,'https://sam.toys').searchParams;
     assert.equal(request.get('earningOnly'),String(earningOnly));
     assert.equal(request.get('fareClass'),'economy');
     assert.equal(request.get('limit'),'100');
-    p.run("go('#/gold')");pending.calls[0].resolve(ok([]));await completion;
+    p.run("go('#/gold')");pending.searches[0].resolve(ok([]));await completion;
   }
 });
 
@@ -771,4 +781,330 @@ test('results heading follows the first visible sorted flight and explicitly nam
   p.run("resetFilters();SORT='cheap';refreshResults()");
   assert.equal(p.elements['#app h1'].innerHTML,p.run('resultsTitle()'));
   assert(p.run('resultsTitle()').startsWith(p.run('flightNumber(flightGroups(visibleFares()[0])[0][0])')));
+});
+
+test('v4 home keeps origin choices below search, Cabin and the compact two-month calendar', () => {
+  const p=page();
+  const home=p.run('vSearch()');
+  assert.match(home,/class="orow" role="group" aria-label="From"/);
+  assert.match(home,/id="anyPill"/);assert.match(home,/data-from="LON"/);assert.match(home,/data-from="IBZ"/);
+  assert.match(home,/id="fromQ"/);assert.match(home,/class="cabinw"/);
+  assert.match(home,/class="goC" id="go" type="submit"/);
+  assert.match(home,/form="sf" class="go gobig">Search/);
+  assert.equal((home.match(/class="mon"/g)||[]).length,2);
+  assert.match(home,/<span class="dow">M<\/span><span class="dow">T<\/span><span class="dow">W<\/span>/);
+  assert(home.indexOf('id="go"')<home.indexOf('class="orow"'));
+  assert(home.indexOf('class="orow"')<home.indexOf('id="cabin"'));
+  assert.match(home,/id="pm" aria-label="Previous month"/);assert.match(home,/id="nm" aria-label="Next month"/);
+  p.run("S.to='MAD';S.out='2026-11-29';S.view='2026-11'");
+  assert.match(p.run('calHTML2()'),/id="pt"/);assert.match(p.run('calHTML2()'),/id="clr"/);
+});
+
+test('calendar range spans months without converting a one-way tap to a return', () => {
+  const p=page();p.run("S.view='2026-11';tapDay('2026-11-29')");
+  assert.deepEqual(p.json('[S.out,S.back]'),['2026-11-29','']);
+  assert.match(p.run('calHTML2()'),/one way/);
+  p.run("tapDay('2026-12-03')");
+  assert.deepEqual(p.json('[S.out,S.back]'),['2026-11-29','2026-12-03']);
+  const calendar=p.run('calHTML2()');
+  assert.match(calendar,/data-k="2026-11-29"[^>]*aria-label="[^"]*, outbound" aria-pressed="true"/);
+  assert.match(calendar,/data-k="2026-12-03"[^>]*aria-label="[^"]*, return" aria-pressed="true"/);
+  assert.match(calendar,/4 nights/);
+});
+
+test('origin defaults to London, persists the last selection and tolerates unavailable storage', () => {
+  assert.equal(page().run('S.from'),'LON');
+  for(const code of ['IBZ','NYC','MAD'])assert.equal(page({origin:code}).run('S.from'),code);
+  for(const code of ['','not-city','<script>'])assert.equal(page({origin:code}).run('S.from'),'LON');
+  assert.equal(page({origin:'IBZ',storageFailure:true}).run('S.from'),'LON');
+  const p=page();p.lists['[data-from]']=[{dataset:{from:'IBZ'}}];
+  searchControls(p,'Madrid');p.lists['[data-from]'][0].onclick();
+  assert.equal(p.run('S.from'),'IBZ');assert.equal(p.storage.get('flights.from.v1'),'IBZ');
+});
+
+test('visible Go dispatches the search directly without requiring a second tap', async () => {
+  const pending=deferredFetch(),p=page({fetch:pending.fetch});query(p);
+  p.elements['#go']={};searchControls(p,'Madrid');
+  let prevented=false;const completion=p.elements['#go'].onclick({preventDefault(){prevented=true;}});
+  assert.equal(prevented,true);assert.equal(pending.searches.length,1);assert.equal(p.location.hash,'#/loading');
+  p.run("go('#/gold')");pending.searches[0].resolve(ok([]));await completion;
+});
+
+test('Starlink card threshold is 50%, likely filter is 80%, and unknown predictions are excluded', async () => {
+  const data=await backend('/api/flights?origin=LHR&destination=MAD&departureDate=2026-11-18',searchFixture({origin:'LHR',destination:'MAD',departureDate:'2026-11-18'}));
+  const p=page();query(p);p.put('data',data);p.run('response=data');
+  const base=data.results[0];
+  for(const [probability,shown,likely] of [[null,false,false],[0.499,false,false],[0.5,true,false],[0.799,true,false],[0.8,true,true],[0.92,true,true]]){
+    const fare=structuredClone(base);fare.starlink={p:probability,basis:'fleet <plan>',note:'Tail & aircraft can change'};
+    p.put('fare',fare);p.run('F.star=true');
+    assert.equal(p.run('passes(fare)'),likely,String(probability));
+    const card=p.run('card(fare,0)');assert.equal(card.includes('Starlink '),shown,String(probability));
+    if(shown)assert(card.includes('Starlink '+Math.round(probability*100)+'%'));
+    p.run('response.results=[fare]');
+    const detail=p.run('vFare(fare.id)');
+    assert.match(detail,/class="slf"/);
+    assert.match(detail,/based on fleet &lt;plan&gt;/);assert.match(detail,/Tail &amp; aircraft can change/);
+    if(probability===null)assert.match(detail,/Starlink unknown/);
+  }
+});
+
+test('Show, Hide and Only skip-last-leg filters work locally alongside Starlink', async () => {
+  const data=await backend('/api/flights?origin=LHR&destination=MAD&departureDate=2026-11-18',searchFixture({origin:'LHR',destination:'MAD',departureDate:'2026-11-18'}));
+  const p=page();query(p);p.put('data',data);p.run('response=data');
+  const all=p.run('visibleFares().length');assert(p.run('fares().some(f=>f.hiddenCity)'));
+  p.run("F.skip='hide'");assert(p.run('visibleFares().every(f=>!f.hiddenCity)'));
+  p.run("F.skip='only'");assert(p.run('visibleFares().every(f=>f.hiddenCity)'));assert(p.run('visibleFares().length')>0);
+  const card=p.run('card(visibleFares()[0],0)');assert.match(card,/Skip last leg/);assert.match(card,/class="skipx" aria-label="Skipped leg to /);
+  p.run("F.skip='show'");assert.equal(p.run('visibleFares().length'),all);
+  const filters=p.run('filtersHTML()');assert.match(filters,/class="seg3" role="radiogroup"/);
+  assert.equal((filters.match(/name="skip"/g)||[]).length,3);
+  p.run('F.star=true');assert.equal(p.run('visibleFares().length'),0);
+});
+
+function glideElement({left=0,width=80,tagName='BUTTON',keyboard=false}={}){
+  const listeners={}, classes=new Set(), children=[];
+  return {listeners,children,style:{},dataset:{},isConnected:true,tagName,scrollLeft:0,scrollTop:0,offsetWidth:width,
+    classList:{add:k=>classes.add(k),remove:k=>classes.delete(k),contains:k=>classes.has(k),toggle(k,on){if(on)classes.add(k);else classes.delete(k);}},
+    getBoundingClientRect:()=>({left,top:0,width,height:30}),
+    addEventListener:(name,callback)=>{listeners[name]=callback;},
+    getAttribute(){},setAttribute(){},matches:selector=>selector===':focus-visible'&&keyboard,contains:()=>false,
+    querySelector:selector=>selector===':scope>.glide'?children[0]||null:null,
+    prepend:child=>children.unshift(child),
+  };
+}
+
+test('origin, sort and skip highlights move only transform and width, respecting pointer and reduced motion', () => {
+  for(const reducedMotion of [false,true])for(const finePointer of [false,true])for(const group of ['origin','sort','seg0']){
+    const p=page({reducedMotion,finePointer}),box=glideElement(),items=[glideElement(),glideElement({left:90,width:95})];
+    const highlight=glideElement({tagName:'SPAN'});box.children.push(highlight);
+    p.put('box',box);p.put('items',items);p.run(`let chosen=0;glide('${group}',box,items,el=>el===items[chosen])`);
+    assert.equal(highlight.style.transform,'translate(0px,0px)');assert.equal(highlight.style.transition,'none');
+    assert.equal(typeof items[1].listeners.pointerenter==='function',finePointer);
+    p.run('chosen=1');items[1].listeners.click({detail:1});p.flushFrames();
+    assert.equal(highlight.style.transform,'translate(90px,0px)');assert.equal(highlight.style.width,'95px');
+    assert.equal(highlight.style.transition,reducedMotion?'none':'');
+    assert.equal(highlight.style.left,undefined);assert.equal(highlight.style.top,undefined);
+  }
+});
+
+test('keyboard focus and activation keep shared highlights instant', () => {
+  const p=page(),box=glideElement(),highlight=glideElement({tagName:'SPAN'}),items=[glideElement(),glideElement({left:90,keyboard:true})];box.children.push(highlight);
+  p.put('box',box);p.put('items',items);p.run("let chosen=0;glide('keyboard',box,items,el=>el===items[chosen])");
+  p.events.keydown({key:'Tab'});items[1].listeners.focusin();assert.equal(highlight.style.transition,'none');
+  p.run('chosen=1');items[1].listeners.click({detail:0});p.flushFrames();
+  assert.equal(highlight.style.transition,'none');assert.equal(highlight.style.transform,'translate(90px,0px)');
+});
+
+test('nearby date strip requests the searched cabin and displays only its seven dates', async () => {
+  const pending=deferredFetch(),p=page({fetch:pending.fetch});query(p,{cabin:'Business',back:'2026-11-21'});
+  p.run("response={action:'search',results:[],meta:{}}");
+  const completion=p.run('loadStrip()');
+  assert.equal(pending.flexes.length,1);
+  const params=new URL(pending.flexes[0].url,'https://sam.toys').searchParams;
+  assert.equal(params.get('fareClass'),'business');assert.equal(params.get('departureDate'),'2026-11-18');
+  assert.equal(params.get('returnDate'),'2026-11-21');
+  pending.flexes[0].resolve({ok:true,json:async()=>({results:[{departureDate:'2026-11-15',priceGbp:210},{departureDate:'2026-11-21',priceGbp:180},{departureDate:'2026-11-22',priceGbp:1}]})});await completion;
+  assert.deepEqual(p.json('stripDays()'),['2026-11-15','2026-11-16','2026-11-17','2026-11-18','2026-11-19','2026-11-20','2026-11-21']);
+  const strip=p.run('dateStrip()');assert.match(strip,/£210/);assert.match(strip,/£180/);
+  assert.doesNotMatch(strip,/data-day="2026-11-22"/);assert.match(strip,/aria-current="date"/);
+});
+
+test('skip and Starlink controls filter loaded rows without another provider request', async () => {
+  const data=await backend('/api/flights?origin=LHR&destination=MAD&departureDate=2026-11-18',searchFixture({origin:'LHR',destination:'MAD',departureDate:'2026-11-18'}));
+  data.results.forEach((fare,i)=>{fare.starlink={p:i%2?0.92:0.6};});
+  const pending=deferredFetch(),p=page({fetch:pending.fetch});query(p);p.put('data',data);p.run('response=data');
+  for(const id of ['#cards','#rcount','#fopen','#fshow','#fclose','#freset','#earningOnly','#fcol','#starlinkOnly'])p.elements[id]={textContent:'',innerHTML:'',setAttribute(){},removeAttribute(){}};
+  const choices=p.lists['input[name=skip]']=['show','hide','only'].map(value=>({value}));
+  p.run('bindResults(false)');
+  assert.equal(typeof p.elements['#starlinkOnly'].onchange,'function');
+  p.elements['#starlinkOnly'].onchange({target:{checked:true}});
+  assert.equal(p.run('F.star'),true);assert(p.run('visibleFares().every(f=>f.starlink.p>=0.8)'));
+  assert.equal(typeof choices[2].onchange,'function');choices[2].onchange();
+  assert.equal(p.run('F.skip'),'only');assert(p.run('visibleFares().every(f=>f.hiddenCity)'));
+  assert.equal(pending.calls.length,0);
+});
+
+test('calendar Clear resets both dates and the price toggle requests route discovery', async () => {
+  const pending=deferredFetch(),p=page({fetch:pending.fetch});query(p,{back:'2026-11-21'});
+  p.elements['#cal']={querySelectorAll:()=>[],querySelector:()=>({}),classList:{add(){}}};
+  for(const id of ['#pm','#nm','#pt','#clr'])p.elements[id]={};
+  p.run('bindCal()');p.elements['#clr'].onclick();assert.deepEqual(p.json('[S.out,S.back]'),['','']);
+  p.run("S.out='2026-11-18';S.view='2026-11';bindCal()");
+  p.elements['#pt'].onclick();assert.equal(p.run('S.prices'),true);assert.equal(pending.flexes.length,1);
+  const params=new URL(pending.flexes[0].url,'https://sam.toys').searchParams;
+  assert.equal(params.get('destination'),'MAD');assert.equal(params.get('fareClass'),'economy');
+  p.run("go('#/gold')");pending.flexes[0].resolve({ok:true,json:async()=>({results:[]})});await Promise.resolve();
+});
+
+test('search paints its skeleton shell immediately and warms cabin-specific flex alongside fares', async () => {
+  const pending=deferredFetch(),p=page({fetch:pending.fetch});query(p,{cabin:'First'});
+  const completion=p.run('search()');
+  assert.equal(p.location.hash,'#/loading');assert.equal(pending.searches.length,1);assert.equal(pending.flexes.length,1);
+  const html=p.elements['#app'].innerHTML;assert.match(html,/aria-busy="true"/);assert.match(html,/class="fc glass skcard"/);assert.doesNotMatch(html,/class="spin"|spinner/);
+  assert.equal(new URL(pending.flexes[0].url,'https://sam.toys').searchParams.get('fareClass'),'first');
+  pending.searches[0].resolve(ok([]));await completion;assert.equal(p.location.hash,'#/results');
+  pending.flexes[0].resolve({ok:true,json:async()=>({results:[]})});await Promise.resolve();
+});
+
+test('pointerdown prefetch and direct Go share one fare and flex request', async () => {
+  const pending=deferredFetch(),p=page({fetch:pending.fetch});query(p);p.elements['#go']={};searchControls(p,'Madrid');
+  p.elements['#go'].onpointerdown({button:0});assert.equal(pending.searches.length,1);assert.equal(pending.flexes.length,1);
+  const completion=p.elements['#go'].onclick({preventDefault(){}});
+  assert.equal(pending.searches.length,1);assert.equal(pending.flexes.length,1);assert.equal(p.location.hash,'#/loading');
+  pending.searches[0].resolve(ok([]));pending.flexes[0].resolve({ok:true,json:async()=>({results:[]})});await completion;
+});
+
+test('typed suggestions debounce at 80ms while input state updates immediately', () => {
+  const p=page();query(p);const controls=searchControls(p,'M');let updates=0;
+  controls.input.parentNode.insertAdjacentHTML=()=>{updates++;};
+  controls.input.oninput();controls.input.value='Madrid';controls.input.oninput();
+  assert.equal(p.run('draft'),'Madrid');assert.equal(p.run('S.to'),'');assert.equal(updates,0);
+  p.flushTimers(79);assert.equal(updates,0);p.flushTimers(80);assert.equal(updates,1);
+});
+
+test('session results restore query history immediately without a fare request and expire after ten minutes', async () => {
+  const p=page();query(p);p.run("saveResults(S,{action:'search',results:[],meta:{}})");
+  const saved=p.session.get('flights.results.v1');assert(saved);
+  const pending=deferredFetch(),restored=page({sessionSaved:saved,fetch:pending.fetch});query(restored);
+  await restored.run('search()');assert.equal(restored.location.hash,'#/results');assert.equal(pending.searches.length,0);
+  restored.run("response=null;resultQuery=null;history.state={flightsQuery:{...S}};location.hash='#/results';render()");
+  assert.equal(restored.run('response.action'),'search');assert.equal(restored.run('resultQuery.to'),'MAD');assert.equal(pending.searches.length,0);
+  restored.run('sessionResults.get(cacheKey(S)).until=Date.now()-1');assert.equal(restored.run('readResults(S)'),null);
+  if(pending.flexes[0])pending.flexes[0].resolve({ok:true,json:async()=>({results:[]})});
+});
+
+test('query cache bounds tab storage, excludes partial replies and isolates dates, cabin and oneworld', () => {
+  const p=page();query(p);p.run("saveResults(S,{action:'search',results:[],meta:{}})");
+  for(const change of ["S.cabin='Business'","S.out='2026-11-19'","S.back='2026-11-21'","S.earningOnly=false"]){query(p);p.run(change);assert.equal(p.run('readResults(S)'),null);}
+  p.run("sessionResults.clear();saveResults(S,{action:'search',results:[],partial:true})");assert.equal(p.run('sessionResults.size'),0);
+  p.run("for(let i=0;i<8;i++)saveResults({...S,out:'2026-11-'+String(10+i)},{action:'search',results:[],meta:{}})");
+  assert.equal(p.run('sessionResults.size'),6);assert.equal(JSON.parse(p.session.get('flights.results.v1')).length,6);
+  assert.equal(page({sessionSaved:'{'}).run('readResults(S)'),null);
+});
+
+test('result entry staggers at most eight cards and reorder animation uses transform only', () => {
+  const p=page(),animations=[];
+  const cards=Array.from({length:10},(_,i)=>({dataset:{fareId:'fare'+i},getBoundingClientRect:()=>({left:0,top:i*100}),animate:(frames,options)=>animations.push({frames,options})}));
+  p.lists['#cards .fc']=cards;p.run('animateCards()');
+  assert.equal(animations.length,8);assert(animations.every(a=>a.options.duration<=220));
+  assert(animations.every((a,i)=>i===0||a.options.delay-animations[i-1].options.delay<=30));
+  animations.length=0;p.run("animateCards(new Map(Array.from({length:10},(_,i)=>['fare'+i,{left:0,top:1000-i*100}])))");
+  assert(animations.length>0);assert(animations.every(a=>a.frames.every(frame=>Object.keys(frame).every(key=>key==='transform'))));
+});
+
+test('page, calendar and card animations are short and disabled for reduced motion or keyboard input', () => {
+  for(const reducedMotion of [false,true])for(const keyboard of [false,true]){
+    const p=page({reducedMotion}),animations=[],animated={getBoundingClientRect:()=>({top:0,left:0}),animate:(frames,options)=>animations.push({frames,options})};
+    p.elements['#app>.fade']=animated;p.elements['#cal .months']=animated;p.lists['#cards .fc']=[{...animated,dataset:{fareId:'one'}}];
+    p.elements['#cal']={querySelectorAll:()=>[]};for(const id of ['#pm','#nm'])p.elements[id]={};
+    if(keyboard)p.events.keydown({key:'Enter'});else p.events.pointerdown({clientX:10,clientY:40});
+    p.run("animatePage();animateCards();S.view='2026-11';bindCal()");p.elements['#nm'].onclick();
+    if(reducedMotion||keyboard)assert.equal(animations.length,0);
+    else{assert.equal(animations.length,3);assert(animations.every(a=>a.options.duration<=300));assert(animations[2].frames[0].transform.includes('translateX('));}
+  }
+});
+
+test('same-hash Back and Forward restore distinct cached query rows through popstate without fetching', async () => {
+  const data=await backend('/api/flights?origin=LHR&destination=MAD&departureDate=2026-11-18',searchFixture({origin:'LHR',destination:'MAD',departureDate:'2026-11-18'}));
+  const pending=deferredFetch(),p=page({fetch:pending.fetch});
+  const queries=[{from:'LON',to:'MAD',out:'2026-11-18'},{from:'IBZ',to:'JFK',out:'2026-11-20'}],states=[];
+  for(const [i,q] of queries.entries()){
+    query(p,q);const completion=p.run('search()');
+    const fare={...structuredClone(data.results[0]),id:'history-query-'+i};
+    pending.searches[i].resolve(ok([fare]));pending.flexes[i].resolve({ok:true,json:async()=>({results:[]})});await completion;
+    assert.equal(p.location.hash,'#/results');states.push(p.json('history.state'));
+  }
+  assert.equal(typeof p.windowEvents.popstate,'function','same-hash navigation needs its own listener');
+  const requests=pending.calls.length;
+  for(const index of [0,1]){
+    p.put('historyState',states[index]);p.run('history.state=historyState');
+    // Browser traversal updates history.state but does not dispatch hashchange
+    // when both history entries have the identical #/results URL.
+    p.windowEvents.popstate({state:states[index]});
+    assert.equal(p.location.hash,'#/results');
+    assert.deepEqual(p.json('[resultQuery.from,resultQuery.to,resultQuery.out]'),[queries[index].from,queries[index].to,queries[index].out]);
+    assert.deepEqual(p.json('[S.from,S.to,S.out]'),[queries[index].from,queries[index].to,queries[index].out]);
+    assert.equal(p.run('response.results[0].id'),'history-query-'+index);
+    assert(p.elements['#app'].innerHTML.includes('#/fare/history-query-'+index));
+    assert.equal(pending.calls.length,requests,'history restoration must not start another fetch');
+  }
+  query(p,{from:'LON',to:'DOH',out:'2026-11-23'});const late=p.run('search()');
+  const lateRequest=pending.searches.at(-1),countBeforeBack=pending.calls.length;
+  p.put('historyState',states[0]);p.run("history.state=historyState;location.hash='#/results'");
+  p.windowEvents.popstate({state:states[0]});
+  assert.equal(lateRequest.signal.aborted,true,'restoring cached history cancels the active fare request');
+  assert.equal(pending.calls.length,countBeforeBack);
+  lateRequest.resolve(ok([{...structuredClone(data.results[0]),id:'late-query'}]));
+  pending.flexes.at(-1).resolve({ok:true,json:async()=>({results:[]})});await late;
+  assert.equal(p.run('response.results[0].id'),'history-query-0');assert.equal(p.run('resultQuery.to'),'MAD');
+});
+
+test('sort and skip handlers animate the shared highlight during refresh rather than snapping before click RAF', () => {
+  for(const reducedMotion of [false,true])for(const keyboard of [false,true]){
+    const p=page({reducedMotion});query(p);p.run("response={action:'search',results:[],meta:{}}");
+    for(const id of ['#cards','#rcount','#fopen','#fshow','#fclose','#freset','#earningOnly','#fcol'])p.elements[id]={innerHTML:'',textContent:'',setAttribute(){},removeAttribute(){}};
+    const tabs=glideElement(),sortHighlight=glideElement({tagName:'SPAN'}),buttons=['value','cheap'].map((value,index)=>{
+      const button=glideElement({left:index*90});button.dataset.sort=value;
+      const attrs={'aria-selected':String(index===0)};
+      button.getAttribute=name=>attrs[name];button.setAttribute=(name,value)=>{attrs[name]=String(value);};return button;
+    });
+    tabs.children.push(sortHighlight);tabs.querySelectorAll=()=>buttons;p.elements['.tabs']=tabs;p.lists['[data-sort]']=buttons;
+    const segment=glideElement(),skipHighlight=glideElement({tagName:'SPAN'}),radios=['show','hide','only'].map((value,index)=>({value,checked:index===0}));
+    const labels=radios.map((radio,index)=>{const label=glideElement({left:index*60,width:55,tagName:'LABEL'});label.querySelector=selector=>selector==='input:checked'&&radio.checked?radio:null;return label;});
+    segment.children.push(skipHighlight);segment.querySelectorAll=()=>labels;p.lists['.seg3']=[segment];p.lists['input[name=skip]']=radios;
+    p.run('bindResults(false);applyGlides()');
+    assert.equal(sortHighlight.style.transform,'translate(0px,0px)');assert.equal(skipHighlight.style.transform,'translate(0px,0px)');
+    if(keyboard)p.events.keydown({key:'Enter'});else p.events.pointerdown({clientX:100,clientY:20});
+    buttons[1].onclick();
+    // No synthetic click listener or RAF has run: refreshResults itself must
+    // preserve the transition while applyGlides observes the new selection.
+    assert.equal(p.run('SORT'),'cheap');assert.equal(sortHighlight.style.transform,'translate(90px,0px)');
+    assert.equal(sortHighlight.style.transition,reducedMotion||keyboard?'none':'');
+    radios.forEach((radio,index)=>{radio.checked=index===2;});radios[2].onchange();
+    assert.equal(p.run('F.skip'),'only');assert.equal(skipHighlight.style.transform,'translate(120px,0px)');
+    assert.equal(skipHighlight.style.transition,reducedMotion||keyboard?'none':'');
+  }
+});
+
+test('native fare navigation stamps query history so reloading restores the fare from session storage', async () => {
+  const data=await backend('/api/flights?origin=LHR&destination=MAD&departureDate=2026-11-18',searchFixture({origin:'LHR',destination:'MAD',departureDate:'2026-11-18'}));
+  data.results=[data.results[0]];data.results[0].id='native-fare-history';
+  const p=page();query(p,{from:'IBZ',to:'MAD',out:'2026-11-18'});p.put('data',data);
+  p.run("response=data;saveResults(S,data);history.state=null;location.hash='#/fare/native-fare-history'");
+  p.windowEvents.hashchange();
+  const historyState=p.json('history.state');
+  assert.equal(historyState.flightsQuery.from,'IBZ');assert.equal(historyState.flightsQuery.out,'2026-11-18');
+  const pending=deferredFetch(),reloaded=page({fetch:pending.fetch,sessionSaved:p.session.get('flights.results.v1'),initialHash:p.location.hash,initialHistoryState:historyState});
+  assert.equal(reloaded.location.hash,'#/fare/native-fare-history');assert.equal(reloaded.run('response.results[0].id'),'native-fare-history');
+  assert.deepEqual(reloaded.json('[resultQuery.from,resultQuery.to,resultQuery.out]'),['IBZ','MAD','2026-11-18']);
+  assert.match(reloaded.elements['#app'].innerHTML,/id="book"/);assert.equal(pending.calls.length,0);
+});
+
+test('Back to an uncached partial or expired query refetches its own rows without pushing history or showing newer rows', async () => {
+  const data=await backend('/api/flights?origin=LHR&destination=MAD&departureDate=2026-11-18',searchFixture({origin:'LHR',destination:'MAD',departureDate:'2026-11-18'}));
+  for(const missing of ['partial','expired']){
+    const pending=deferredFetch(),p=page({fetch:pending.fetch});
+    query(p,{from:'IBZ',to:'MAD',out:'2026-11-18'});const oldSearch=p.run('search()');
+    pending.searches[0].resolve({ok:true,json:async()=>({action:'search',results:[{...structuredClone(data.results[0]),id:'old-'+missing}],meta:{},...(missing==='partial'?{partial:true}:{})})});
+    pending.flexes[0].resolve({ok:true,json:async()=>({results:[]})});await oldSearch;
+    const oldHistory=p.json('history.state');
+    if(missing==='expired')p.run('sessionResults.get(cacheKey(S)).until=Date.now()-1');
+    query(p,{from:'LON',to:'JFK',out:'2026-11-20'});const newerSearch=p.run('search()');
+    pending.searches[1].resolve(ok([{...structuredClone(data.results[0]),id:'newer-'+missing}]));
+    pending.flexes[1].resolve({ok:true,json:async()=>({results:[]})});await newerSearch;
+    const pushes=p.historyCalls.filter(call=>call.method==='push').length;
+    p.put('oldHistory',oldHistory);p.run('history.state=oldHistory');p.windowEvents.popstate({state:oldHistory});
+    assert.equal(p.location.hash,'#/loading',missing);assert.equal(p.run('response'),null,missing);
+    assert.deepEqual(p.json('[S.from,S.to,S.out,resultQuery.from,resultQuery.to,resultQuery.out]'),['IBZ','MAD','2026-11-18','IBZ','MAD','2026-11-18']);
+    assert.match(p.elements['#app'].innerHTML,/Ibiza → Madrid/);assert.match(p.elements['#app'].innerHTML,/class="fc glass skcard"/);
+    assert(!p.elements['#app'].innerHTML.includes('#/fare/newer-'+missing));
+    assert.equal(pending.searches.length,3,missing);
+    const request=new URL(pending.searches[2].url,'https://sam.toys').searchParams;
+    assert.equal(request.get('origin'),'IBZ');assert.equal(request.get('destination'),'MAD');assert.equal(request.get('departureDate'),'2026-11-18');
+    assert.equal(p.historyCalls.filter(call=>call.method==='push').length,pushes,'restoration replaces the traversed entry');
+    const completion=p.run('prepared.promise');pending.searches[2].resolve(ok([{...structuredClone(data.results[0]),id:'refetched-'+missing}]));await completion;
+    assert.equal(p.location.hash,'#/results');assert.equal(p.run('response.results[0].id'),'refetched-'+missing);
+    assert.equal(p.run('resultQuery.from'),'IBZ');assert.equal(p.run('resultQuery.out'),'2026-11-18');
+    assert.equal(p.historyCalls.filter(call=>call.method==='push').length,pushes);
+  }
 });

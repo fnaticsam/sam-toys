@@ -343,7 +343,7 @@ async function main() {
         assert.equal(await page.locator('#gtp').inputValue(),'0'); assert.equal(await page.locator('#gtarget').inputValue(),'20000');
         assert.equal(await page.locator('#gend').inputValue(),'2027-03-31'); assert.equal(await page.locator('.gring circle').count(),1);
         await page.locator('#gtp').fill('12500');await page.locator('#gtarget').fill('21000');await page.locator('#gend').fill('2027-03-30');
-        await page.locator('button[form="gf"]').click();await page.reload();await page.locator('#gtp').waitFor();
+        await page.locator('button[form="gf"]').click();await page.waitForFunction(()=>JSON.parse(localStorage.getItem('flights.gold.live.v1')||'{}').tp===12500);await page.reload();await page.locator('#gtp').waitFor();
         assert.equal(await page.locator('#gtp').inputValue(),'12500');assert.equal(await page.locator('#gtarget').inputValue(),'21000');
         assert.deepEqual(await page.evaluate(()=>JSON.parse(localStorage.getItem('flights.gold.live.v1'))),{tp:12500,target:21000,ends:'2027-03-30'});
         assert.equal(await page.evaluate(()=>localStorage.getItem('flights.proto.gold')),null);await snap('gold');

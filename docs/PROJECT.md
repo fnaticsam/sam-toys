@@ -1,33 +1,38 @@
-# Sam Toys (sam-toys, sam.toys, toys, playa): checked 2026-10-02, main 6935a37
-
-Product URL: https://sam.toys (listed in [index.html](../index.html); current production response was not checked).
+# fnaticsam/sam-toys (sam.toys, playa, sam-toys, samfun): checked 2026-10-31
 
 ## What exists
 
-- **IMPLEMENTED** — Sam Toys is the sam.toys index and hosts multiple small product surfaces, defined in [index.html](../index.html).
-- **IMPLEMENTED** — The index links product cards for Vroom, Tracks, Voicenotes, Out / London, Co-produce, Phone and Tantra.
-- **IMPLEMENTED** — The index also links larger external products including TradeGG, Splittt, Taotime, Hike Fan, Finca, Drift & Sea, DrFit and Seer.
-- **IMPLEMENTED** — The repository contains serverless handlers for transcription, London data/refresh, track playlist/OCR, and product-specific routes under [api/](../api/).
-- **IMPLEMENTED** — [api/playa.js](../api/playa.js) is a private gallery route; its page documentation says it gates the shell, catalogue, media and shortlist.
-- **IMPLEMENTED** — The gallery is designed to fail closed when required server-side configuration is absent; no secret values are stored in this summary.
-- **IMPLEMENTED** — [vercel.json](../vercel.json) lists function settings for the repository’s API routes.
-- **DEPLOYED** — GitHub records a Preview deployment for commit `ef5c402` on 2026-09-20; that is not confirmation of the current production revision.
-- **MERGED** — PRs #15 and #16 redirect `/awakening` and `/awakening/` to knomi.club; their merge commits are `2c621f8` and `5f14468`.
+- Sam Toys index: The sam.toys index hosts multiple small product surfaces. IMPLEMENTED `index.html`
+- Product cards: The index links Vroom, Tracks, Voicenotes, Out / London, Co-produce, Phone and Tantra. IMPLEMENTED `index.html`
+- External products: The index links TradeGG, Splittt, Taotime, Hike Fan, Finca, Drift & Sea, DrFit and Seer. IMPLEMENTED `index.html`
+- Serverless routes: The repository contains transcription, London, track playlist, OCR and product-specific handlers. IMPLEMENTED `vercel.json`
+- Playa gallery: The private gallery gates the shell, catalogue, media and shortlist. IMPLEMENTED `api/_lib/PLAYA-PAGE.md`
+- Playa downloads: Sam can download photos at 2048, 4096 or original size, and a shortlist as a zip. MERGED #21
+- Gemini cost guard: Anonymous calls to transcription and track OCR are refused. MERGED #22
+- Awakening redirect: `/awakening` redirects to knomi.club. MERGED #15
+- Flights search: sam.toys/flights searches oneworld and BA-partner fares ranked by estimated £ per tier point. MERGED #26
+- Flights results: Flight cards show tier points and an oneworld toggle that can add other airlines. MERGED #30
+- City search: Flights searches whole cities and pulls up to 100 flights. MERGED #31
+- Flights filters: Results carry sourced Starlink Wi-Fi likelihood. MERGED #35
+- Pull-request checks: Pull requests run site tests and the flights browser check in parallel. MERGED #37
 
 ## Gaps
 
-The GitHub deployment data returned Preview records for recent changes but no current production receipt for main. Public availability, external integration configuration, and runtime health are unverified. Playa’s gallery content and related data are intentionally not described here.
+- Production receipt: Current production revision and runtime health are unverified.
+- External integrations: Configuration and public availability are unverified.
+- Playa content: Gallery content and related data are intentionally not described here.
 
 ## Recent
 
-- 2026-09-20: merged PR #17 (`6935a37`) added the private Playa gallery shell.
-- 2026-09-13: merged PR #16 added the trailing-slash `/awakening/` redirect.
-- 2026-09-13: merge commit `2c621f8` moved KNOMI to its own repository.
-- 2026-09-13: merge commit `a1ab383` updated KNOMI naming, routing and resource links.
+- 2026-10-30: Flights received the v4 design with origin pills, calendar, nearby dates, filters and animation. MERGED #38
+- 2026-10-30: Pull requests began running site tests and the flights browser check in parallel. MERGED #37
+- 2026-10-30: Flights results added sourced Starlink Wi-Fi likelihood. MERGED #35
+- 2026-10-29: Flights added city search and up to 100 results. MERGED #31
+- 2026-10-29: Turning off oneworld adds other airlines rather than hiding BA partners. MERGED #30
 
 ## Read deeper
 
-- [index.html](../index.html)
-- [API routes](../api/)
-- [Playa page contract](../api/_lib/PLAYA-PAGE.md)
-- [vercel.json](../vercel.json)
+- `README.md`
+- `index.html`
+- `api/_lib/PLAYA-PAGE.md`
+- `vercel.json`

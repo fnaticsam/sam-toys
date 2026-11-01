@@ -155,8 +155,13 @@
   .card > .tw:first-child{margin-top:0}
   table.cmp{min-width:0}
   table.cmp tbody tr:last-child > *{border-bottom:0}
-  table.cmp tbody th{font-weight:600;width:30%}
+  table.cmp tbody th{width:30%}
   table.cmp.two tbody th{width:44%}
+  @media (max-width:640px){
+    table.cmp th,table.cmp td{padding:10px 6px}
+    table.cmp tr > :first-child{padding-left:0}
+    table.cmp tr > :last-child{padding-right:0}
+  }
   .pc{display:grid;grid-template-columns:1fr 1fr;gap:14px}
   @media (max-width:760px){.pc{grid-template-columns:1fr}}
   .pc h3{font-size:15px;font-weight:650;margin-bottom:12px}
@@ -164,8 +169,8 @@
   .pc li{position:relative;padding-left:20px;font-size:15px;line-height:1.45}
   .pc li + li{margin-top:9px}
   .pc li::before{position:absolute;left:0;top:0;color:var(--dim);font-weight:700}
-  .pc .pro li::before{content:"+"}
-  .pc .con li::before{content:"\2212"}
+  .pc .pro li::before{content:"+";content:"+" / ""}
+  .pc .con li::before{content:"\2212";content:"\2212" / ""}
 
   footer{margin-top:56px;color:var(--dim);font-size:13px;line-height:1.7}
   footer a{color:var(--dim)}
@@ -243,10 +248,10 @@
     <div class="tw">
       <table class="cmp">
         <thead>
-          <tr><th scope="col"></th><th scope="col">GitHub Actions</th><th scope="col">LV</th></tr>
+          <tr><td></td><th scope="col"><i class="sw gh"></i>GitHub Actions</th><th scope="col"><i class="sw lv"></i>LV</th></tr>
         </thead>
         <tbody>
-          <tr><th scope="row">When it runs</th><td>After the push</td><td>Before the push, inside the coding agent's loop</td></tr>
+          <tr><th scope="row">When it runs</th><td>After the push</td><td>Inside the coding agent's loop before the push, and on the pull request</td></tr>
           <tr><th scope="row">Where</th><td>GitHub's machines, in a queue</td><td>My own server, no queue</td></tr>
           <tr><th scope="row">What runs</th><td>Every check, every time</td><td>Only the checks a change touches; everything when unsure</td></tr>
           <tr><th scope="row">Same code again</th><td>Runs it all again</td><td>Reuses the saved verdict</td></tr>
@@ -369,7 +374,7 @@
     <div class="card tile">
       <div class="fig">37%</div>
       <p>Less waiting than running the checks one after another</p>
-      <small>median of 12 commits · 5.9 min of checks finish in 3.7 min</small>
+      <small>median of 12 commits · 3.7 min side by side, 5.9 one by one</small>
     </div>
     <div class="card tile">
       <div class="fig">0<span class="u">s</span></div>
@@ -382,23 +387,20 @@
   <div class="pc">
     <div class="card pro">
       <h3>Better</h3>
-      <ul>
-        <li>Faster: 3.3 minutes on a typical check instead of 5.9, and 7.7 instead of 20.4 on a slow day.</li>
+      <ul role="list">
+        <li>Faster, most of all on a slow day.</li>
         <li>A change reaches GitHub already checked, so fewer fix-and-push rounds.</li>
-        <li>No queue for shared runners.</li>
-        <li>Unchanged code is never checked twice.</li>
-        <li>No Actions minutes to pay for.</li>
+        <li>No waiting for GitHub's machines, no paid minutes, and nothing checked twice.</li>
         <li>It keeps watching the live site after a deploy.</li>
       </ul>
     </div>
     <div class="card con">
       <h3>Worse</h3>
-      <ul>
+      <ul role="list">
         <li>One server: if it is down, nothing gets checked, and keeping it running is my job.</li>
         <li>Checks that need Docker or a database can't run there yet.</li>
-        <li>Apple builds share one Mac.</li>
+        <li>Apple app builds take turns on one Mac.</li>
         <li>Picking only the touched checks could miss something; it runs everything when unsure.</li>
-        <li>Small samples so far, so the speed-ups are rough.</li>
       </ul>
     </div>
   </div>
@@ -467,11 +469,11 @@
       <text class="s sm" x="308" y="211">and replay</text>
     </svg>
 
-    <p class="note">A repo switches when the replay has no disagreements, no LV errors and at least one match. A disagreement caused by the repo itself, such as a flaky test, gets explained before the switch, not ignored.</p>
+    <p class="note">A repo switches when LV and Actions agree on at least one replayed commit, disagree on none, and LV never errors. The one exception is a disagreement the repo causes itself, such as a flaky test: it gets explained before the switch, not ignored.</p>
     <p class="note">GitHub Actions ran <b>1,260+ hours</b> of workflows for 11 of my repos in the last 30 days.</p>
   </div>
 
-  <h2>Against the research</h2>
+  <h2>Measured against the research</h2>
   <div class="card">
     <div class="tw">
       <table class="cmp two">
@@ -487,10 +489,10 @@
           <tr><th scope="row">Faster type-checking and linting tools</th><td><b>Not yet.</b></td></tr>
           <tr><th scope="row">Shared staging with request routing</th><td><b>Skipped.</b> These are single web apps, so it isn't needed.</td></tr>
           <tr><th scope="row">Merge queues and agent-ready source control</th><td><b>Skipped</b> for now.</td></tr>
-          <tr><th scope="row">Safety after a deploy</th><td><b>Done,</b> beyond the research: the live site is checked for 10 minutes after each deploy.</td></tr>
         </tbody>
       </table>
     </div>
+    <p class="note">The research is a report on making code checks fast enough for AI coding agents.</p>
   </div>
 
   <details class="more">
@@ -506,7 +508,7 @@
           <tr><th scope="row">Slow day (90th percentile)</th><td class="n">20.4 min</td><td class="n">7.7 min</td><td class="n">2.6×</td><td class="sm">639 · 30</td></tr>
           <tr><th scope="row">After merge to main, push to result</th><td class="n">5.8 min</td><td class="n">2.1 min</td><td class="n">—</td><td class="sm">219 · 1 LV run so far</td></tr>
           <tr><th scope="row">Only the touched checks (median)</th><td class="n">—</td><td class="n">1.9 min</td><td class="n">—</td><td class="sm">10 LV runs</td></tr>
-          <tr><th scope="row">Checks side by side (full suite median)</th><td class="n">—</td><td class="n">3.7 min, not 5.9</td><td class="n">37% less</td><td class="sm">12 LV commits</td></tr>
+          <tr><th scope="row">Checks side by side (full suite median)</th><td class="n">—</td><td class="n">3.7 min, not 5.9 one by one</td><td class="n">37% less</td><td class="sm">12 LV commits</td></tr>
           <tr><th scope="row">This site, full check (median)</th><td class="n">82 s</td><td class="n">40 s</td><td class="n">2×</td><td class="sm">13 · 3</td></tr>
           <tr><th scope="row">This site, docs-only change</th><td class="n">—</td><td class="n">0 s</td><td class="n">—</td><td class="sm">2 of 5 verdicts</td></tr>
         </tbody>

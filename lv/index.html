@@ -66,9 +66,9 @@
     background-image:linear-gradient(to right,var(--line) 1px,transparent 1px);
     background-size:calc(100% / 6) 100%;
   }
-  .bl{display:flex;align-items:center;gap:8px;height:14px;cursor:default;outline:none;border-radius:4px}
+  .bl{display:flex;align-items:center;gap:8px;height:14px;cursor:default;border-radius:4px}
   .bl + .bl{margin-top:2px}
-  .bl:focus-visible{box-shadow:0 0 0 2px var(--bg),0 0 0 4px var(--text)}
+  .bl:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
   .bar{
     flex:none;height:100%;width:max(3px, calc(var(--v) / var(--max) * 100%));
     border-radius:0 4px 4px 0;transform-origin:left;
@@ -116,6 +116,8 @@
   .tr{fill:var(--line)}
   .fl{fill:var(--lv);transform-box:fill-box;transform-origin:left;animation:run 2.6s ease-in-out infinite}
   .fl.b{animation-duration:3.4s;animation-delay:-.8s}
+  .sc,.fl{animation-iteration-count:3}
+  .fl{animation-fill-mode:both}
   .fl.c{animation-duration:1.9s;animation-delay:-.3s}
   @keyframes dash{to{stroke-dashoffset:-10}}
   @keyframes run{0%{transform:scaleX(.04)}75%,100%{transform:scaleX(1)}}
@@ -165,14 +167,14 @@
   <a class="back" href="/">← sam.toys</a>
   <header>
     <div class="mark">LV<span class="dot">.</span></div>
-    <p class="tag"><b>Checks my code on my own server,</b> about twice as fast as GitHub Actions.</p>
+    <p class="tag"><b>Checks my code on my own server,</b> nearly twice as fast as GitHub Actions on a typical check.</p>
   </header>
 
   <section class="card" aria-labelledby="hero-fig">
     <div class="hero-top">
       <div>
         <div class="big" id="hero-fig"><span class="was">6.2</span><span class="to" aria-hidden="true">→</span><span class="sr">down to</span>3.3<span class="unit">min</span></div>
-        <div class="sub">Typical check, median · a finance app</div>
+        <div class="sub">Typical check, median of 264 vs 30 runs · a finance app</div>
       </div>
       <div class="legend" aria-hidden="true">
         <span><i class="sw gh"></i>GitHub Actions</span>
@@ -180,7 +182,7 @@
       </div>
     </div>
 
-    <div class="chart" role="group" aria-label="Minutes from push to result, GitHub Actions against LV">
+    <div class="chart" role="group" aria-label="Minutes to result: GitHub Actions from push, queue included; LV from start to verdict">
       <div class="row">
         <div class="lab">Typical check <small>median</small></div>
         <div class="bars">
@@ -223,13 +225,13 @@
       </div>
     </div>
 
-    <p class="note">GitHub Actions: push until the last check finished, queue included, over the 30 days before the switch. LV: start to verdict, since the switch. Small samples, so the ratios are rough.</p>
+    <p class="note">GitHub Actions: push until the last check finished, queue included, over the 30 days before the switch. LV: start to verdict since the switch, typical and slow day passing runs only (after merge: push to verdict for both). Small samples, so the ratios are rough.</p>
   </section>
 
   <h2>How a change gets checked</h2>
   <div class="card">
     <svg class="dg wide" viewBox="0 0 960 256" role="img" aria-labelledby="flow-w">
-      <title id="flow-w">A change goes to Plan, which reads what changed and picks just the checks it touches. Run runs each check in its own sandbox, all at the same time. The verdict, pass or fail, is saved against the exact code checked. Merge only happens when lv/verdict passes; no verdict or an error means no merge. If the same code was checked before, LV reuses its verdict.</title>
+      <title id="flow-w">A change goes to Plan, which reads what changed and picks just the checks it touches. Run runs each check in its own sandbox, all at the same time. The verdict, pass or fail, is saved against the exact code checked. Merge only happens when the verdict passes; no verdict or an error means no merge. If the same code was checked before, LV reuses its verdict.</title>
       <defs>
         <marker id="m1d" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" markerUnits="userSpaceOnUse" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#9a99a6"/></marker>
         <marker id="m1a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" markerUnits="userSpaceOnUse" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#c9822e"/></marker>
@@ -262,7 +264,7 @@
 
       <rect class="nd" x="808" y="110" width="148" height="72" rx="12"/>
       <text class="t" x="882" y="141">Merge</text>
-      <text class="s" x="882" y="162">lv/verdict passes</text>
+      <text class="s" x="882" y="162">the verdict passes</text>
 
       <line class="ar" x1="156" y1="146" x2="200" y2="146" marker-end="url(#m1d)"/>
       <line class="ar" x1="357" y1="146" x2="401" y2="146" marker-end="url(#m1d)"/>
@@ -281,7 +283,7 @@
     </svg>
 
     <svg class="dg tall" viewBox="0 0 360 556" role="img" aria-labelledby="flow-t">
-      <title id="flow-t">A change goes to Plan, which reads what changed and picks just the checks it touches. Run runs each check in its own sandbox, all at the same time. The verdict, pass or fail, is saved against the exact code checked. Merge only happens when lv/verdict passes; no verdict or an error means no merge. If the same code was checked before, LV reuses its verdict.</title>
+      <title id="flow-t">A change goes to Plan, which reads what changed and picks just the checks it touches. Run runs each check in its own sandbox, all at the same time. The verdict, pass or fail, is saved against the exact code checked. Merge only happens when the verdict passes; no verdict or an error means no merge. If the same code was checked before, LV reuses its verdict.</title>
       <defs>
         <marker id="m2d" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" markerUnits="userSpaceOnUse" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#9a99a6"/></marker>
         <marker id="m2a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" markerUnits="userSpaceOnUse" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#c9822e"/></marker>
@@ -319,7 +321,7 @@
 
       <rect class="nd" x="104" y="460" width="244" height="88" rx="12"/>
       <text class="t" x="226" y="490">Merge</text>
-      <text class="s" x="226" y="510">only when lv/verdict passes;</text>
+      <text class="s" x="226" y="510">only when the verdict passes;</text>
       <text class="s" x="226" y="528">no verdict or an error: no merge</text>
 
       <line class="ar" x1="226" y1="103" x2="226" y2="120" marker-end="url(#m2d)"/>
@@ -337,13 +339,13 @@
     </div>
     <div class="card tile">
       <div class="fig">44%</div>
-      <p>Less waiting, by running checks side by side</p>
-      <small>7.5 min of checks finish in 4.2 min</small>
+      <p>Less waiting than running the checks one after another</p>
+      <small>median of 20 · 7.5 min of checks finish in 4.2 min</small>
     </div>
     <div class="card tile">
       <div class="fig">0<span class="u">s</span></div>
       <p>A docs-only change on this site: nothing to run</p>
-      <small>a full check here takes 40 s; it was 82 s on Actions</small>
+      <small>2 of 5 changes so far · a full check here takes 40 s (median of 3); it was 82 s on Actions (13)</small>
     </div>
   </div>
 
@@ -425,7 +427,7 @@
           <tr><th scope="row">Typical check (median)</th><td class="n">6.2 min</td><td class="n">3.3 min</td><td class="n">1.9×</td><td class="sm">264 Actions runs · 30 LV passes</td></tr>
           <tr><th scope="row">Full suite (median)</th><td class="n">5.8 min</td><td class="n">4.2 min</td><td class="n">1.4×</td><td class="sm">80 main pushes · 20 LV full runs</td></tr>
           <tr><th scope="row">Slow day (90th percentile)</th><td class="n">26.3 min</td><td class="n">7.7 min</td><td class="n">3.4×</td><td class="sm">264 · 30</td></tr>
-          <tr><th scope="row">After merge to main, push to result (median)</th><td class="n">5.8 min</td><td class="n">22 s</td><td class="n">~16×</td><td class="sm">80 · 3</td></tr>
+          <tr><th scope="row">After merge to main, push to result (median)</th><td class="n">5.8 min</td><td class="n">22 s</td><td class="n">~16× (3 runs)</td><td class="sm">80 · 3</td></tr>
           <tr><th scope="row">Only the touched checks (median)</th><td class="n">—</td><td class="n">1.9 min</td><td class="n">—</td><td class="sm">10 LV runs</td></tr>
           <tr><th scope="row">Checks side by side (full suite median)</th><td class="n">—</td><td class="n">4.2 min, not 7.5</td><td class="n">44% less</td><td class="sm">20 LV full runs</td></tr>
           <tr><th scope="row">This site, full check (median)</th><td class="n">82 s</td><td class="n">40 s</td><td class="n">2×</td><td class="sm">13 · 3</td></tr>
@@ -470,6 +472,7 @@
   }
 
   document.querySelectorAll('.bl').forEach((el) => {
+    el.setAttribute('aria-label', el.getAttribute('aria-label') + '. ' + el.dataset.d);
     el.addEventListener('mouseenter', () => show(el));
     el.addEventListener('mouseleave', () => { if (document.activeElement !== el) hide(); });
     el.addEventListener('focus', () => show(el));

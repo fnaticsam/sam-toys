@@ -1,0 +1,488 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#0b0b0f">
+<meta name="description" content="LV checks my code on my own server. How it works, and how much faster it is than GitHub Actions.">
+<title>LV · sam.toys</title>
+<style>
+  :root{
+    --bg:#0b0b0f; --card:#15151c; --card-hi:#1d1d27; --line:#26262f;
+    --text:#f0efe9; --dim:#9a99a6; --accent:#ffb454; --accent-2:#8b7cff;
+    --radius:16px;
+    /* series: validated against #0b0b0f */
+    --gh:#8b7cff; --lv:#c9822e;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html{-webkit-text-size-adjust:100%}
+  body{
+    background:
+      radial-gradient(900px 500px at 15% -10%, rgba(255,180,84,.10), transparent 60%),
+      radial-gradient(900px 500px at 90% 0%, rgba(139,124,255,.10), transparent 55%),
+      var(--bg);
+    color:var(--text); min-height:100dvh;
+    font:16px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:1000px;margin:0 auto;padding:64px 20px 80px}
+  @media (max-width:640px){.wrap{padding:44px 16px 60px}}
+  .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+
+  .back{display:inline-block;color:var(--dim);font-size:14px;text-decoration:none;margin-bottom:28px}
+  .back:hover{color:var(--text)}
+  header{margin-bottom:28px}
+  .mark{font-size:38px;font-weight:800;letter-spacing:-.03em;line-height:1}
+  .mark .dot{color:var(--accent)}
+  .tag{color:var(--dim);font-size:17px;margin-top:12px;max-width:46ch}
+  .tag b{color:var(--text);font-weight:600}
+
+  h2{font-size:13px;letter-spacing:.14em;text-transform:uppercase;color:var(--dim);
+    font-weight:700;margin:48px 0 16px}
+
+  .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:24px}
+  @media (max-width:640px){.card{padding:18px 16px}}
+
+  /* ── hero + chart ─────────────── */
+  .hero-top{display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:16px}
+  .big{font-size:56px;font-weight:800;letter-spacing:-.03em;line-height:1}
+  .big .was{color:var(--dim)}
+  .big .to{color:var(--dim);font-weight:400;font-size:.6em;margin:0 .25em;vertical-align:.12em}
+  .big .unit{color:var(--dim);font-size:.4em;font-weight:600;letter-spacing:0;margin-left:.25em}
+  .sub{color:var(--dim);font-size:14px;margin-top:10px}
+  .legend{display:flex;gap:18px;font-size:13px;color:var(--dim)}
+  .sw{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:7px;vertical-align:-1px}
+  .sw.gh,.bar.gh{background:var(--gh)}
+  .sw.lv,.bar.lv{background:var(--lv)}
+  @media (max-width:640px){.big{font-size:44px}}
+
+  .chart{--max:30;margin-top:26px}
+  .row{display:grid;grid-template-columns:200px 1fr;gap:16px;align-items:center}
+  .lab{font-size:14px;line-height:1.3}
+  .lab small{display:block;color:var(--dim);font-size:12px;margin-top:2px}
+  .bars{
+    position:relative;margin-right:44px;padding:12px 0;
+    background-image:linear-gradient(to right,var(--line) 1px,transparent 1px);
+    background-size:calc(100% / 6) 100%;
+  }
+  .bl{display:flex;align-items:center;gap:8px;height:14px;cursor:default;border-radius:4px}
+  .bl + .bl{margin-top:2px}
+  .bl:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+  .bar{
+    flex:none;height:100%;width:max(3px, calc(var(--v) / var(--max) * 100%));
+    border-radius:0 4px 4px 0;transform-origin:left;
+    animation:grow .8s cubic-bezier(.2,.7,.2,1) both;animation-delay:calc(var(--i) * 60ms);
+  }
+  .bl:hover .bar,.bl:focus-visible .bar{filter:brightness(1.2)}
+  .val{flex:none;white-space:nowrap;font-size:13px;color:var(--text);
+    animation:fade .4s ease both;animation-delay:calc(var(--i) * 60ms + .55s)}
+  .axis{position:relative;height:24px;margin-right:44px}
+  .tick{position:absolute;top:6px;left:calc(var(--p) / 6 * 100%);transform:translateX(-50%);
+    font-size:12px;color:var(--dim);font-variant-numeric:tabular-nums;white-space:nowrap}
+  .tick .u{position:absolute;left:100%;padding-left:3px}
+  @keyframes grow{from{transform:scaleX(0)}}
+  @keyframes fade{from{opacity:0}}
+  @media (max-width:640px){
+    .row{grid-template-columns:1fr;gap:4px}
+    .row + .row{margin-top:10px}
+    .axis-row > :first-child{display:none}
+    .tick.odd{display:none}
+  }
+  .note{color:var(--dim);font-size:13px;margin-top:16px;max-width:72ch}
+  .note b{color:var(--text);font-weight:600}
+
+  .tip{position:fixed;left:0;top:0;z-index:10;max-width:260px;pointer-events:none;
+    background:var(--card-hi);border:1px solid var(--line);border-radius:10px;
+    padding:8px 11px;font-size:13px;line-height:1.4;box-shadow:0 8px 24px rgba(0,0,0,.4)}
+  .tip[hidden]{display:none}
+  .tip b{display:block;font-weight:650}
+  .tip span{color:var(--dim)}
+
+  /* ── diagrams ─────────────── */
+  .dg{display:block;width:100%;height:auto}
+  .dg.tall{display:none;max-width:400px;margin:0 auto}
+  @media (max-width:900px){.dg.wide{display:none}.dg.tall{display:block}}
+  .nd{fill:var(--card-hi);stroke:#33333f;stroke-width:1}
+  .nd.lv{stroke:var(--lv)}
+  .t{fill:var(--text);font-size:15px;font-weight:650;text-anchor:middle}
+  .s{fill:var(--dim);font-size:13px;text-anchor:middle}
+  .s.hl{fill:var(--text)}
+  .s.sm{font-size:12px}
+  .s.st{text-anchor:start}
+  .ar{fill:none;stroke:var(--dim);stroke-width:1.5}
+  .sc{fill:none;stroke:var(--lv);stroke-width:1.5;stroke-dasharray:5 5;animation:dash 1.2s linear infinite}
+  .mk{fill:var(--card)}
+  .tr{fill:var(--line)}
+  .fl{fill:var(--lv);transform-box:fill-box;transform-origin:left;animation:run 2.6s ease-in-out infinite}
+  .fl.b{animation-duration:3.4s;animation-delay:-.8s}
+  .sc,.fl{animation-iteration-count:3}
+  .fl{animation-fill-mode:both}
+  .fl.c{animation-duration:1.9s;animation-delay:-.3s}
+  @keyframes dash{to{stroke-dashoffset:-10}}
+  @keyframes run{0%{transform:scaleX(.04)}75%,100%{transform:scaleX(1)}}
+
+  /* ── stat tiles ─────────────── */
+  .tiles{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:14px}
+  @media (max-width:760px){.tiles{grid-template-columns:1fr}}
+  .tile{padding:20px}
+  .fig{font-size:40px;font-weight:800;letter-spacing:-.03em;line-height:1.05}
+  .fig .u{color:var(--dim);font-size:.45em;font-weight:600;letter-spacing:0;margin-left:.2em}
+  .tile p{font-size:15px;margin-top:10px;line-height:1.4}
+  .tile small{display:block;color:var(--dim);font-size:13px;margin-top:6px}
+
+  /* ── numbers ─────────────── */
+  details.more{margin-top:48px}
+  details.more summary{
+    cursor:pointer;list-style:none;display:inline-flex;align-items:center;gap:10px;
+    font-size:13px;letter-spacing:.14em;text-transform:uppercase;color:var(--dim);font-weight:700}
+  details.more summary::-webkit-details-marker{display:none}
+  details.more summary::before{
+    content:"";width:7px;height:7px;border-right:2px solid currentColor;border-bottom:2px solid currentColor;
+    transform:rotate(-45deg);transition:transform .2s}
+  details.more[open] summary::before{transform:rotate(45deg)}
+  details.more summary:hover{color:var(--text)}
+  details.more summary:focus-visible{outline:2px solid var(--text);outline-offset:4px;border-radius:4px}
+  .tw{overflow-x:auto;margin-top:16px}
+  table{width:100%;min-width:560px;border-collapse:collapse;font-size:14px}
+  th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+  th{color:var(--dim);font-weight:600;font-size:12px}
+  .n{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+  td.sm{color:var(--dim);font-size:13px}
+
+  footer{margin-top:56px;color:var(--dim);font-size:13px;line-height:1.7}
+  footer a{color:var(--dim)}
+
+  @media (prefers-reduced-motion:reduce){
+    .bar,.val,.sc{animation:none}
+    .fl{animation:none;transform:scaleX(.8)}
+    .fl.b{transform:scaleX(.55)}
+    .fl.c{transform:scaleX(1)}
+    details.more summary::before{transition:none}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="/">← sam.toys</a>
+  <header>
+    <div class="mark">LV<span class="dot">.</span></div>
+    <p class="tag"><b>Checks my code on my own server,</b> nearly twice as fast as GitHub Actions on a typical check.</p>
+  </header>
+
+  <section class="card" aria-labelledby="hero-fig">
+    <div class="hero-top">
+      <div>
+        <div class="big" id="hero-fig"><span class="was">6.2</span><span class="to" aria-hidden="true">→</span><span class="sr">down to</span>3.3<span class="unit">min</span></div>
+        <div class="sub">Typical check, median of 264 vs 30 runs · a finance app</div>
+      </div>
+      <div class="legend" aria-hidden="true">
+        <span><i class="sw gh"></i>GitHub Actions</span>
+        <span><i class="sw lv"></i>LV</span>
+      </div>
+    </div>
+
+    <div class="chart" role="group" aria-label="Minutes to result: GitHub Actions from push, queue included; LV from start to verdict">
+      <div class="row">
+        <div class="lab">Typical check <small>median</small></div>
+        <div class="bars">
+          <div class="bl" tabindex="0" role="img" aria-label="GitHub Actions, typical check: 6.2 minutes" data-k="GitHub Actions · 6.2 min" data-d="Median of 264 runs, from push until the last check finished" style="--v:6.2;--i:0"><span class="bar gh"></span><span class="val">6.2</span></div>
+          <div class="bl" tabindex="0" role="img" aria-label="LV, typical check: 3.3 minutes" data-k="LV · 3.3 min" data-d="Median of 30 passing verdicts, start to verdict" style="--v:3.3;--i:1"><span class="bar lv"></span><span class="val">3.3</span></div>
+        </div>
+      </div>
+      <div class="row">
+        <div class="lab">Full suite <small>median</small></div>
+        <div class="bars">
+          <div class="bl" tabindex="0" role="img" aria-label="GitHub Actions, full suite: 5.8 minutes" data-k="GitHub Actions · 5.8 min" data-d="Median of 80 pushes to main" style="--v:5.8;--i:2"><span class="bar gh"></span><span class="val">5.8</span></div>
+          <div class="bl" tabindex="0" role="img" aria-label="LV, full suite: 4.2 minutes" data-k="LV · 4.2 min" data-d="Median of 20 full runs" style="--v:4.2;--i:3"><span class="bar lv"></span><span class="val">4.2</span></div>
+        </div>
+      </div>
+      <div class="row">
+        <div class="lab">Slow day <small>90th percentile</small></div>
+        <div class="bars">
+          <div class="bl" tabindex="0" role="img" aria-label="GitHub Actions, slow day: 26.3 minutes" data-k="GitHub Actions · 26.3 min" data-d="90th percentile of 264 runs" style="--v:26.3;--i:4"><span class="bar gh"></span><span class="val">26.3</span></div>
+          <div class="bl" tabindex="0" role="img" aria-label="LV, slow day: 7.7 minutes" data-k="LV · 7.7 min" data-d="90th percentile of 30 passing verdicts" style="--v:7.7;--i:5"><span class="bar lv"></span><span class="val">7.7</span></div>
+        </div>
+      </div>
+      <div class="row">
+        <div class="lab">After merge to main <small>push to result · 3 LV runs</small></div>
+        <div class="bars">
+          <div class="bl" tabindex="0" role="img" aria-label="GitHub Actions, after merge to main: 5.8 minutes" data-k="GitHub Actions · 5.8 min" data-d="Median of 80 pushes to main, push to result" style="--v:5.8;--i:6"><span class="bar gh"></span><span class="val">5.8 min</span></div>
+          <div class="bl" tabindex="0" role="img" aria-label="LV, after merge to main: 22 seconds" data-k="LV · 22 s" data-d="Median of 3 pushes to main across this site and a finance app, push to verdict" style="--v:.37;--i:7"><span class="bar lv"></span><span class="val">22 s</span></div>
+        </div>
+      </div>
+      <div class="row axis-row" aria-hidden="true">
+        <div></div>
+        <div class="axis">
+          <span class="tick" style="--p:0">0</span>
+          <span class="tick odd" style="--p:1">5</span>
+          <span class="tick" style="--p:2">10</span>
+          <span class="tick odd" style="--p:3">15</span>
+          <span class="tick" style="--p:4">20</span>
+          <span class="tick odd" style="--p:5">25</span>
+          <span class="tick" style="--p:6">30<span class="u">min</span></span>
+        </div>
+      </div>
+    </div>
+
+    <p class="note">GitHub Actions: push until the last check finished, queue included, over the 30 days before the switch. LV: start to verdict since the switch, typical and slow day passing runs only (after merge: push to verdict for both). Small samples, so the ratios are rough.</p>
+  </section>
+
+  <h2>How a change gets checked</h2>
+  <div class="card">
+    <svg class="dg wide" viewBox="0 0 960 256" role="img" aria-labelledby="flow-w">
+      <title id="flow-w">A change goes to Plan, which reads what changed and picks just the checks it touches. Run runs each check in its own sandbox, all at the same time. The verdict, pass or fail, is saved against the exact code checked. Merge only happens when the verdict passes; no verdict or an error means no merge. If the same code was checked before, LV reuses its verdict.</title>
+      <defs>
+        <marker id="m1d" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" markerUnits="userSpaceOnUse" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#9a99a6"/></marker>
+        <marker id="m1a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" markerUnits="userSpaceOnUse" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#c9822e"/></marker>
+      </defs>
+      <path class="sc" d="M78,106 C78,24 681,24 681,104" marker-end="url(#m1a)"/>
+      <rect class="mk" x="300" y="26" width="160" height="38" rx="6"/>
+      <text class="s hl" x="380" y="41">Same code as before?</text>
+      <text class="s" x="380" y="58">Reuse its verdict</text>
+
+      <rect class="nd" x="4" y="110" width="148" height="72" rx="12"/>
+      <text class="t" x="78" y="141">Change</text>
+      <text class="s" x="78" y="162">push or pull request</text>
+
+      <rect class="nd" x="205" y="110" width="148" height="72" rx="12"/>
+      <text class="t" x="279" y="141">Plan</text>
+      <text class="s" x="279" y="162">reads what changed</text>
+
+      <rect class="nd" x="406" y="110" width="148" height="72" rx="12"/>
+      <text class="t" x="480" y="136">Run</text>
+      <rect class="tr" x="426" y="148" width="108" height="5" rx="2.5"/>
+      <rect class="fl" x="426" y="148" width="108" height="5" rx="2.5"/>
+      <rect class="tr" x="426" y="157" width="108" height="5" rx="2.5"/>
+      <rect class="fl b" x="426" y="157" width="108" height="5" rx="2.5"/>
+      <rect class="tr" x="426" y="166" width="108" height="5" rx="2.5"/>
+      <rect class="fl c" x="426" y="166" width="108" height="5" rx="2.5"/>
+
+      <rect class="nd lv" x="607" y="110" width="148" height="72" rx="12"/>
+      <text class="t" x="681" y="141">Verdict</text>
+      <text class="s" x="681" y="162">pass or fail</text>
+
+      <rect class="nd" x="808" y="110" width="148" height="72" rx="12"/>
+      <text class="t" x="882" y="141">Merge</text>
+      <text class="s" x="882" y="162">the verdict passes</text>
+
+      <line class="ar" x1="156" y1="146" x2="200" y2="146" marker-end="url(#m1d)"/>
+      <line class="ar" x1="357" y1="146" x2="401" y2="146" marker-end="url(#m1d)"/>
+      <line class="ar" x1="558" y1="146" x2="602" y2="146" marker-end="url(#m1d)"/>
+      <line class="ar" x1="759" y1="146" x2="803" y2="146" marker-end="url(#m1d)"/>
+
+      <text class="s" x="279" y="212">Just the checks the</text>
+      <text class="s" x="279" y="229">change touches</text>
+      <text class="s" x="480" y="212">Each check in its</text>
+      <text class="s" x="480" y="229">own sandbox, all</text>
+      <text class="s" x="480" y="246">at the same time</text>
+      <text class="s" x="681" y="212">Saved against the</text>
+      <text class="s" x="681" y="229">exact code checked</text>
+      <text class="s" x="882" y="212">No verdict, or an</text>
+      <text class="s" x="882" y="229">error: no merge</text>
+    </svg>
+
+    <svg class="dg tall" viewBox="0 0 360 556" role="img" aria-labelledby="flow-t">
+      <title id="flow-t">A change goes to Plan, which reads what changed and picks just the checks it touches. Run runs each check in its own sandbox, all at the same time. The verdict, pass or fail, is saved against the exact code checked. Merge only happens when the verdict passes; no verdict or an error means no merge. If the same code was checked before, LV reuses its verdict.</title>
+      <defs>
+        <marker id="m2d" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" markerUnits="userSpaceOnUse" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#9a99a6"/></marker>
+        <marker id="m2a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" markerUnits="userSpaceOnUse" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#c9822e"/></marker>
+      </defs>
+      <path class="sc" d="M102,56 C28,56 28,392 100,392" marker-end="url(#m2a)"/>
+      <rect class="mk" x="6" y="190" width="84" height="74" rx="6"/>
+      <text class="s sm hl" x="48" y="207">Same code</text>
+      <text class="s sm hl" x="48" y="223">as before?</text>
+      <text class="s sm" x="48" y="243">Reuse its</text>
+      <text class="s sm" x="48" y="259">verdict</text>
+
+      <rect class="nd" x="104" y="12" width="244" height="88" rx="12"/>
+      <text class="t" x="226" y="50">Change</text>
+      <text class="s" x="226" y="70">push or pull request</text>
+
+      <rect class="nd" x="104" y="124" width="244" height="88" rx="12"/>
+      <text class="t" x="226" y="154">Plan</text>
+      <text class="s" x="226" y="174">reads what changed and picks</text>
+      <text class="s" x="226" y="192">just the checks it touches</text>
+
+      <rect class="nd" x="104" y="236" width="244" height="88" rx="12"/>
+      <text class="t" x="226" y="262">Run</text>
+      <rect class="tr" x="150" y="272" width="152" height="5" rx="2.5"/>
+      <rect class="fl" x="150" y="272" width="152" height="5" rx="2.5"/>
+      <rect class="tr" x="150" y="281" width="152" height="5" rx="2.5"/>
+      <rect class="fl b" x="150" y="281" width="152" height="5" rx="2.5"/>
+      <rect class="tr" x="150" y="290" width="152" height="5" rx="2.5"/>
+      <rect class="fl c" x="150" y="290" width="152" height="5" rx="2.5"/>
+      <text class="s" x="226" y="314">each in its own sandbox, at once</text>
+
+      <rect class="nd lv" x="104" y="348" width="244" height="88" rx="12"/>
+      <text class="t" x="226" y="378">Verdict</text>
+      <text class="s" x="226" y="398">pass or fail, saved against</text>
+      <text class="s" x="226" y="416">the exact code checked</text>
+
+      <rect class="nd" x="104" y="460" width="244" height="88" rx="12"/>
+      <text class="t" x="226" y="490">Merge</text>
+      <text class="s" x="226" y="510">only when the verdict passes;</text>
+      <text class="s" x="226" y="528">no verdict or an error: no merge</text>
+
+      <line class="ar" x1="226" y1="103" x2="226" y2="120" marker-end="url(#m2d)"/>
+      <line class="ar" x1="226" y1="215" x2="226" y2="232" marker-end="url(#m2d)"/>
+      <line class="ar" x1="226" y1="327" x2="226" y2="344" marker-end="url(#m2d)"/>
+      <line class="ar" x1="226" y1="439" x2="226" y2="456" marker-end="url(#m2d)"/>
+    </svg>
+  </div>
+
+  <div class="tiles">
+    <div class="card tile">
+      <div class="fig">1.9<span class="u">min</span></div>
+      <p>When a change only touches some checks</p>
+      <small>median of 10 · the full suite takes 4.2 min</small>
+    </div>
+    <div class="card tile">
+      <div class="fig">44%</div>
+      <p>Less waiting than running the checks one after another</p>
+      <small>median of 20 · 7.5 min of checks finish in 4.2 min</small>
+    </div>
+    <div class="card tile">
+      <div class="fig">0<span class="u">s</span></div>
+      <p>A docs-only change on this site: nothing to run</p>
+      <small>2 of 5 changes so far · a full check here takes 40 s (median of 3); it was 82 s on Actions (13)</small>
+    </div>
+  </div>
+
+  <h2>Moving a repo over</h2>
+  <div class="card">
+    <svg class="dg wide" viewBox="0 0 960 184" role="img" aria-labelledby="move-w">
+      <title id="move-w">First LV is taught the repo's tests and builds. Then the last 20 commits are replayed on LV and on GitHub Actions. If all 20 give the same answers with no LV errors, LV becomes the gate and Actions is switched off. If not, the problem is fixed and the replay runs again.</title>
+      <defs>
+        <marker id="m3d" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" markerUnits="userSpaceOnUse" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#9a99a6"/></marker>
+      </defs>
+      <rect class="nd" x="4" y="24" width="204" height="76" rx="12"/>
+      <text class="t" x="106" y="57">Teach LV the checks</text>
+      <text class="s" x="106" y="79">the repo's tests and builds</text>
+
+      <rect class="nd" x="253" y="24" width="204" height="76" rx="12"/>
+      <text class="t" x="355" y="57">Replay 20 commits</text>
+      <text class="s" x="355" y="79">on LV and on Actions</text>
+
+      <rect class="nd lv" x="502" y="24" width="204" height="76" rx="12"/>
+      <text class="t" x="604" y="57">All 20 agree?</text>
+      <text class="s" x="604" y="79">same answers, no LV errors</text>
+
+      <rect class="nd" x="751" y="24" width="204" height="76" rx="12"/>
+      <text class="t" x="853" y="57">LV is the gate</text>
+      <text class="s" x="853" y="79">Actions switched off</text>
+
+      <line class="ar" x1="212" y1="62" x2="249" y2="62" marker-end="url(#m3d)"/>
+      <line class="ar" x1="461" y1="62" x2="498" y2="62" marker-end="url(#m3d)"/>
+      <line class="ar" x1="710" y1="62" x2="747" y2="62" marker-end="url(#m3d)"/>
+      <text class="s hl" x="728" y="54">yes</text>
+
+      <path class="ar" d="M604,102 V140 Q604,150 594,150 H365 Q355,150 355,140 V105" marker-end="url(#m3d)"/>
+      <text class="s" x="480" y="172">no: fix it and replay</text>
+    </svg>
+
+    <svg class="dg tall" viewBox="0 0 360 392" role="img" aria-labelledby="move-t">
+      <title id="move-t">First LV is taught the repo's tests and builds. Then the last 20 commits are replayed on LV and on GitHub Actions. If all 20 give the same answers with no LV errors, LV becomes the gate and Actions is switched off. If not, the problem is fixed and the replay runs again.</title>
+      <defs>
+        <marker id="m4d" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" markerUnits="userSpaceOnUse" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#9a99a6"/></marker>
+      </defs>
+      <rect class="nd" x="12" y="12" width="244" height="72" rx="12"/>
+      <text class="t" x="134" y="43">Teach LV the checks</text>
+      <text class="s" x="134" y="63">the repo's tests and builds</text>
+
+      <rect class="nd" x="12" y="112" width="244" height="72" rx="12"/>
+      <text class="t" x="134" y="143">Replay 20 commits</text>
+      <text class="s" x="134" y="163">on LV and on Actions</text>
+
+      <rect class="nd lv" x="12" y="212" width="244" height="72" rx="12"/>
+      <text class="t" x="134" y="243">All 20 agree?</text>
+      <text class="s" x="134" y="263">same answers, no LV errors</text>
+
+      <rect class="nd" x="12" y="312" width="244" height="72" rx="12"/>
+      <text class="t" x="134" y="343">LV is the gate</text>
+      <text class="s" x="134" y="363">Actions switched off</text>
+
+      <line class="ar" x1="134" y1="87" x2="134" y2="108" marker-end="url(#m4d)"/>
+      <line class="ar" x1="134" y1="187" x2="134" y2="208" marker-end="url(#m4d)"/>
+      <line class="ar" x1="134" y1="287" x2="134" y2="308" marker-end="url(#m4d)"/>
+      <text class="s hl st" x="146" y="302">yes</text>
+
+      <path class="ar" d="M258,248 H296 Q308,248 308,236 V160 Q308,148 296,148 H261" marker-end="url(#m4d)"/>
+      <rect class="mk" x="272" y="180" width="72" height="36" rx="6"/>
+      <text class="s sm" x="308" y="195">no: fix</text>
+      <text class="s sm" x="308" y="211">and replay</text>
+    </svg>
+
+    <p class="note">GitHub Actions ran <b>1,260+ hours</b> of workflows for 11 of my repos in the last 30 days.</p>
+  </div>
+
+  <details class="more">
+    <summary>All the numbers</summary>
+    <div class="tw">
+      <table>
+        <thead>
+          <tr><th scope="col">Measure</th><th scope="col" class="n">GitHub Actions</th><th scope="col" class="n">LV</th><th scope="col" class="n">Faster by</th><th scope="col">Sample</th></tr>
+        </thead>
+        <tbody>
+          <tr><th scope="row">Typical check (median)</th><td class="n">6.2 min</td><td class="n">3.3 min</td><td class="n">1.9×</td><td class="sm">264 Actions runs · 30 LV passes</td></tr>
+          <tr><th scope="row">Full suite (median)</th><td class="n">5.8 min</td><td class="n">4.2 min</td><td class="n">1.4×</td><td class="sm">80 main pushes · 20 LV full runs</td></tr>
+          <tr><th scope="row">Slow day (90th percentile)</th><td class="n">26.3 min</td><td class="n">7.7 min</td><td class="n">3.4×</td><td class="sm">264 · 30</td></tr>
+          <tr><th scope="row">After merge to main, push to result (median)</th><td class="n">5.8 min</td><td class="n">22 s</td><td class="n">~16× (3 runs)</td><td class="sm">80 · 3</td></tr>
+          <tr><th scope="row">Only the touched checks (median)</th><td class="n">—</td><td class="n">1.9 min</td><td class="n">—</td><td class="sm">10 LV runs</td></tr>
+          <tr><th scope="row">Checks side by side (full suite median)</th><td class="n">—</td><td class="n">4.2 min, not 7.5</td><td class="n">44% less</td><td class="sm">20 LV full runs</td></tr>
+          <tr><th scope="row">This site, full check (median)</th><td class="n">82 s</td><td class="n">40 s</td><td class="n">2×</td><td class="sm">13 · 3</td></tr>
+          <tr><th scope="row">This site, docs-only change</th><td class="n">—</td><td class="n">0 s</td><td class="n">—</td><td class="sm">2 of 5 verdicts</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="note">GitHub Actions times run from push until the last check finished, queue included, over the 30 days before each repo switched. LV times run from start to verdict, except after merge, which is push to verdict for both. LV figures run from each switch (this site and a finance app) until 1 Nov 2026. Small samples, so the ratios are rough.</p>
+  </details>
+
+  <footer>Checked 1 Nov 2026 · <a href="/">sam.toys</a></footer>
+</div>
+
+<div class="tip" role="tooltip" hidden><b></b><span></span></div>
+
+<script>
+(() => {
+  const tip = document.querySelector('.tip');
+  const head = tip.querySelector('b');
+  const body = tip.querySelector('span');
+  let cur = null;
+
+  function place() {
+    if (!cur) return;
+    const r = cur.querySelector('.bar').getBoundingClientRect();
+    const t = tip.getBoundingClientRect();
+    const x = Math.max(8, Math.min(r.right - t.width / 2, innerWidth - t.width - 8));
+    let y = r.top - t.height - 8;
+    if (y < 8) y = r.bottom + 8;
+    tip.style.transform = `translate(${Math.round(x)}px, ${Math.round(y)}px)`;
+  }
+  function show(el) {
+    cur = el;
+    head.textContent = el.dataset.k;
+    body.textContent = el.dataset.d;
+    tip.hidden = false;
+    place();
+  }
+  function hide() {
+    cur = null;
+    tip.hidden = true;
+  }
+
+  document.querySelectorAll('.bl').forEach((el) => {
+    el.setAttribute('aria-label', el.getAttribute('aria-label') + '. ' + el.dataset.d);
+    el.addEventListener('mouseenter', () => show(el));
+    el.addEventListener('mouseleave', () => { if (document.activeElement !== el) hide(); });
+    el.addEventListener('focus', () => show(el));
+    el.addEventListener('click', () => show(el));
+    el.addEventListener('blur', hide);
+  });
+  addEventListener('keydown', (e) => { if (e.key === 'Escape') hide(); });
+  addEventListener('scroll', place, { passive: true });
+  addEventListener('resize', place);
+})();
+</script>
+</body>
+</html>

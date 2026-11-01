@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="robots" content="noindex">
 <meta name="theme-color" content="#0b0b0f">
-<meta name="description" content="LV checks my code on my own server. How it works, and how much faster it is than GitHub Actions.">
+<meta name="description" content="LV (Loop Validation) checks my code on my own server. How it works, how it differs from GitHub Actions, and how much faster it is.">
 <title>LV · sam.toys</title>
 <style>
   :root{
@@ -149,6 +149,28 @@
   th{color:var(--dim);font-weight:600;font-size:12px}
   .n{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
   td.sm{color:var(--dim);font-size:13px}
+  td b{font-weight:650}
+
+  /* ── comparisons ─────────────── */
+  .card > .tw:first-child{margin-top:0}
+  table.cmp{min-width:0}
+  table.cmp tbody tr:last-child > *{border-bottom:0}
+  table.cmp tbody th{width:30%}
+  table.cmp.two tbody th{width:44%}
+  @media (max-width:640px){
+    table.cmp th,table.cmp td{padding:10px 6px}
+    table.cmp tr > :first-child{padding-left:0}
+    table.cmp tr > :last-child{padding-right:0}
+  }
+  .pc{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  @media (max-width:760px){.pc{grid-template-columns:1fr}}
+  .pc h3{font-size:15px;font-weight:650;margin-bottom:12px}
+  .pc ul{list-style:none}
+  .pc li{position:relative;padding-left:20px;font-size:15px;line-height:1.45}
+  .pc li + li{margin-top:9px}
+  .pc li::before{position:absolute;left:0;top:0;color:var(--dim);font-weight:700}
+  .pc .pro li::before{content:"+";content:"+" / ""}
+  .pc .con li::before{content:"\2212";content:"\2212" / ""}
 
   footer{margin-top:56px;color:var(--dim);font-size:13px;line-height:1.7}
   footer a{color:var(--dim)}
@@ -167,14 +189,14 @@
   <a class="back" href="/">← sam.toys</a>
   <header>
     <div class="mark">LV<span class="dot">.</span></div>
-    <p class="tag"><b>Checks my code on my own server,</b> nearly twice as fast as GitHub Actions on a typical check.</p>
+    <p class="tag"><b>Loop Validation.</b> It checks my code on my own server, inside the coding agent's loop, before anything reaches GitHub.</p>
   </header>
 
   <section class="card" aria-labelledby="hero-fig">
     <div class="hero-top">
       <div>
-        <div class="big" id="hero-fig"><span class="was">6.2</span><span class="to" aria-hidden="true">→</span><span class="sr">down to</span>3.3<span class="unit">min</span></div>
-        <div class="sub">Typical check, median of 264 vs 30 runs · a finance app</div>
+        <div class="big" id="hero-fig"><span class="was">5.9</span><span class="to" aria-hidden="true">→</span><span class="sr">down to</span>3.3<span class="unit">min</span></div>
+        <div class="sub">Typical check, median of 639 pushes on Actions vs 30 LV runs · a finance app</div>
       </div>
       <div class="legend" aria-hidden="true">
         <span><i class="sw gh"></i>GitHub Actions</span>
@@ -186,29 +208,22 @@
       <div class="row">
         <div class="lab">Typical check <small>median</small></div>
         <div class="bars">
-          <div class="bl" tabindex="0" role="img" aria-label="GitHub Actions, typical check: 6.2 minutes" data-k="GitHub Actions · 6.2 min" data-d="Median of 264 runs, from push until the last check finished" style="--v:6.2;--i:0"><span class="bar gh"></span><span class="val">6.2</span></div>
+          <div class="bl" tabindex="0" role="img" aria-label="GitHub Actions, typical check: 5.9 minutes" data-k="GitHub Actions · 5.9 min" data-d="Median of 639 pushes, from push until the last check finished" style="--v:5.9;--i:0"><span class="bar gh"></span><span class="val">5.9</span></div>
           <div class="bl" tabindex="0" role="img" aria-label="LV, typical check: 3.3 minutes" data-k="LV · 3.3 min" data-d="Median of 30 passing verdicts, start to verdict" style="--v:3.3;--i:1"><span class="bar lv"></span><span class="val">3.3</span></div>
         </div>
       </div>
       <div class="row">
         <div class="lab">Full suite <small>median</small></div>
         <div class="bars">
-          <div class="bl" tabindex="0" role="img" aria-label="GitHub Actions, full suite: 5.8 minutes" data-k="GitHub Actions · 5.8 min" data-d="Median of 80 pushes to main" style="--v:5.8;--i:2"><span class="bar gh"></span><span class="val">5.8</span></div>
-          <div class="bl" tabindex="0" role="img" aria-label="LV, full suite: 4.2 minutes" data-k="LV · 4.2 min" data-d="Median of 20 full runs" style="--v:4.2;--i:3"><span class="bar lv"></span><span class="val">4.2</span></div>
+          <div class="bl" tabindex="0" role="img" aria-label="GitHub Actions, full suite: 5.8 minutes" data-k="GitHub Actions · 5.8 min" data-d="Median of 219 pushes to main" style="--v:5.8;--i:2"><span class="bar gh"></span><span class="val">5.8</span></div>
+          <div class="bl" tabindex="0" role="img" aria-label="LV, full suite: 3.7 minutes" data-k="LV · 3.7 min" data-d="Median over 12 commits, first full run of each" style="--v:3.7;--i:3"><span class="bar lv"></span><span class="val">3.7</span></div>
         </div>
       </div>
       <div class="row">
         <div class="lab">Slow day <small>90th percentile</small></div>
         <div class="bars">
-          <div class="bl" tabindex="0" role="img" aria-label="GitHub Actions, slow day: 26.3 minutes" data-k="GitHub Actions · 26.3 min" data-d="90th percentile of 264 runs" style="--v:26.3;--i:4"><span class="bar gh"></span><span class="val">26.3</span></div>
+          <div class="bl" tabindex="0" role="img" aria-label="GitHub Actions, slow day: 20.4 minutes" data-k="GitHub Actions · 20.4 min" data-d="90th percentile of 639 pushes" style="--v:20.4;--i:4"><span class="bar gh"></span><span class="val">20.4</span></div>
           <div class="bl" tabindex="0" role="img" aria-label="LV, slow day: 7.7 minutes" data-k="LV · 7.7 min" data-d="90th percentile of 30 passing verdicts" style="--v:7.7;--i:5"><span class="bar lv"></span><span class="val">7.7</span></div>
-        </div>
-      </div>
-      <div class="row">
-        <div class="lab">After merge to main <small>push to result · 3 LV runs</small></div>
-        <div class="bars">
-          <div class="bl" tabindex="0" role="img" aria-label="GitHub Actions, after merge to main: 5.8 minutes" data-k="GitHub Actions · 5.8 min" data-d="Median of 80 pushes to main, push to result" style="--v:5.8;--i:6"><span class="bar gh"></span><span class="val">5.8 min</span></div>
-          <div class="bl" tabindex="0" role="img" aria-label="LV, after merge to main: 22 seconds" data-k="LV · 22 s" data-d="Median of 3 pushes to main across this site and a finance app, push to verdict" style="--v:.37;--i:7"><span class="bar lv"></span><span class="val">22 s</span></div>
         </div>
       </div>
       <div class="row axis-row" aria-hidden="true">
@@ -225,8 +240,27 @@
       </div>
     </div>
 
-    <p class="note">GitHub Actions: push until the last check finished, queue included, over the 30 days before the switch. LV: start to verdict since the switch, typical and slow day passing runs only (after merge: push to verdict for both). Small samples, so the ratios are rough.</p>
+    <p class="note">GitHub Actions: push until the last check finished, queue included, over the 30 days before the switch. LV: start to verdict since the switch, passing runs only, and only runs that actually ran the checks (a reused verdict takes no time). Small samples, so the ratios are rough.</p>
   </section>
+
+  <h2>LV and GitHub Actions</h2>
+  <div class="card">
+    <div class="tw">
+      <table class="cmp">
+        <thead>
+          <tr><td></td><th scope="col"><i class="sw gh"></i>GitHub Actions</th><th scope="col"><i class="sw lv"></i>LV</th></tr>
+        </thead>
+        <tbody>
+          <tr><th scope="row">When it runs</th><td>After the push</td><td>Inside the coding agent's loop before the push, and on the pull request</td></tr>
+          <tr><th scope="row">Where</th><td>GitHub's machines, in a queue</td><td>My own server, no queue</td></tr>
+          <tr><th scope="row">What runs</th><td>Every check, every time</td><td>Only the checks a change touches; everything when unsure</td></tr>
+          <tr><th scope="row">Same code again</th><td>Runs it all again</td><td>Reuses the saved verdict</td></tr>
+          <tr><th scope="row">After it ships</th><td>Stops at merge</td><td>Checks the live site for 10 minutes</td></tr>
+          <tr><th scope="row">Cost</th><td>Paid minutes</td><td>A server I already run</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
 
   <h2>How a change gets checked</h2>
   <div class="card">
@@ -335,12 +369,12 @@
     <div class="card tile">
       <div class="fig">1.9<span class="u">min</span></div>
       <p>When a change only touches some checks</p>
-      <small>median of 10 · the full suite takes 4.2 min</small>
+      <small>median of 10 · the full suite takes 3.7 min</small>
     </div>
     <div class="card tile">
-      <div class="fig">44%</div>
+      <div class="fig">37%</div>
       <p>Less waiting than running the checks one after another</p>
-      <small>median of 20 · 7.5 min of checks finish in 4.2 min</small>
+      <small>median of 12 commits · 3.7 min side by side, 5.9 one by one</small>
     </div>
     <div class="card tile">
       <div class="fig">0<span class="u">s</span></div>
@@ -349,10 +383,32 @@
     </div>
   </div>
 
+  <h2>Pros and cons</h2>
+  <div class="pc">
+    <div class="card pro">
+      <h3>Better</h3>
+      <ul role="list">
+        <li>Faster, most of all on a slow day.</li>
+        <li>A change reaches GitHub already checked, so fewer fix-and-push rounds.</li>
+        <li>No waiting for GitHub's machines, no paid minutes, and nothing checked twice.</li>
+        <li>It keeps watching the live site after a deploy.</li>
+      </ul>
+    </div>
+    <div class="card con">
+      <h3>Worse</h3>
+      <ul role="list">
+        <li>One server: if it is down, nothing gets checked, and keeping it running is my job.</li>
+        <li>Checks that need Docker or a database can't run there yet.</li>
+        <li>Apple app builds take turns on one Mac.</li>
+        <li>Picking only the touched checks could miss something; it runs everything when unsure.</li>
+      </ul>
+    </div>
+  </div>
+
   <h2>Moving a repo over</h2>
   <div class="card">
     <svg class="dg wide" viewBox="0 0 960 184" role="img" aria-labelledby="move-w">
-      <title id="move-w">First LV is taught the repo's tests and builds. Then the last 20 commits are replayed on LV and on GitHub Actions. If all 20 give the same answers with no LV errors, LV becomes the gate and Actions is switched off. If not, the problem is fixed and the replay runs again.</title>
+      <title id="move-w">First LV is taught the repo's tests and builds. Then the last 20 commits are replayed on LV and on GitHub Actions. If LV never disagrees with Actions and never errors, LV becomes the gate and Actions is switched off. If not, the problem is fixed and the replay runs again.</title>
       <defs>
         <marker id="m3d" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" markerUnits="userSpaceOnUse" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#9a99a6"/></marker>
       </defs>
@@ -365,8 +421,8 @@
       <text class="s" x="355" y="79">on LV and on Actions</text>
 
       <rect class="nd lv" x="502" y="24" width="204" height="76" rx="12"/>
-      <text class="t" x="604" y="57">All 20 agree?</text>
-      <text class="s" x="604" y="79">same answers, no LV errors</text>
+      <text class="t" x="604" y="57">No disagreements?</text>
+      <text class="s" x="604" y="79">and no LV errors</text>
 
       <rect class="nd" x="751" y="24" width="204" height="76" rx="12"/>
       <text class="t" x="853" y="57">LV is the gate</text>
@@ -382,7 +438,7 @@
     </svg>
 
     <svg class="dg tall" viewBox="0 0 360 392" role="img" aria-labelledby="move-t">
-      <title id="move-t">First LV is taught the repo's tests and builds. Then the last 20 commits are replayed on LV and on GitHub Actions. If all 20 give the same answers with no LV errors, LV becomes the gate and Actions is switched off. If not, the problem is fixed and the replay runs again.</title>
+      <title id="move-t">First LV is taught the repo's tests and builds. Then the last 20 commits are replayed on LV and on GitHub Actions. If LV never disagrees with Actions and never errors, LV becomes the gate and Actions is switched off. If not, the problem is fixed and the replay runs again.</title>
       <defs>
         <marker id="m4d" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" markerUnits="userSpaceOnUse" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#9a99a6"/></marker>
       </defs>
@@ -395,8 +451,8 @@
       <text class="s" x="134" y="163">on LV and on Actions</text>
 
       <rect class="nd lv" x="12" y="212" width="244" height="72" rx="12"/>
-      <text class="t" x="134" y="243">All 20 agree?</text>
-      <text class="s" x="134" y="263">same answers, no LV errors</text>
+      <text class="t" x="134" y="243">No disagreements?</text>
+      <text class="s" x="134" y="263">and no LV errors</text>
 
       <rect class="nd" x="12" y="312" width="244" height="72" rx="12"/>
       <text class="t" x="134" y="343">LV is the gate</text>
@@ -413,7 +469,30 @@
       <text class="s sm" x="308" y="211">and replay</text>
     </svg>
 
+    <p class="note">A repo switches when LV and Actions agree on at least one replayed commit, disagree on none, and LV never errors. The one exception is a disagreement the repo causes itself, such as a flaky test: it gets explained before the switch, not ignored.</p>
     <p class="note">GitHub Actions ran <b>1,260+ hours</b> of workflows for 11 of my repos in the last 30 days.</p>
+  </div>
+
+  <h2>Measured against the research</h2>
+  <div class="card">
+    <div class="tw">
+      <table class="cmp two">
+        <thead>
+          <tr><th scope="col">The research recommends</th><th scope="col">LV today</th></tr>
+        </thead>
+        <tbody>
+          <tr><th scope="row">Check inside the agent's loop, before a pull request</th><td><b>Done.</b> This is the whole idea.</td></tr>
+          <tr><th scope="row">Run only the tests a change affects</th><td><b>Done,</b> more simply: file patterns pick the checks, not a recorded map of which test touches which file.</td></tr>
+          <tr><th scope="row">Run each check in a microVM</th><td><b>Partly.</b> Today each check runs as a throwaway, locked-down job with capped CPU and memory. Firecracker microVMs on the same server come next.</td></tr>
+          <tr><th scope="row">Never redo work</th><td><b>Done.</b> The same code reuses its verdict, and docs-only changes skip.</td></tr>
+          <tr><th scope="row">Feedback in under a minute</th><td><b>Not yet.</b> A typical check takes 3.3 minutes; a reused verdict is instant.</td></tr>
+          <tr><th scope="row">Faster type-checking and linting tools</th><td><b>Not yet.</b></td></tr>
+          <tr><th scope="row">Shared staging with request routing</th><td><b>Skipped.</b> These are single web apps, so it isn't needed.</td></tr>
+          <tr><th scope="row">Merge queues and agent-ready source control</th><td><b>Skipped</b> for now.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="note">The research is a report on making code checks fast enough for AI coding agents.</p>
   </div>
 
   <details class="more">
@@ -424,18 +503,18 @@
           <tr><th scope="col">Measure</th><th scope="col" class="n">GitHub Actions</th><th scope="col" class="n">LV</th><th scope="col" class="n">Faster by</th><th scope="col">Sample</th></tr>
         </thead>
         <tbody>
-          <tr><th scope="row">Typical check (median)</th><td class="n">6.2 min</td><td class="n">3.3 min</td><td class="n">1.9×</td><td class="sm">264 Actions runs · 30 LV passes</td></tr>
-          <tr><th scope="row">Full suite (median)</th><td class="n">5.8 min</td><td class="n">4.2 min</td><td class="n">1.4×</td><td class="sm">80 main pushes · 20 LV full runs</td></tr>
-          <tr><th scope="row">Slow day (90th percentile)</th><td class="n">26.3 min</td><td class="n">7.7 min</td><td class="n">3.4×</td><td class="sm">264 · 30</td></tr>
-          <tr><th scope="row">After merge to main, push to result (median)</th><td class="n">5.8 min</td><td class="n">22 s</td><td class="n">~16× (3 runs)</td><td class="sm">80 · 3</td></tr>
+          <tr><th scope="row">Typical check (median)</th><td class="n">5.9 min</td><td class="n">3.3 min</td><td class="n">1.8×</td><td class="sm">639 Actions pushes · 30 LV passes</td></tr>
+          <tr><th scope="row">Full suite (median)</th><td class="n">5.8 min</td><td class="n">3.7 min</td><td class="n">1.6×</td><td class="sm">219 main pushes · 12 LV commits</td></tr>
+          <tr><th scope="row">Slow day (90th percentile)</th><td class="n">20.4 min</td><td class="n">7.7 min</td><td class="n">2.6×</td><td class="sm">639 · 30</td></tr>
+          <tr><th scope="row">After merge to main, push to result</th><td class="n">5.8 min</td><td class="n">2.1 min</td><td class="n">—</td><td class="sm">219 · 1 LV run so far</td></tr>
           <tr><th scope="row">Only the touched checks (median)</th><td class="n">—</td><td class="n">1.9 min</td><td class="n">—</td><td class="sm">10 LV runs</td></tr>
-          <tr><th scope="row">Checks side by side (full suite median)</th><td class="n">—</td><td class="n">4.2 min, not 7.5</td><td class="n">44% less</td><td class="sm">20 LV full runs</td></tr>
+          <tr><th scope="row">Checks side by side (full suite median)</th><td class="n">—</td><td class="n">3.7 min, not 5.9 one by one</td><td class="n">37% less</td><td class="sm">12 LV commits</td></tr>
           <tr><th scope="row">This site, full check (median)</th><td class="n">82 s</td><td class="n">40 s</td><td class="n">2×</td><td class="sm">13 · 3</td></tr>
           <tr><th scope="row">This site, docs-only change</th><td class="n">—</td><td class="n">0 s</td><td class="n">—</td><td class="sm">2 of 5 verdicts</td></tr>
         </tbody>
       </table>
     </div>
-    <p class="note">GitHub Actions times run from push until the last check finished, queue included, over the 30 days before each repo switched. LV times run from start to verdict, except after merge, which is push to verdict for both. LV figures run from each switch (this site and a finance app) until 1 Nov 2026. Small samples, so the ratios are rough.</p>
+    <p class="note">GitHub Actions times run from push until the last check finished, queue included, over the 30 days before each repo switched. LV times run from start to verdict, except after merge, which is push to verdict for both. LV figures count passing runs that actually ran the checks, from each switch (this site and a finance app) until 1 Nov 2026; the full suite counts the first full run of each commit. Small samples, so the ratios are rough.</p>
   </details>
 
   <footer>Checked 1 Nov 2026 · <a href="/">sam.toys</a></footer>

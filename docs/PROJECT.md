@@ -1,4 +1,6 @@
-# fnaticsam/sam-toys (sam.toys, playa, sam-toys, samfun): checked 2026-10-31
+# fnaticsam/sam-toys (sam.toys, playa, sam-toys, samfun): checked 2026-11-01
+
+- A collection of small product surfaces and supporting serverless routes.
 
 ## What exists
 
@@ -14,21 +16,20 @@
 - Flights results: Flight cards show tier points and an oneworld toggle that can add other airlines. MERGED #30
 - City search: Flights searches whole cities and pulls up to 100 flights. MERGED #31
 - Flights filters: Results carry sourced Starlink Wi-Fi likelihood. MERGED #35
-- Pull-request checks: Pull requests run site tests and the flights browser check in parallel. MERGED #37
+- Pull-request checks: Pull requests run site tests and the flights browser check in parallel. RETIRED #40
 
 ## Gaps
 
-- Production receipt: Current production revision and runtime health are unverified.
-- External integrations: Configuration and public availability are unverified.
-- Playa content: Gallery content and related data are intentionally not described here.
+- Production receipt: Current production revision and runtime health are unverified. UNVERIFIED `vercel.json`
+- External integrations: Configuration and public availability are unverified. UNVERIFIED `vercel.json`
+- Playa content: Gallery content and related data are intentionally not described here. UNVERIFIED `api/_lib/PLAYA-PAGE.md`
 
 ## Recent
 
+- 2026-11-01: Actions tests no longer run on pull requests or main; LV's verdict is the merge gate. MERGED #40
 - 2026-10-30: Flights received the v4 design with origin pills, calendar, nearby dates, filters and animation. MERGED #38
-- 2026-10-30: Pull requests began running site tests and the flights browser check in parallel. MERGED #37
 - 2026-10-30: Flights results added sourced Starlink Wi-Fi likelihood. MERGED #35
 - 2026-10-29: Flights added city search and up to 100 results. MERGED #31
-- 2026-10-29: Turning off oneworld adds other airlines rather than hiding BA partners. MERGED #30
 
 ## Read deeper
 

@@ -1,7 +1,5 @@
 # fnaticsam/sam-toys (sam.toys, playa, sam-toys, samfun): checked 2026-11-01
 
-- A collection of small product surfaces and supporting serverless routes.
-
 ## What exists
 
 - Sam Toys index: The sam.toys index hosts multiple small product surfaces. IMPLEMENTED `index.html`

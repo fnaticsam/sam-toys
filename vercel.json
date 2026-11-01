@@ -37,6 +37,16 @@
   ],
   "redirects": [
     {
+      "source": "/LV",
+      "destination": "/lv",
+      "permanent": true
+    },
+    {
+      "source": "/LV/",
+      "destination": "/lv",
+      "permanent": true
+    },
+    {
       "source": "/awakening",
       "destination": "https://knomi.club/",
       "permanent": true

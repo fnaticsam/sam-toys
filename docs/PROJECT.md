@@ -17,6 +17,7 @@
 - City search: Flights searches whole cities and pulls up to 100 flights. MERGED #31
 - Flights filters: Results carry sourced Starlink Wi-Fi likelihood. MERGED #35
 - Pull-request checks: Pull requests run site tests and the flights browser check in parallel. RETIRED #40
+- LV explainer: sam.toys/lv explains how LV checks code and how much faster it is than GitHub Actions. MERGED #42
 
 ## Gaps
 
@@ -26,6 +27,7 @@
 
 ## Recent
 
+- 2026-11-01: sam.toys/lv explains how LV checks code and how much faster it is than GitHub Actions. MERGED #42
 - 2026-11-01: Actions tests no longer run on pull requests or main; LV's verdict is the merge gate. MERGED #40
 - 2026-10-30: Flights received the v4 design with origin pills, calendar, nearby dates, filters and animation. MERGED #38
 - 2026-10-30: Flights results added sourced Starlink Wi-Fi likelihood. MERGED #35

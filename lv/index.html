@@ -172,6 +172,65 @@
   .pc .pro li::before{content:"+";content:"+" / ""}
   .pc .con li::before{content:"\2212";content:"\2212" / ""}
 
+  /* ── race: one change, two paths ─────────────── */
+  .race-top{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px}
+  .seg{display:inline-flex;flex-wrap:wrap;gap:2px;padding:3px;background:var(--bg);border:1px solid var(--line);border-radius:999px}
+  .seg button,.replay{font:inherit;font-size:14px;line-height:1.2;color:var(--dim);background:none;border:0;border-radius:999px;padding:7px 14px;cursor:pointer}
+  .seg button:hover,.replay:hover{color:var(--text)}
+  .seg button[aria-checked="true"]{background:var(--card-hi);color:var(--text);box-shadow:inset 0 0 0 1px #33333f}
+  .seg button:focus-visible,.replay:focus-visible,.sg:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+  .replay{border:1px solid var(--line)}
+  .answer{font-size:24px;font-weight:700;letter-spacing:-.015em;line-height:1.25;margin-top:24px;max-width:34ch;min-height:2.5em;text-wrap:balance}
+  .answer em{font-style:normal;color:var(--accent)}
+  .lanes{margin-top:22px}
+  .lane{display:grid;grid-template-columns:150px 1fr 84px;gap:16px;align-items:end;padding:6px 0}
+  .lname{font-size:14px;line-height:1.3;padding-bottom:9px}
+  .lname small{display:block;color:var(--dim);font-size:12px;margin-top:2px}
+  .track{position:relative;height:52px;background-image:linear-gradient(to right,var(--line) 1px,transparent 1px);background-size:var(--g,20%) 100%}
+  .track .in{position:absolute;inset:0}
+  .sg{position:absolute;top:22px;bottom:2px;border-radius:4px;display:flex;align-items:center;padding:0 8px;
+    font-size:12px;font-weight:650;white-space:nowrap;overflow:hidden;cursor:default}
+  .sg.run.gh{background:var(--gh);color:var(--bg)}
+  .sg.run.lv{background:var(--lv);color:var(--bg)}
+  .sg.wait{color:var(--text);background:repeating-linear-gradient(135deg,color-mix(in srgb,var(--gh) 42%,transparent) 0 2px,transparent 2px 7px);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--gh) 55%,transparent)}
+  .sg.wait.lv{background:repeating-linear-gradient(135deg,color-mix(in srgb,var(--lv) 45%,transparent) 0 2px,transparent 2px 7px);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--lv) 60%,transparent)}
+  .sg:hover{filter:brightness(1.2)}
+  .sg .x{opacity:0}
+  .sg.lbl .x{opacity:1}
+  .ev{position:absolute;top:0;font-size:12px;line-height:16px;color:var(--dim);white-space:nowrap;transform:translateX(-50%)}
+  .ev.l{transform:none}
+  .ev.r{transform:translateX(-100%)}
+  .ev b{color:var(--text);font-weight:650}
+  .ev::after{content:"";position:absolute;left:50%;top:17px;width:1px;height:5px;background:var(--dim)}
+  .ev.l::after{left:0}
+  .ev.r::after{left:auto;right:0}
+  .ev.off{visibility:hidden}
+  .clock{font-size:22px;font-weight:750;letter-spacing:-.02em;line-height:1;text-align:right;padding-bottom:9px;
+    font-variant-numeric:tabular-nums;color:var(--dim)}
+  .clock b{font-weight:inherit}
+  .clock span{font-size:12px;font-weight:600;letter-spacing:0;margin-left:3px}
+  .lane.done .clock{color:var(--text)}
+  .axis-race{display:grid;grid-template-columns:150px 1fr 84px;gap:16px}
+  .raxis{position:relative;height:22px}
+  .raxis .tick{left:var(--x)}
+  .rkey{display:flex;flex-wrap:wrap;gap:6px 18px;font-size:13px;color:var(--dim);margin-top:14px}
+  .rkey i{display:inline-block;width:18px;height:10px;border-radius:3px;margin-right:7px;vertical-align:-1px}
+  .rkey .k-wait{background:repeating-linear-gradient(135deg,var(--dim) 0 2px,transparent 2px 6px);box-shadow:inset 0 0 0 1px var(--line)}
+  .est{display:inline-block;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--dim);
+    border:1px solid var(--line);border-radius:999px;padding:2px 8px;margin-left:8px;vertical-align:4px}
+  @media (max-width:640px){
+    .answer{font-size:21px}
+    .seg{flex-wrap:nowrap}
+    .seg button,.replay{font-size:13px;padding:7px 11px}
+    .lane{grid-template-columns:1fr auto;grid-template-areas:"n c" "t t";gap:2px 12px;padding:8px 0}
+    .lane .lname{grid-area:n;padding-bottom:0}
+    .lane .clock{grid-area:c;padding-bottom:0;align-self:center}
+    .lane .track{grid-area:t}
+    .axis-race > :first-child,.axis-race > :last-child{display:none}
+    .axis-race{grid-template-columns:1fr}
+    .raxis .tick .u{display:none}
+  }
+
   footer{margin-top:56px;color:var(--dim);font-size:13px;line-height:1.7}
   footer a{color:var(--dim)}
 
@@ -181,6 +240,7 @@
     .fl.b{transform:scaleX(.55)}
     .fl.c{transform:scaleX(1)}
     details.more summary::before{transition:none}
+    .replay{display:none}
   }
 </style>
 </head>
@@ -196,7 +256,7 @@
     <div class="hero-top">
       <div>
         <div class="big" id="hero-fig"><span class="was">5.9</span><span class="to" aria-hidden="true">→</span><span class="sr">down to</span>3.3<span class="unit">min</span></div>
-        <div class="sub">Typical check, median of 639 pushes on Actions vs 30 LV runs · a finance app</div>
+        <div class="sub">Typical check, median of 640 pushes on Actions vs 30 LV runs · a finance app</div>
       </div>
       <div class="legend" aria-hidden="true">
         <span><i class="sw gh"></i>GitHub Actions</span>
@@ -208,7 +268,7 @@
       <div class="row">
         <div class="lab">Typical check <small>median</small></div>
         <div class="bars">
-          <div class="bl" tabindex="0" role="img" aria-label="GitHub Actions, typical check: 5.9 minutes" data-k="GitHub Actions · 5.9 min" data-d="Median of 639 pushes, from push until the last check finished" style="--v:5.9;--i:0"><span class="bar gh"></span><span class="val">5.9</span></div>
+          <div class="bl" tabindex="0" role="img" aria-label="GitHub Actions, typical check: 5.9 minutes" data-k="GitHub Actions · 5.9 min" data-d="Median of 640 pushes, from push until the last check finished" style="--v:5.9;--i:0"><span class="bar gh"></span><span class="val">5.9</span></div>
           <div class="bl" tabindex="0" role="img" aria-label="LV, typical check: 3.3 minutes" data-k="LV · 3.3 min" data-d="Median of 30 passing verdicts, start to verdict" style="--v:3.3;--i:1"><span class="bar lv"></span><span class="val">3.3</span></div>
         </div>
       </div>
@@ -222,7 +282,7 @@
       <div class="row">
         <div class="lab">Slow day <small>90th percentile</small></div>
         <div class="bars">
-          <div class="bl" tabindex="0" role="img" aria-label="GitHub Actions, slow day: 20.4 minutes" data-k="GitHub Actions · 20.4 min" data-d="90th percentile of 639 pushes" style="--v:20.4;--i:4"><span class="bar gh"></span><span class="val">20.4</span></div>
+          <div class="bl" tabindex="0" role="img" aria-label="GitHub Actions, slow day: 20.4 minutes" data-k="GitHub Actions · 20.4 min" data-d="90th percentile of 640 pushes" style="--v:20.4;--i:4"><span class="bar gh"></span><span class="val">20.4</span></div>
           <div class="bl" tabindex="0" role="img" aria-label="LV, slow day: 7.7 minutes" data-k="LV · 7.7 min" data-d="90th percentile of 30 passing verdicts" style="--v:7.7;--i:5"><span class="bar lv"></span><span class="val">7.7</span></div>
         </div>
       </div>
@@ -240,8 +300,68 @@
       </div>
     </div>
 
-    <p class="note">GitHub Actions: push until the last check finished, queue included, over the 30 days before the switch. LV: start to verdict since the switch, passing runs only, and only runs that actually ran the checks (a reused verdict takes no time). Small samples, so the ratios are rough.</p>
+    <p class="note">GitHub Actions: push until the last check finished, queue included, over the 30 days before the switch. LV: start to verdict since LV began checking the app on 30 Oct, passing runs only, and only runs that actually ran the checks (a reused verdict takes no time). Small samples, so the ratios are rough.</p>
   </section>
+
+  <h2 id="race-h">One change, two paths</h2>
+  <section class="card" aria-labelledby="race-h">
+    <div class="race-top">
+      <div class="seg" role="radiogroup" aria-label="Scenario">
+        <button type="button" role="radio" aria-checked="true" data-s="typical">Typical</button>
+        <button type="button" role="radio" aria-checked="false" tabindex="-1" data-s="slow">Slow day</button>
+        <button type="button" role="radio" aria-checked="false" tabindex="-1" data-s="fail">It fails</button>
+      </div>
+      <button type="button" class="replay">Replay</button>
+    </div>
+    <p class="answer" aria-live="polite">On a typical change, LV answers <em>about 2.3 minutes sooner</em>.</p>
+    <div class="lanes">
+      <div class="lane" data-l="gh" role="group" aria-label="GitHub Actions: 5.9 minutes from push">
+        <div class="lname">GitHub Actions</div>
+        <div class="track" style="--g:23.81%"><div class="in"></div></div>
+        <div class="clock" aria-hidden="true"><b>0.0</b><span>min</span></div>
+      </div>
+      <div class="lane" data-l="lv" role="group" aria-label="LV: 3.6 minutes from push">
+        <div class="lname">LV</div>
+        <div class="track" style="--g:23.81%"><div class="in"></div></div>
+        <div class="clock" aria-hidden="true"><b>0.0</b><span>min</span></div>
+      </div>
+      <div class="axis-race" aria-hidden="true">
+        <div></div>
+        <div class="raxis">
+          <span class="tick" style="--x:0%">0</span>
+          <span class="tick odd" style="--x:23.81%">5</span>
+          <span class="tick" style="--x:47.62%">10</span>
+          <span class="tick odd" style="--x:71.43%">15</span>
+          <span class="tick" style="--x:95.24%">20<span class="u">min</span></span>
+        </div>
+        <div></div>
+      </div>
+    </div>
+    <div class="rkey" aria-hidden="true">
+      <span><i class="sw gh"></i>Actions checking</span>
+      <span><i class="sw lv"></i>LV checking</span>
+      <span><i class="k-wait"></i>Waiting to start</span>
+    </div>
+    <p class="note">Same finance app: medians, or the slowest tenth on a slow day. Both clocks start at the push. Actions: push to last check, queue included. LV checks for new pushes every 20 s; we count the full 20 s, so 3.6 here, not 3.3 above. Fixing time left out. Small samples.</p>
+  </section>
+
+  <div class="tiles">
+    <div class="card tile">
+      <div class="fig">2.1<span class="u">min</span></div>
+      <p>To learn a change failed, not 8.7 until every Actions check finished</p>
+      <small>5 failed LV runs + 20 s check · 54 failed Actions pushes</small>
+    </div>
+    <div class="card tile">
+      <div class="fig">25<span class="u">h</span><span class="est">estimate</span></div>
+      <p>Of waiting saved a month</p>
+      <small>640 pushes a month × the typical 2.3-minute gap</small>
+    </div>
+    <div class="card tile">
+      <div class="fig">20<span class="u">of 20</span></div>
+      <p>Same commits came back faster on LV</p>
+      <small>Checks only, 2.7 vs 5.0 min median</small>
+    </div>
+  </div>
 
   <h2>LV and GitHub Actions</h2>
   <div class="card">
@@ -503,18 +623,25 @@
           <tr><th scope="col">Measure</th><th scope="col" class="n">GitHub Actions</th><th scope="col" class="n">LV</th><th scope="col" class="n">Faster by</th><th scope="col">Sample</th></tr>
         </thead>
         <tbody>
-          <tr><th scope="row">Typical check (median)</th><td class="n">5.9 min</td><td class="n">3.3 min</td><td class="n">1.8×</td><td class="sm">639 Actions pushes · 30 LV passes</td></tr>
+          <tr><th scope="row">Typical check (median)</th><td class="n">5.9 min</td><td class="n">3.3 min</td><td class="n">1.8×</td><td class="sm">640 Actions pushes · 30 LV passes</td></tr>
           <tr><th scope="row">Full suite (median)</th><td class="n">5.8 min</td><td class="n">3.7 min</td><td class="n">1.6×</td><td class="sm">219 main pushes · 12 LV commits</td></tr>
-          <tr><th scope="row">Slow day (90th percentile)</th><td class="n">20.4 min</td><td class="n">7.7 min</td><td class="n">2.6×</td><td class="sm">639 · 30</td></tr>
+          <tr><th scope="row">Slow day (90th percentile)</th><td class="n">20.4 min</td><td class="n">7.7 min</td><td class="n">2.6×</td><td class="sm">640 · 30</td></tr>
           <tr><th scope="row">After merge to main, push to result</th><td class="n">5.8 min</td><td class="n">2.1 min</td><td class="n">—</td><td class="sm">219 · 1 LV run so far</td></tr>
           <tr><th scope="row">Only the touched checks (median)</th><td class="n">—</td><td class="n">1.9 min</td><td class="n">—</td><td class="sm">10 LV runs</td></tr>
           <tr><th scope="row">Checks side by side (full suite median)</th><td class="n">—</td><td class="n">3.7 min, not 5.9 one by one</td><td class="n">37% less</td><td class="sm">12 LV commits</td></tr>
           <tr><th scope="row">This site, full check (median)</th><td class="n">82 s</td><td class="n">40 s</td><td class="n">2×</td><td class="sm">13 · 3</td></tr>
           <tr><th scope="row">This site, docs-only change</th><td class="n">—</td><td class="n">0 s</td><td class="n">—</td><td class="sm">2 of 5 verdicts</td></tr>
+          <tr><th scope="row">Typical change, push to result</th><td class="n">5.9 min</td><td class="n">3.6 min</td><td class="n">1.6×</td><td class="sm">640 · 30 LV passes + 20 s check</td></tr>
+          <tr><th scope="row">Slow day, push to result</th><td class="n">20.4 min</td><td class="n">8.0 min</td><td class="n">2.6×</td><td class="sm">640 · 30 + 20 s check</td></tr>
+          <tr><th scope="row">Waiting before checks start, slow day</th><td class="n">≈8.8 min</td><td class="n">0.3 min</td><td class="n">—</td><td class="sm">≈ from 12 similar pushes · 20 s check</td></tr>
+          <tr><th scope="row">Failing change, until every check finished</th><td class="n">8.7 min</td><td class="n">2.1 min</td><td class="n">4.1×</td><td class="sm">54 · 5 + 20 s check</td></tr>
+          <tr><th scope="row">Failing change, both rounds (fix time left out)</th><td class="n">15.2 min</td><td class="n">5.7 min</td><td class="n">2.7×</td><td class="sm">sum of two medians: 54 + 51 · 5 + 30</td></tr>
+          <tr><th scope="row">Same commit, checks only</th><td class="n">5.0 min</td><td class="n">2.7 min</td><td class="n">1.9×</td><td class="sm">20 replayed; LV faster on all 20</td></tr>
+          <tr><th scope="row">Waiting saved a month (estimate)</th><td class="n">—</td><td class="n">25 h</td><td class="n">—</td><td class="sm">640 pushes × 2.3 min</td></tr>
         </tbody>
       </table>
     </div>
-    <p class="note">GitHub Actions times run from push until the last check finished, queue included, over the 30 days before each repo switched. LV times run from start to verdict, except after merge, which is push to verdict for both. LV figures count passing runs that actually ran the checks, from each switch (this site and a finance app) until 1 Nov 2026; the full suite counts the first full run of each commit. Small samples, so the ratios are rough.</p>
+    <p class="note">GitHub Actions times run from push until the last check finished, queue included, over the 30 days before each repo switched. LV times run from start to verdict, except after merge, which is push to verdict for both. LV figures count passing runs that actually ran the checks, up to 1 Nov 2026 (for the finance app, from 30 Oct, when LV began checking it); the full suite counts the first full run of each commit. The race rows add LV's 20-second check for new pushes, counted in full. Small samples, so the ratios are rough.</p>
   </details>
 
   <footer>Checked 1 Nov 2026 · <a href="/">sam.toys</a></footer>
@@ -531,9 +658,11 @@
 
   function place() {
     if (!cur) return;
-    const r = cur.querySelector('.bar').getBoundingClientRect();
+    const bar = cur.querySelector('.bar');
+    const r = (bar || cur).getBoundingClientRect();
     const t = tip.getBoundingClientRect();
-    const x = Math.max(8, Math.min(r.right - t.width / 2, innerWidth - t.width - 8));
+    const ax = bar ? r.right : r.left + r.width / 2;
+    const x = Math.max(8, Math.min(ax - t.width / 2, innerWidth - t.width - 8));
     let y = r.top - t.height - 8;
     if (y < 8) y = r.bottom + 8;
     tip.style.transform = `translate(${Math.round(x)}px, ${Math.round(y)}px)`;
@@ -550,14 +679,177 @@
     tip.hidden = true;
   }
 
-  document.querySelectorAll('.bl').forEach((el) => {
+  function bind(el) {
     el.setAttribute('aria-label', el.getAttribute('aria-label') + '. ' + el.dataset.d);
     el.addEventListener('mouseenter', () => show(el));
     el.addEventListener('mouseleave', () => { if (document.activeElement !== el) hide(); });
     el.addEventListener('focus', () => show(el));
     el.addEventListener('click', () => show(el));
     el.addEventListener('blur', hide);
-  });
+  }
+  document.querySelectorAll('.bl').forEach(bind);
+
+  // One change, two paths: both lanes share one time scale; the longer one takes about 2.6 s.
+  const sec = document.querySelector('.lanes')?.closest('section');
+  if (sec) {
+    const W = 21;
+    const NAME = { gh: 'Actions', lv: 'LV' };
+    const PICK = 'LV looks for new pushes every 20 seconds; counted at the full 20 s';
+    const PASS = 'Median of 30 passing runs, start to verdict';
+    const S = {
+      typical: {
+        answer: 'On a typical change, LV answers <em>about 2.3 minutes sooner</em>.',
+        label: { gh: 'GitHub Actions: 5.9 minutes from push', lv: 'LV: 3.6 minutes from push' },
+        gh: [['run', 5.9, 'checks', 'Median push 5.9 min, 4 s of it waiting for a machine (640 pushes)']],
+        lv: [['wait', 0.3, 'waiting', PICK], ['run', 3.3, 'checks', PASS]],
+      },
+      slow: {
+        answer: 'On a slow day, LV answers <em>about 12 minutes sooner</em>.',
+        label: { gh: 'GitHub Actions: 20.4 minutes from push, about 9 of them waiting', lv: 'LV: 8.0 minutes from push' },
+        gh: [
+          ['wait', 8.8, 'waiting', 'Split estimated from 12 pushes of similar length with job timings', false, true],
+          ['run', 11.6, 'checks', 'Split estimated; the 90th-percentile push took 20.4 min in all (640 pushes)', false, true],
+        ],
+        lv: [['wait', 0.3, 'waiting', PICK], ['run', 7.7, 'checks', '90th percentile of 30 passing runs']],
+      },
+      fail: {
+        answer: 'When a change fails, LV gets you to green <em>about 9.5 minutes sooner</em>.',
+        label: { gh: 'GitHub Actions: every check finished, failed, at 8.7 minutes, green at 15.2', lv: 'LV: failed at 2.1 minutes, green at 5.7' },
+        gh: [
+          ['run', 8.7, 'checks', 'Median failing push, until every check finished (54 pushes)', true],
+          ['run', 6.5, 'green', 'Median next green push on the same branch (51 fixes)'],
+        ],
+        lv: [
+          ['wait', 0.3, 'waiting', PICK],
+          ['run', 1.8, 'checks', 'Median of 5 failed LV runs', true],
+          ['wait', 0.3, 'waiting', PICK],
+          ['run', 3.3, 'green', PASS],
+        ],
+      },
+    };
+    const lanes = [...sec.querySelectorAll('.lane')].map((el) => ({
+      el, key: el.dataset.l, box: el.querySelector('.in'), track: el.querySelector('.track'),
+      clock: el.querySelector('.clock b'), segs: [], evs: [], total: 0,
+    }));
+    const radios = [...sec.querySelectorAll('[role="radio"]')];
+    const answer = sec.querySelector('.answer');
+    const reduce = matchMedia('(prefers-reduced-motion: reduce)');
+    let raf = 0;
+    let seen = false;
+
+    function build(s) {
+      hide();
+      for (const L of lanes) {
+        L.box.textContent = '';
+        L.segs = [];
+        L.evs = [];
+        let a = 0;
+        for (const [t, w, word, d, fail, est] of S[s][L.key]) {
+          const v = `${est ? '≈' : ''}${w}`;
+          const el = document.createElement('span');
+          el.className = `sg ${t} ${L.key}`;
+          el.style.left = `calc(${(a / W) * 100}% + 1px)`;
+          el.style.width = `max(3px, calc(${(w / W) * 100}% - 2px))`;
+          el.tabIndex = 0;
+          el.setAttribute('role', 'img');
+          el.dataset.k = `${NAME[L.key]} · ${word} ${v} min`;
+          el.dataset.d = d;
+          el.setAttribute('aria-label', el.dataset.k);
+          const x = document.createElement('span');
+          x.className = 'x';
+          x.textContent = `${word} ${v}`;
+          el.append(x);
+          L.box.append(el);
+          bind(el);
+          L.segs.push({ el, x, a, w, done: false });
+          a += w;
+          if (fail) {
+            const p = (a / W) * 100;
+            const ev = document.createElement('span');
+            ev.className = 'ev off' + (p < 15 ? ' l' : p > 85 ? ' r' : '');
+            ev.style.left = `${p}%`;
+            ev.setAttribute('aria-hidden', 'true');
+            ev.innerHTML = `<b>failed</b> at ${a.toFixed(1)}`;
+            L.box.append(ev);
+            L.evs.push({ el: ev, at: a });
+          }
+        }
+        L.total = a;
+        L.el.setAttribute('aria-label', S[s].label[L.key]);
+      }
+    }
+    function fit() {
+      for (const L of lanes) {
+        const tw = L.track.clientWidth;
+        for (const g of L.segs) g.el.classList.toggle('lbl', g.done && g.x.offsetWidth + 16 <= (tw * g.w) / W);
+      }
+    }
+    function frame(m) {
+      let changed = false;
+      for (const L of lanes) {
+        for (const g of L.segs) {
+          const r = m >= g.a + g.w - 1e-6 ? 1 : Math.max(0, (m - g.a) / g.w);
+          g.el.style.visibility = r > 0 ? '' : 'hidden';
+          g.el.style.clipPath = r >= 1 ? '' : `inset(0 ${(1 - r) * 100}% 0 0)`;
+          if (g.done !== r >= 1) { g.done = r >= 1; changed = true; }
+        }
+        for (const e of L.evs) e.el.classList.toggle('off', m < e.at - 1e-6);
+        L.clock.textContent = Math.min(m, L.total).toFixed(1);
+        L.el.classList.toggle('done', m >= L.total - 1e-6);
+      }
+      if (changed) fit();
+    }
+    function run() {
+      seen = true;
+      cancelAnimationFrame(raf);
+      const max = Math.max(...lanes.map((L) => L.total));
+      if (reduce.matches) { frame(max); return; }
+      const t0 = performance.now();
+      const step = (now) => {
+        const m = Math.min(max, ((now - t0) / 2600) * max);
+        frame(m);
+        if (m < max) raf = requestAnimationFrame(step);
+      };
+      frame(0);
+      raf = requestAnimationFrame(step);
+    }
+    function select(btn, focus) {
+      for (const r of radios) {
+        const on = r === btn;
+        r.setAttribute('aria-checked', String(on));
+        r.tabIndex = on ? 0 : -1;
+      }
+      if (focus) btn.focus();
+      answer.innerHTML = S[btn.dataset.s].answer;
+      build(btn.dataset.s);
+      run();
+    }
+    radios.forEach((r, i) => {
+      r.addEventListener('click', () => select(r));
+      r.addEventListener('keydown', (e) => {
+        const step = { ArrowRight: 1, ArrowDown: 1, ArrowLeft: -1, ArrowUp: -1 }[e.key];
+        const j = step ? (i + step + radios.length) % radios.length
+          : e.key === 'Home' ? 0 : e.key === 'End' ? radios.length - 1 : -1;
+        if (j < 0) return;
+        e.preventDefault();
+        select(radios[j], true);
+      });
+    });
+    sec.querySelector('.replay').addEventListener('click', run);
+    addEventListener('resize', fit);
+
+    build('typical');
+    if (reduce.matches || !('IntersectionObserver' in window)) run();
+    else {
+      frame(0);
+      const io = new IntersectionObserver((es) => {
+        if (!es.some((e) => e.isIntersecting)) return;
+        io.disconnect();
+        if (!seen) run();
+      }, { threshold: 0.4 });
+      io.observe(sec);
+    }
+  }
   addEventListener('keydown', (e) => { if (e.key === 'Escape') hide(); });
   addEventListener('scroll', place, { passive: true });
   addEventListener('resize', place);

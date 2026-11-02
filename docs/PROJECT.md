@@ -7,16 +7,15 @@
 - External products: The index links TradeGG, Splittt, Taotime, Hike Fan, Finca, Drift & Sea, DrFit and Seer. IMPLEMENTED index.html
 - Serverless routes: The repository contains transcription, London, track playlist, OCR and product-specific handlers. IMPLEMENTED vercel.json
 - Playa gallery: The private gallery gates the shell, catalogue, media and shortlist. IMPLEMENTED api/_lib/PLAYA-PAGE.md
-- Playa downloads: Sam can download photos at 2048, 4096 or original size, and a shortlist as a zip. MERGED #21
-- Gemini cost guard: Anonymous calls to transcription and track OCR are refused. MERGED #22
-- Awakening redirect: /awakening redirects to knomi.club. MERGED #15
-- Flights search: sam.toys/flights searches oneworld and BA-partner fares ranked by estimated £ per tier point. MERGED #26
-- Flights results: Flight cards show tier points and an oneworld toggle that can add other airlines. MERGED #30
-- City search: Flights searches whole cities and pulls up to 100 flights. MERGED #31
-- Flights filters: Results carry sourced Starlink Wi-Fi likelihood. MERGED #35
-- LV explainer: sam.toys/lv explains how LV checks code and how much faster it is than GitHub Actions. MERGED #42
-- LV vs Actions race: sam.toys/lv races one change through GitHub Actions and LV on a finance app. MERGED #46
-- LV page accuracy: The LV page matches what is live and identifies the old CI as self-hosted with rented overflow. MERGED #48
+- Playa downloads: Sam can download photos at 2048, 4096 or original size, and a shortlist as a zip. IMPLEMENTED api/_lib/PLAYA-PAGE.md
+- Gemini cost guard: Anonymous calls to transcription and track OCR are refused. IMPLEMENTED vercel.json
+- Awakening redirect: /awakening redirects to knomi.club. IMPLEMENTED vercel.json
+- Flights search: sam.toys/flights searches oneworld and BA-partner fares ranked by estimated £ per tier point. IMPLEMENTED vercel.json
+- Flights results: Flight cards show tier points, whole-city search, up to 100 flights, an oneworld toggle and sourced Starlink Wi-Fi likelihood. IMPLEMENTED vercel.json
+- LV explainer: sam.toys/lv explains how LV checks code and how much faster it is than GitHub Actions. IMPLEMENTED index.html
+- LV vs Actions race: sam.toys/lv races one change through GitHub Actions and LV on a finance app. IMPLEMENTED index.html
+- LV page accuracy: The LV page matches what is live and identifies the old CI as self-hosted with rented overflow. IMPLEMENTED index.html
+- Loop Validation rationale: The LV page explains why I built Loop Validation and compares it with a CI/CD pipeline, with new diagrams. MERGED #50
 
 ## Gaps
 
@@ -26,11 +25,11 @@
 
 ## Recent
 
-- 2026-11-02: The LV page now matches what is live and says old CI ran on self-hosted servers with rented overflow. MERGED #48
-- 2026-11-01: sam.toys/lv races one change through GitHub Actions and LV on a finance app. MERGED #46
-- 2026-11-01: sam.toys/lv now says what LV stands for, how it differs from CI, its pros and cons, and how it compares with the research, with corrected timings. MERGED #44
-- 2026-11-01: sam.toys/lv explains how LV checks code and how much faster it is than GitHub Actions. MERGED #42
-- 2026-10-30: Flights received the v4 design with origin pills, calendar, nearby dates, filters and animation. MERGED #38
+- 2026-11-02: The LV page explains why I built Loop Validation and compares it with a CI/CD pipeline, with new diagrams. MERGED #50
+- 2026-11-02: The LV page now matches what is live and says old CI ran on self-hosted servers with rented overflow. IMPLEMENTED index.html
+- 2026-11-01: sam.toys/lv races one change through GitHub Actions and LV on a finance app. IMPLEMENTED index.html
+- 2026-11-01: sam.toys/lv explains how LV checks code and how much faster it is than GitHub Actions. IMPLEMENTED index.html
+- 2026-10-30: Flights received the v4 design with origin pills, calendar, nearby dates, filters and animation. IMPLEMENTED index.html
 
 ## Read deeper
 

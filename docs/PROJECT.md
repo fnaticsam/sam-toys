@@ -1,4 +1,4 @@
-# fnaticsam/sam-toys (sam.toys, playa, sam-toys, samfun): checked 2026-11-01
+# fnaticsam/sam-toys (sam.toys, playa, sam-toys, samfun): checked 2026-11-02
 
 ## What exists
 
@@ -14,9 +14,9 @@
 - Flights results: Flight cards show tier points and an oneworld toggle that can add other airlines. MERGED #30
 - City search: Flights searches whole cities and pulls up to 100 flights. MERGED #31
 - Flights filters: Results carry sourced Starlink Wi-Fi likelihood. MERGED #35
-- Pull-request checks: Pull requests run site tests and the flights browser check in parallel. RETIRED #40
 - LV explainer: sam.toys/lv explains how LV checks code and how much faster it is than GitHub Actions. MERGED #42
 - LV vs Actions race: sam.toys/lv races one change through GitHub Actions and LV on a finance app. MERGED #46
+- LV page accuracy: The LV page matches what is live and identifies the old CI as self-hosted with rented overflow. MERGED #48
 
 ## Gaps
 
@@ -26,10 +26,10 @@
 
 ## Recent
 
+- 2026-11-02: The LV page now matches what is live and says old CI ran on self-hosted servers with rented overflow. MERGED #48
 - 2026-11-01: sam.toys/lv races one change through GitHub Actions and LV on a finance app. MERGED #46
 - 2026-11-01: sam.toys/lv now says what LV stands for, how it differs from CI, its pros and cons, and how it compares with the research, with corrected timings. MERGED #44
 - 2026-11-01: sam.toys/lv explains how LV checks code and how much faster it is than GitHub Actions. MERGED #42
-- 2026-11-01: Actions tests no longer run on pull requests or main; LV's verdict is the merge gate. MERGED #40
 - 2026-10-30: Flights received the v4 design with origin pills, calendar, nearby dates, filters and animation. MERGED #38
 
 ## Read deeper

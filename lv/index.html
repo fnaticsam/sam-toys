@@ -375,7 +375,7 @@
           <tr><th scope="row">Where</th><td>GitHub's machines, in a queue</td><td>My own server, no queue</td></tr>
           <tr><th scope="row">What runs</th><td>Every check, every time</td><td>Only the checks a change touches; everything when unsure</td></tr>
           <tr><th scope="row">Same code again</th><td>Runs it all again</td><td>Reuses the saved verdict</td></tr>
-          <tr><th scope="row">After it ships</th><td>Stops at merge</td><td>Checks the live site for 10 minutes</td></tr>
+          <tr><th scope="row">After it ships</th><td>Stops at merge</td><td>Can check the live site for 10 minutes, started by hand for now</td></tr>
           <tr><th scope="row">Cost</th><td>Paid minutes</td><td>A server I already run</td></tr>
         </tbody>
       </table>
@@ -511,7 +511,7 @@
         <li>Faster, most of all on a slow day.</li>
         <li>A change reaches GitHub already checked, so fewer fix-and-push rounds.</li>
         <li>No waiting for GitHub's machines, no paid minutes, and nothing checked twice.</li>
-        <li>It keeps watching the live site after a deploy.</li>
+        <li>It can watch the live site after a deploy, started by hand for now.</li>
       </ul>
     </div>
     <div class="card con">
@@ -602,12 +602,14 @@
         </thead>
         <tbody>
           <tr><th scope="row">Check inside the agent's loop, before a pull request</th><td><b>Done.</b> This is the whole idea.</td></tr>
-          <tr><th scope="row">Run only the tests a change affects</th><td><b>Done,</b> more simply: file patterns pick the checks, not a recorded map of which test touches which file.</td></tr>
-          <tr><th scope="row">Run each check in a microVM</th><td><b>Partly.</b> Today each check runs as a throwaway, locked-down job with capped CPU and memory. Firecracker microVMs on the same server come next.</td></tr>
+          <tr><th scope="row">Run only the tests a change affects</th><td><b>Partly.</b> File patterns pick the checks, not a recorded map of which test touches which file, and about two runs in three still check everything.</td></tr>
+          <tr><th scope="row">Run each check in a microVM</th><td><b>Not yet.</b> Each check runs as a throwaway, locked-down job with capped CPU and memory. The server can now run Firecracker microVMs; they aren't built yet.</td></tr>
           <tr><th scope="row">Never redo work</th><td><b>Done.</b> The same code reuses its verdict, and docs-only changes skip.</td></tr>
           <tr><th scope="row">Feedback in under a minute</th><td><b>Not yet.</b> A typical check takes 3.3 minutes; a reused verdict is instant.</td></tr>
           <tr><th scope="row">Faster type-checking and linting tools</th><td><b>Not yet.</b></td></tr>
-          <tr><th scope="row">Shared staging with request routing</th><td><b>Skipped.</b> These are single web apps, so it isn't needed.</td></tr>
+          <tr><th scope="row">Shared staging with request routing</th><td><b>Not built.</b> These are single web apps, so it may not be needed.</td></tr>
+          <tr><th scope="row">Gradual rollout with automatic rollback</th><td><b>Partly.</b> A 10-minute live-site check exists, but it's started by hand and rollback is off.</td></tr>
+          <tr><th scope="row">A shared record of what agents plan and decide</th><td><b>Not yet.</b> LV keeps verdicts, not decisions.</td></tr>
           <tr><th scope="row">Merge queues and agent-ready source control</th><td><b>Skipped</b> for now.</td></tr>
         </tbody>
       </table>

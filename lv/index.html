@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="robots" content="noindex">
 <meta name="theme-color" content="#0b0b0f">
-<meta name="description" content="LV (Loop Validation) checks my code on my own server. How it works, how it differs from GitHub Actions, and how much faster it is.">
+<meta name="description" content="LV (Loop Validation) checks my code on my own server, inside the coding agent's loop. Why I built it, how it differs from a CI/CD pipeline, and how much faster it is.">
 <title>LV · sam.toys</title>
 <style>
   :root{
@@ -242,6 +242,17 @@
     details.more summary::before{transition:none}
     .replay{display:none}
   }
+  .lead,.turn{font-size:19px;line-height:1.5;max-width:62ch}
+  .turn{margin-top:20px}
+  .nd.gh{stroke:var(--gh)}
+  .nd.push{stroke:var(--text);stroke-width:1.5}
+  .zone{fill:rgba(255,255,255,.02);stroke:#33333f;stroke-dasharray:4 4}
+  .zone.gh{fill:rgba(139,124,255,.07);stroke:rgba(139,124,255,.45)}
+  .zn{fill:var(--dim);font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;text-anchor:middle}
+  .lt{fill:var(--text);font-size:15px;font-weight:700}
+  .s.en{text-anchor:end}
+  .ar.lp{stroke-dasharray:5 4}
+  @media (max-width:640px){.lead,.turn{font-size:17px}}
 </style>
 </head>
 <body>
@@ -249,40 +260,288 @@
   <a class="back" href="/">← sam.toys</a>
   <header>
     <div class="mark">LV<span class="dot">.</span></div>
-    <p class="tag"><b>Loop Validation.</b> It checks my code on my own server, inside the coding agent's loop, before anything reaches GitHub.</p>
+    <p class="tag"><b>Loop Validation.</b> How my code gets checked now, and why I'm moving off a CI/CD pipeline.</p>
   </header>
 
+  <h2>Why I built it</h2>
+  <p class="lead">AI coding agents write most of my code now, and they push often. Every push went through a CI/CD pipeline: wait for a machine, run every check, then answer. The agent waited the whole time.</p>
+  <div class="tiles">
+    <div class="card tile">
+      <div class="fig">640</div>
+      <p>Pushes in 30 days, to one finance app</p>
+      <small>one of 11 repos on the pipeline</small>
+    </div>
+    <div class="card tile">
+      <div class="fig">5.9<span class="u">min</span></div>
+      <p>Typical wait for the pipeline's answer</p>
+      <small>median of those 640 · 20.4 min on a slow day</small>
+    </div>
+    <div class="card tile">
+      <div class="fig">1,260+<span class="u">h</span></div>
+      <p>Of pipeline runs in 30 days</p>
+      <small>across 11 of my repos</small>
+    </div>
+  </div>
+  <p class="turn">So I moved the check inside the agent's loop: before the push, and only on what the change touches.</p>
+
+  <h2>What Loop Validation is</h2>
+  <p class="lead">My own checker, on my own server. Before an agent pushes, it asks LV to check its work. LV works out what the change touched, runs just those checks side by side and gives one verdict. When the push lands, LV recognises the same code and reuses that verdict, and the merge waits for it.</p>
+  <p class="turn">The name: an agent works in a loop of write, check, fix, repeat. A CI/CD pipeline sits outside that loop, after the push. Loop Validation puts the check inside it.</p>
+
+  <h2>CI/CD pipeline vs Loop Validation</h2>
+  <div class="card">
+    <svg class="dg wide" viewBox="0 0 960 400" role="img" aria-labelledby="cmp-w">
+      <title id="cmp-w">Two ways to check a change. CI/CD pipeline: the agent writes code and pushes it; the change waits in a queue for a machine, every check runs, and the result comes back after the push. If it fails, the agent fixes it, pushes again and queues again. Loop Validation: before the push, LV works out what changed, runs only those checks side by side and gives a verdict inside the agent's loop. If it fails, the agent fixes it in the same session. The push arrives already checked and merges with no second run.</title>
+      <defs><marker id="mcwd" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" markerUnits="userSpaceOnUse" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#9a99a6"/></marker><marker id="mcwa" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" markerUnits="userSpaceOnUse" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#c9822e"/></marker></defs>
+      <circle cx="11" cy="20" r="5" fill="#8b7cff"/><text class="lt" x="22" y="25">CI/CD pipeline</text>
+      <text class="s en" x="954" y="25">checks after the push</text>
+      <rect class="zone" x="0" y="40" width="140" height="100" rx="14"/><text class="zn" x="70" y="56">agent's loop</text>
+      <rect class="zone gh" x="328" y="40" width="468" height="100" rx="14"/><text class="zn" x="562" y="56">the pipeline</text>
+      <rect class="nd" x="6" y="70" width="128" height="56" rx="12"/>
+      <text class="t" x="70" y="94">Write code</text>
+      <text class="s" x="70" y="113">the agent</text>
+      <rect class="nd push" x="170" y="70" width="128" height="56" rx="12"/>
+      <text class="t" x="234" y="94">Push</text>
+      <text class="s" x="234" y="113">the change</text>
+      <rect class="nd gh" x="334" y="70" width="128" height="56" rx="12"/>
+      <text class="t" x="398" y="94">Queue</text>
+      <text class="s" x="398" y="113">wait for a machine</text>
+      <rect class="nd gh" x="498" y="70" width="128" height="56" rx="12"/>
+      <text class="t" x="562" y="94">Run all checks</text>
+      <text class="s" x="562" y="113">the whole suite</text>
+      <rect class="nd gh" x="662" y="70" width="128" height="56" rx="12"/>
+      <text class="t" x="726" y="94">Result</text>
+      <text class="s" x="726" y="113">pass or fail</text>
+      <rect class="nd" x="826" y="70" width="128" height="56" rx="12"/>
+      <text class="t" x="890" y="94">Merge</text>
+      <text class="s" x="890" y="113">if it passed</text>
+      <line class="ar" x1="136" y1="98" x2="168" y2="98" marker-end="url(#mcwd)"/>
+      <line class="ar" x1="300" y1="98" x2="332" y2="98" marker-end="url(#mcwd)"/>
+      <line class="ar" x1="464" y1="98" x2="496" y2="98" marker-end="url(#mcwd)"/>
+      <line class="ar" x1="628" y1="98" x2="660" y2="98" marker-end="url(#mcwd)"/>
+      <line class="ar" x1="792" y1="98" x2="824" y2="98" marker-end="url(#mcwd)"/>
+      <path class="ar lp" d="M726,126 V166 H70 V130" marker-end="url(#mcwd)"/>
+      <text class="s" x="400" y="158">fails: fix, push, queue again</text>
+      <circle cx="11" cy="244" r="5" fill="#c9822e"/><text class="lt" x="22" y="249">Loop Validation</text>
+      <text class="s en" x="954" y="249">checks before the push</text>
+      <rect class="zone" x="0" y="264" width="640" height="128" rx="14"/><text class="zn" x="320" y="280">agent's loop</text>
+      <rect class="nd" x="6" y="294" width="128" height="56" rx="12"/>
+      <text class="t" x="70" y="318">Write code</text>
+      <text class="s" x="70" y="337">the agent</text>
+      <rect class="nd lv" x="170" y="294" width="128" height="56" rx="12"/>
+      <text class="t" x="234" y="318">Plan</text>
+      <text class="s" x="234" y="337">what changed?</text>
+      <rect class="nd lv" x="334" y="294" width="128" height="56" rx="12"/>
+      <text class="t" x="398" y="314">Run only those</text>
+      <rect class="tr" x="350" y="320" width="96" height="5" rx="2.5"/>
+      <rect class="fl" x="350" y="320" width="96" height="5" rx="2.5"/>
+      <rect class="tr" x="350" y="328" width="96" height="5" rx="2.5"/>
+      <rect class="fl b" x="350" y="328" width="96" height="5" rx="2.5"/>
+      <rect class="tr" x="350" y="336" width="96" height="5" rx="2.5"/>
+      <rect class="fl c" x="350" y="336" width="96" height="5" rx="2.5"/>
+      <rect class="nd lv" x="498" y="294" width="128" height="56" rx="12"/>
+      <text class="t" x="562" y="318">Verdict</text>
+      <text class="s" x="562" y="337">pass or fail</text>
+      <rect class="nd push" x="662" y="294" width="128" height="56" rx="12"/>
+      <text class="t" x="726" y="318">Push</text>
+      <text class="s" x="726" y="337">already checked</text>
+      <rect class="nd" x="826" y="294" width="128" height="56" rx="12"/>
+      <text class="t" x="890" y="318">Merge</text>
+      <text class="s" x="890" y="337">no second run</text>
+      <line class="ar" x1="136" y1="322" x2="168" y2="322" marker-end="url(#mcwd)"/>
+      <line class="ar" x1="300" y1="322" x2="332" y2="322" marker-end="url(#mcwd)"/>
+      <line class="ar" x1="464" y1="322" x2="496" y2="322" marker-end="url(#mcwd)"/>
+      <line class="ar" x1="628" y1="322" x2="660" y2="322" marker-end="url(#mcwd)"/>
+      <line class="ar" x1="792" y1="322" x2="824" y2="322" marker-end="url(#mcwd)"/>
+      <path class="sc" d="M562,350 V380 H70 V354" marker-end="url(#mcwa)"/>
+      <text class="s" x="316" y="372">fails: fixed in the same session</text>
+    </svg>
+
+    <svg class="dg tall" viewBox="0 0 360 545" role="img" aria-labelledby="cmp-t">
+      <title id="cmp-t">Two ways to check a change. CI/CD pipeline: the agent writes code and pushes it; the change waits in a queue for a machine, every check runs, and the result comes back after the push. If it fails, the agent fixes it, pushes again and queues again. Loop Validation: before the push, LV works out what changed, runs only those checks side by side and gives a verdict inside the agent's loop. If it fails, the agent fixes it in the same session. The push arrives already checked and merges with no second run.</title>
+      <defs><marker id="mctd" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" markerUnits="userSpaceOnUse" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#9a99a6"/></marker><marker id="mcta" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" markerUnits="userSpaceOnUse" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#c9822e"/></marker></defs>
+      <circle cx="21" cy="17" r="5" fill="#8b7cff"/><text class="lt" x="31" y="22">CI/CD pipeline</text>
+      <circle cx="189" cy="17" r="5" fill="#c9822e"/><text class="lt" x="199" y="22">Loop Validation</text>
+      <rect class="zone" x="16" y="34" width="160" height="84" rx="12"/><text class="zn" x="96" y="50">agent's loop</text>
+      <rect class="zone gh" x="16" y="200" width="160" height="224" rx="12"/><text class="zn" x="96" y="215">the pipeline</text>
+      <rect class="zone" x="182" y="34" width="172" height="294" rx="12"/><text class="zn" x="264" y="50">agent's loop</text>
+      <rect class="nd" x="24" y="60" width="144" height="48" rx="12"/>
+      <text class="t" x="96" y="80">Write code</text>
+      <text class="s" x="96" y="98">the agent</text>
+      <rect class="nd push" x="24" y="140" width="144" height="48" rx="12"/>
+      <text class="t" x="96" y="160">Push</text>
+      <text class="s" x="96" y="178">the change</text>
+      <rect class="nd gh" x="24" y="226" width="144" height="48" rx="12"/>
+      <text class="t" x="96" y="246">Queue</text>
+      <text class="s" x="96" y="264">wait for a machine</text>
+      <rect class="nd gh" x="24" y="296" width="144" height="48" rx="12"/>
+      <text class="t" x="96" y="316">Run all checks</text>
+      <text class="s" x="96" y="334">the whole suite</text>
+      <rect class="nd gh" x="24" y="366" width="144" height="48" rx="12"/>
+      <text class="t" x="96" y="386">Result</text>
+      <text class="s" x="96" y="404">pass or fail</text>
+      <rect class="nd" x="24" y="446" width="144" height="48" rx="12"/>
+      <text class="t" x="96" y="466">Merge</text>
+      <text class="s" x="96" y="484">if it passed</text>
+      <rect class="nd" x="192" y="60" width="144" height="48" rx="12"/>
+      <text class="t" x="264" y="80">Write code</text>
+      <text class="s" x="264" y="98">the agent</text>
+      <rect class="nd lv" x="192" y="130" width="144" height="48" rx="12"/>
+      <text class="t" x="264" y="150">Plan</text>
+      <text class="s" x="264" y="168">what changed?</text>
+      <rect class="nd lv" x="192" y="200" width="144" height="48" rx="12"/>
+      <text class="t" x="264" y="218">Run only those</text>
+      <rect class="tr" x="208" y="226" width="112" height="5" rx="2.5"/>
+      <rect class="fl" x="208" y="226" width="112" height="5" rx="2.5"/>
+      <rect class="tr" x="208" y="233" width="112" height="5" rx="2.5"/>
+      <rect class="fl b" x="208" y="233" width="112" height="5" rx="2.5"/>
+      <rect class="tr" x="208" y="240" width="112" height="5" rx="2.5"/>
+      <rect class="fl c" x="208" y="240" width="112" height="5" rx="2.5"/>
+      <rect class="nd lv" x="192" y="270" width="144" height="48" rx="12"/>
+      <text class="t" x="264" y="290">Verdict</text>
+      <text class="s" x="264" y="308">pass or fail</text>
+      <rect class="nd push" x="192" y="350" width="144" height="48" rx="12"/>
+      <text class="t" x="264" y="370">Push</text>
+      <text class="s" x="264" y="388">already checked</text>
+      <rect class="nd" x="192" y="420" width="144" height="48" rx="12"/>
+      <text class="t" x="264" y="440">Merge</text>
+      <text class="s" x="264" y="458">no second run</text>
+      <line class="ar" x1="96" y1="110" x2="96" y2="138" marker-end="url(#mctd)"/>
+      <line class="ar" x1="96" y1="190" x2="96" y2="224" marker-end="url(#mctd)"/>
+      <line class="ar" x1="96" y1="276" x2="96" y2="294" marker-end="url(#mctd)"/>
+      <line class="ar" x1="96" y1="346" x2="96" y2="364" marker-end="url(#mctd)"/>
+      <line class="ar" x1="96" y1="416" x2="96" y2="444" marker-end="url(#mctd)"/>
+      <line class="ar" x1="264" y1="110" x2="264" y2="128" marker-end="url(#mctd)"/>
+      <line class="ar" x1="264" y1="180" x2="264" y2="198" marker-end="url(#mctd)"/>
+      <line class="ar" x1="264" y1="250" x2="264" y2="268" marker-end="url(#mctd)"/>
+      <line class="ar" x1="264" y1="320" x2="264" y2="348" marker-end="url(#mctd)"/>
+      <line class="ar" x1="264" y1="400" x2="264" y2="418" marker-end="url(#mctd)"/>
+      <path class="ar lp" d="M24,390 H8 V84 H22" marker-end="url(#mctd)"/>
+      <path class="sc" d="M336,294 H345 V84 H338" marker-end="url(#mcta)"/>
+      <text class="s sm" x="96" y="516">fails: fix, push,</text><text class="s sm" x="96" y="532">queue again</text>
+      <text class="s sm" x="264" y="516">fails: fixed in</text><text class="s sm" x="264" y="532">the same session</text>
+    </svg>
+    <p class="note">If a push arrives unchecked, LV checks it within 20 seconds, the same way.</p>
+  </div>
+
+  <div class="tiles">
+    <div class="card tile">
+      <div class="fig">1.9<span class="u">min</span></div>
+      <p>When a change only touches some checks</p>
+      <small>median of 10 · the full suite takes 3.7 min</small>
+    </div>
+    <div class="card tile">
+      <div class="fig">37%</div>
+      <p>Less waiting than running the checks one after another</p>
+      <small>median of 12 commits · 3.7 min side by side, 5.9 one by one</small>
+    </div>
+    <div class="card tile">
+      <div class="fig">0<span class="u">s</span></div>
+      <p>A docs-only change on this site: nothing to run</p>
+      <small>2 of 5 changes so far · a full check here takes 40 s (median of 3); it was 82 s on the pipeline (13)</small>
+    </div>
+  </div>
+
+  <h2>Moving a repo over</h2>
+  <div class="card">
+    <svg class="dg wide" viewBox="0 0 960 184" role="img" aria-labelledby="move-w">
+      <title id="move-w">First LV is taught the repo's tests and builds. Then the last 20 commits are replayed on LV and on the CI/CD pipeline. If LV never disagrees with the pipeline and never errors, LV becomes the gate and the pipeline is switched off. If not, the problem is fixed and the replay runs again.</title>
+      <defs>
+        <marker id="m3d" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" markerUnits="userSpaceOnUse" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#9a99a6"/></marker>
+      </defs>
+      <rect class="nd" x="4" y="24" width="204" height="76" rx="12"/>
+      <text class="t" x="106" y="57">Teach LV the checks</text>
+      <text class="s" x="106" y="79">the repo's tests and builds</text>
+
+      <rect class="nd" x="253" y="24" width="204" height="76" rx="12"/>
+      <text class="t" x="355" y="57">Replay 20 commits</text>
+      <text class="s" x="355" y="79">on LV and on the pipeline</text>
+
+      <rect class="nd lv" x="502" y="24" width="204" height="76" rx="12"/>
+      <text class="t" x="604" y="57">No disagreements?</text>
+      <text class="s" x="604" y="79">and no LV errors</text>
+
+      <rect class="nd" x="751" y="24" width="204" height="76" rx="12"/>
+      <text class="t" x="853" y="57">LV is the gate</text>
+      <text class="s" x="853" y="79">Pipeline switched off</text>
+
+      <line class="ar" x1="212" y1="62" x2="249" y2="62" marker-end="url(#m3d)"/>
+      <line class="ar" x1="461" y1="62" x2="498" y2="62" marker-end="url(#m3d)"/>
+      <line class="ar" x1="710" y1="62" x2="747" y2="62" marker-end="url(#m3d)"/>
+      <text class="s hl" x="728" y="54">yes</text>
+
+      <path class="ar" d="M604,102 V140 Q604,150 594,150 H365 Q355,150 355,140 V105" marker-end="url(#m3d)"/>
+      <text class="s" x="480" y="172">no: fix it and replay</text>
+    </svg>
+
+    <svg class="dg tall" viewBox="0 0 360 392" role="img" aria-labelledby="move-t">
+      <title id="move-t">First LV is taught the repo's tests and builds. Then the last 20 commits are replayed on LV and on the CI/CD pipeline. If LV never disagrees with the pipeline and never errors, LV becomes the gate and the pipeline is switched off. If not, the problem is fixed and the replay runs again.</title>
+      <defs>
+        <marker id="m4d" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" markerUnits="userSpaceOnUse" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#9a99a6"/></marker>
+      </defs>
+      <rect class="nd" x="12" y="12" width="244" height="72" rx="12"/>
+      <text class="t" x="134" y="43">Teach LV the checks</text>
+      <text class="s" x="134" y="63">the repo's tests and builds</text>
+
+      <rect class="nd" x="12" y="112" width="244" height="72" rx="12"/>
+      <text class="t" x="134" y="143">Replay 20 commits</text>
+      <text class="s" x="134" y="163">on LV and on the pipeline</text>
+
+      <rect class="nd lv" x="12" y="212" width="244" height="72" rx="12"/>
+      <text class="t" x="134" y="243">No disagreements?</text>
+      <text class="s" x="134" y="263">and no LV errors</text>
+
+      <rect class="nd" x="12" y="312" width="244" height="72" rx="12"/>
+      <text class="t" x="134" y="343">LV is the gate</text>
+      <text class="s" x="134" y="363">Pipeline switched off</text>
+
+      <line class="ar" x1="134" y1="87" x2="134" y2="108" marker-end="url(#m4d)"/>
+      <line class="ar" x1="134" y1="187" x2="134" y2="208" marker-end="url(#m4d)"/>
+      <line class="ar" x1="134" y1="287" x2="134" y2="308" marker-end="url(#m4d)"/>
+      <text class="s hl st" x="146" y="302">yes</text>
+
+      <path class="ar" d="M258,248 H296 Q308,248 308,236 V160 Q308,148 296,148 H261" marker-end="url(#m4d)"/>
+      <rect class="mk" x="272" y="180" width="72" height="36" rx="6"/>
+      <text class="s sm" x="308" y="195">no: fix</text>
+      <text class="s sm" x="308" y="211">and replay</text>
+    </svg>
+
+    <p class="note">A repo switches when LV and the pipeline agree on at least one replayed commit, disagree on none, and LV never errors. The one exception is a disagreement the repo causes itself, such as a flaky test: it gets explained before the switch, not ignored.</p>
+    <p class="note">Four of my repos have moved over so far, this site included.</p>
+  </div>
+
+  <h2>How much faster</h2>
   <section class="card" aria-labelledby="hero-fig">
     <div class="hero-top">
       <div>
         <div class="big" id="hero-fig"><span class="was">5.9</span><span class="to" aria-hidden="true">→</span><span class="sr">down to</span>3.3<span class="unit">min</span></div>
-        <div class="sub">Typical check, median of 640 pushes on Actions vs 30 LV runs · a finance app</div>
+        <div class="sub">Typical check, median of 640 pipeline pushes vs 30 LV runs · a finance app</div>
       </div>
       <div class="legend" aria-hidden="true">
-        <span><i class="sw gh"></i>GitHub Actions</span>
+        <span><i class="sw gh"></i>CI/CD pipeline</span>
         <span><i class="sw lv"></i>LV</span>
       </div>
     </div>
 
-    <div class="chart" role="group" aria-label="Minutes to result: GitHub Actions from push, queue included; LV from start to verdict">
+    <div class="chart" role="group" aria-label="Minutes to result: CI/CD pipeline from push, queue included; LV from start to verdict">
       <div class="row">
         <div class="lab">Typical check <small>median</small></div>
         <div class="bars">
-          <div class="bl" tabindex="0" role="img" aria-label="GitHub Actions, typical check: 5.9 minutes" data-k="GitHub Actions · 5.9 min" data-d="Median of 640 pushes, from push until the last check finished" style="--v:5.9;--i:0"><span class="bar gh"></span><span class="val">5.9</span></div>
+          <div class="bl" tabindex="0" role="img" aria-label="CI/CD pipeline, typical check: 5.9 minutes" data-k="CI/CD pipeline · 5.9 min" data-d="Median of 640 pushes, from push until the last check finished" style="--v:5.9;--i:0"><span class="bar gh"></span><span class="val">5.9</span></div>
           <div class="bl" tabindex="0" role="img" aria-label="LV, typical check: 3.3 minutes" data-k="LV · 3.3 min" data-d="Median of 30 passing verdicts, start to verdict" style="--v:3.3;--i:1"><span class="bar lv"></span><span class="val">3.3</span></div>
         </div>
       </div>
       <div class="row">
         <div class="lab">Full suite <small>median</small></div>
         <div class="bars">
-          <div class="bl" tabindex="0" role="img" aria-label="GitHub Actions, full suite: 5.8 minutes" data-k="GitHub Actions · 5.8 min" data-d="Median of 219 pushes to main" style="--v:5.8;--i:2"><span class="bar gh"></span><span class="val">5.8</span></div>
+          <div class="bl" tabindex="0" role="img" aria-label="CI/CD pipeline, full suite: 5.8 minutes" data-k="CI/CD pipeline · 5.8 min" data-d="Median of 219 pushes to main" style="--v:5.8;--i:2"><span class="bar gh"></span><span class="val">5.8</span></div>
           <div class="bl" tabindex="0" role="img" aria-label="LV, full suite: 3.7 minutes" data-k="LV · 3.7 min" data-d="Median over 12 commits, first full run of each" style="--v:3.7;--i:3"><span class="bar lv"></span><span class="val">3.7</span></div>
         </div>
       </div>
       <div class="row">
         <div class="lab">Slow day <small>90th percentile</small></div>
         <div class="bars">
-          <div class="bl" tabindex="0" role="img" aria-label="GitHub Actions, slow day: 20.4 minutes" data-k="GitHub Actions · 20.4 min" data-d="90th percentile of 640 pushes" style="--v:20.4;--i:4"><span class="bar gh"></span><span class="val">20.4</span></div>
+          <div class="bl" tabindex="0" role="img" aria-label="CI/CD pipeline, slow day: 20.4 minutes" data-k="CI/CD pipeline · 20.4 min" data-d="90th percentile of 640 pushes" style="--v:20.4;--i:4"><span class="bar gh"></span><span class="val">20.4</span></div>
           <div class="bl" tabindex="0" role="img" aria-label="LV, slow day: 7.7 minutes" data-k="LV · 7.7 min" data-d="90th percentile of 30 passing verdicts" style="--v:7.7;--i:5"><span class="bar lv"></span><span class="val">7.7</span></div>
         </div>
       </div>
@@ -300,7 +559,7 @@
       </div>
     </div>
 
-    <p class="note">GitHub Actions: push until the last check finished, queue included, over the 30 days before the switch. LV: start to verdict since LV began checking the app on 30 Oct, passing runs only, and only runs that actually ran the checks (a reused verdict takes no time). Small samples, so the ratios are rough.</p>
+    <p class="note">Pipeline: push until the last check finished, queue included, over the 30 days before the switch. LV: start to verdict since LV began checking the app on 30 Oct, passing runs only, and only runs that actually ran the checks (a reused verdict takes no time). Small samples, so the ratios are rough.</p>
   </section>
 
   <h2 id="race-h">One change, two paths</h2>
@@ -315,8 +574,8 @@
     </div>
     <p class="answer" aria-live="polite">On a typical change, LV answers <em>about 2.3 minutes sooner</em>.</p>
     <div class="lanes">
-      <div class="lane" data-l="gh" role="group" aria-label="GitHub Actions: 5.9 minutes from push">
-        <div class="lname">GitHub Actions</div>
+      <div class="lane" data-l="gh" role="group" aria-label="CI/CD pipeline: 5.9 minutes from push">
+        <div class="lname">CI/CD pipeline</div>
         <div class="track" style="--g:23.81%"><div class="in"></div></div>
         <div class="clock" aria-hidden="true"><b>0.0</b><span>min</span></div>
       </div>
@@ -338,18 +597,18 @@
       </div>
     </div>
     <div class="rkey" aria-hidden="true">
-      <span><i class="sw gh"></i>Actions checking</span>
+      <span><i class="sw gh"></i>Pipeline checking</span>
       <span><i class="sw lv"></i>LV checking</span>
       <span><i class="k-wait"></i>Waiting to start</span>
     </div>
-    <p class="note">Same finance app: medians, or the slowest tenth on a slow day. Both clocks start at the push. Actions: push to last check, queue included. LV checks for new pushes every 20 s; we count the full 20 s, so 3.6 here, not 3.3 above. Fixing time left out. Small samples.</p>
+    <p class="note">Same finance app: medians, or the slowest tenth on a slow day. Both clocks start at the push. Pipeline: push to last check, queue included. LV checks for new pushes every 20 s; we count the full 20 s, so 3.6 here, not 3.3 above. Fixing time left out. Small samples.</p>
   </section>
 
   <div class="tiles">
     <div class="card tile">
       <div class="fig">2.1<span class="u">min</span></div>
-      <p>To learn a change failed, not 8.7 until every Actions check finished</p>
-      <small>5 failed LV runs + 20 s check · 54 failed Actions pushes</small>
+      <p>To learn a change failed, not 8.7 until every pipeline check finished</p>
+      <small>5 failed LV runs + 20 s check · 54 failed pipeline pushes</small>
     </div>
     <div class="card tile">
       <div class="fig">25<span class="u">h</span><span class="est">estimate</span></div>
@@ -363,12 +622,12 @@
     </div>
   </div>
 
-  <h2>LV and GitHub Actions</h2>
+  <h2>Side by side</h2>
   <div class="card">
     <div class="tw">
       <table class="cmp">
         <thead>
-          <tr><td></td><th scope="col"><i class="sw gh"></i>GitHub Actions</th><th scope="col"><i class="sw lv"></i>LV</th></tr>
+          <tr><td></td><th scope="col"><i class="sw gh"></i>CI/CD pipeline</th><th scope="col"><i class="sw lv"></i>LV</th></tr>
         </thead>
         <tbody>
           <tr><th scope="row">When it runs</th><td>After the push</td><td>Inside the coding agent's loop before the push, and on the pull request</td></tr>
@@ -376,130 +635,9 @@
           <tr><th scope="row">What runs</th><td>Each repo's own rules, often everything</td><td>Only the checks a change touches; everything when unsure</td></tr>
           <tr><th scope="row">Same code again</th><td>Runs it all again</td><td>Reuses the saved verdict</td></tr>
           <tr><th scope="row">After it ships</th><td>Stops at merge</td><td>Can check the live site for 10 minutes, started by hand for now</td></tr>
-          <tr><th scope="row">Cost</th><td>Rented machines when busy, and GitHub's Macs as a last resort</td><td>Nothing beyond servers I already run</td></tr>
+          <tr><th scope="row">Cost</th><td>Rented machines when busy, and paid Mac time as a last resort</td><td>Nothing beyond servers I already run</td></tr>
         </tbody>
       </table>
-    </div>
-  </div>
-
-  <h2>How a change gets checked</h2>
-  <div class="card">
-    <svg class="dg wide" viewBox="0 0 960 256" role="img" aria-labelledby="flow-w">
-      <title id="flow-w">A change goes to Plan, which reads what changed and picks just the checks it touches. Run runs each check in its own sandbox, all at the same time. The verdict, pass or fail, is saved against the exact code checked. Merge only happens when the verdict passes; no verdict or an error means no merge. If the same code was checked before, LV reuses its verdict.</title>
-      <defs>
-        <marker id="m1d" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" markerUnits="userSpaceOnUse" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#9a99a6"/></marker>
-        <marker id="m1a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" markerUnits="userSpaceOnUse" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#c9822e"/></marker>
-      </defs>
-      <path class="sc" d="M78,106 C78,24 681,24 681,104" marker-end="url(#m1a)"/>
-      <rect class="mk" x="300" y="26" width="160" height="38" rx="6"/>
-      <text class="s hl" x="380" y="41">Same code as before?</text>
-      <text class="s" x="380" y="58">Reuse its verdict</text>
-
-      <rect class="nd" x="4" y="110" width="148" height="72" rx="12"/>
-      <text class="t" x="78" y="141">Change</text>
-      <text class="s" x="78" y="162">push or pull request</text>
-
-      <rect class="nd" x="205" y="110" width="148" height="72" rx="12"/>
-      <text class="t" x="279" y="141">Plan</text>
-      <text class="s" x="279" y="162">reads what changed</text>
-
-      <rect class="nd" x="406" y="110" width="148" height="72" rx="12"/>
-      <text class="t" x="480" y="136">Run</text>
-      <rect class="tr" x="426" y="148" width="108" height="5" rx="2.5"/>
-      <rect class="fl" x="426" y="148" width="108" height="5" rx="2.5"/>
-      <rect class="tr" x="426" y="157" width="108" height="5" rx="2.5"/>
-      <rect class="fl b" x="426" y="157" width="108" height="5" rx="2.5"/>
-      <rect class="tr" x="426" y="166" width="108" height="5" rx="2.5"/>
-      <rect class="fl c" x="426" y="166" width="108" height="5" rx="2.5"/>
-
-      <rect class="nd lv" x="607" y="110" width="148" height="72" rx="12"/>
-      <text class="t" x="681" y="141">Verdict</text>
-      <text class="s" x="681" y="162">pass or fail</text>
-
-      <rect class="nd" x="808" y="110" width="148" height="72" rx="12"/>
-      <text class="t" x="882" y="141">Merge</text>
-      <text class="s" x="882" y="162">the verdict passes</text>
-
-      <line class="ar" x1="156" y1="146" x2="200" y2="146" marker-end="url(#m1d)"/>
-      <line class="ar" x1="357" y1="146" x2="401" y2="146" marker-end="url(#m1d)"/>
-      <line class="ar" x1="558" y1="146" x2="602" y2="146" marker-end="url(#m1d)"/>
-      <line class="ar" x1="759" y1="146" x2="803" y2="146" marker-end="url(#m1d)"/>
-
-      <text class="s" x="279" y="212">Just the checks the</text>
-      <text class="s" x="279" y="229">change touches</text>
-      <text class="s" x="480" y="212">Each check in its</text>
-      <text class="s" x="480" y="229">own sandbox, all</text>
-      <text class="s" x="480" y="246">at the same time</text>
-      <text class="s" x="681" y="212">Saved against the</text>
-      <text class="s" x="681" y="229">exact code checked</text>
-      <text class="s" x="882" y="212">No verdict, or an</text>
-      <text class="s" x="882" y="229">error: no merge</text>
-    </svg>
-
-    <svg class="dg tall" viewBox="0 0 360 556" role="img" aria-labelledby="flow-t">
-      <title id="flow-t">A change goes to Plan, which reads what changed and picks just the checks it touches. Run runs each check in its own sandbox, all at the same time. The verdict, pass or fail, is saved against the exact code checked. Merge only happens when the verdict passes; no verdict or an error means no merge. If the same code was checked before, LV reuses its verdict.</title>
-      <defs>
-        <marker id="m2d" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" markerUnits="userSpaceOnUse" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#9a99a6"/></marker>
-        <marker id="m2a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" markerUnits="userSpaceOnUse" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#c9822e"/></marker>
-      </defs>
-      <path class="sc" d="M102,56 C28,56 28,392 100,392" marker-end="url(#m2a)"/>
-      <rect class="mk" x="6" y="190" width="84" height="74" rx="6"/>
-      <text class="s sm hl" x="48" y="207">Same code</text>
-      <text class="s sm hl" x="48" y="223">as before?</text>
-      <text class="s sm" x="48" y="243">Reuse its</text>
-      <text class="s sm" x="48" y="259">verdict</text>
-
-      <rect class="nd" x="104" y="12" width="244" height="88" rx="12"/>
-      <text class="t" x="226" y="50">Change</text>
-      <text class="s" x="226" y="70">push or pull request</text>
-
-      <rect class="nd" x="104" y="124" width="244" height="88" rx="12"/>
-      <text class="t" x="226" y="154">Plan</text>
-      <text class="s" x="226" y="174">reads what changed and picks</text>
-      <text class="s" x="226" y="192">just the checks it touches</text>
-
-      <rect class="nd" x="104" y="236" width="244" height="88" rx="12"/>
-      <text class="t" x="226" y="262">Run</text>
-      <rect class="tr" x="150" y="272" width="152" height="5" rx="2.5"/>
-      <rect class="fl" x="150" y="272" width="152" height="5" rx="2.5"/>
-      <rect class="tr" x="150" y="281" width="152" height="5" rx="2.5"/>
-      <rect class="fl b" x="150" y="281" width="152" height="5" rx="2.5"/>
-      <rect class="tr" x="150" y="290" width="152" height="5" rx="2.5"/>
-      <rect class="fl c" x="150" y="290" width="152" height="5" rx="2.5"/>
-      <text class="s" x="226" y="314">each in its own sandbox, at once</text>
-
-      <rect class="nd lv" x="104" y="348" width="244" height="88" rx="12"/>
-      <text class="t" x="226" y="378">Verdict</text>
-      <text class="s" x="226" y="398">pass or fail, saved against</text>
-      <text class="s" x="226" y="416">the exact code checked</text>
-
-      <rect class="nd" x="104" y="460" width="244" height="88" rx="12"/>
-      <text class="t" x="226" y="490">Merge</text>
-      <text class="s" x="226" y="510">only when the verdict passes;</text>
-      <text class="s" x="226" y="528">no verdict or an error: no merge</text>
-
-      <line class="ar" x1="226" y1="103" x2="226" y2="120" marker-end="url(#m2d)"/>
-      <line class="ar" x1="226" y1="215" x2="226" y2="232" marker-end="url(#m2d)"/>
-      <line class="ar" x1="226" y1="327" x2="226" y2="344" marker-end="url(#m2d)"/>
-      <line class="ar" x1="226" y1="439" x2="226" y2="456" marker-end="url(#m2d)"/>
-    </svg>
-  </div>
-
-  <div class="tiles">
-    <div class="card tile">
-      <div class="fig">1.9<span class="u">min</span></div>
-      <p>When a change only touches some checks</p>
-      <small>median of 10 · the full suite takes 3.7 min</small>
-    </div>
-    <div class="card tile">
-      <div class="fig">37%</div>
-      <p>Less waiting than running the checks one after another</p>
-      <small>median of 12 commits · 3.7 min side by side, 5.9 one by one</small>
-    </div>
-    <div class="card tile">
-      <div class="fig">0<span class="u">s</span></div>
-      <p>A docs-only change on this site: nothing to run</p>
-      <small>2 of 5 changes so far · a full check here takes 40 s (median of 3); it was 82 s on Actions (13)</small>
     </div>
   </div>
 
@@ -509,7 +647,7 @@
       <h3>Better</h3>
       <ul role="list">
         <li>Faster, most of all on a slow day.</li>
-        <li>A change reaches GitHub already checked, so fewer fix-and-push rounds.</li>
+        <li>A change reaches the repo already checked, so fewer fix-and-push rounds.</li>
         <li>No rented overflow machines to pay for, and nothing checked twice.</li>
         <li>It can watch the live site after a deploy, started by hand for now.</li>
       </ul>
@@ -523,74 +661,6 @@
         <li>Picking only the touched checks could miss something; it runs everything when unsure.</li>
       </ul>
     </div>
-  </div>
-
-  <h2>Moving a repo over</h2>
-  <div class="card">
-    <svg class="dg wide" viewBox="0 0 960 184" role="img" aria-labelledby="move-w">
-      <title id="move-w">First LV is taught the repo's tests and builds. Then the last 20 commits are replayed on LV and on GitHub Actions. If LV never disagrees with Actions and never errors, LV becomes the gate and Actions is switched off. If not, the problem is fixed and the replay runs again.</title>
-      <defs>
-        <marker id="m3d" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" markerUnits="userSpaceOnUse" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#9a99a6"/></marker>
-      </defs>
-      <rect class="nd" x="4" y="24" width="204" height="76" rx="12"/>
-      <text class="t" x="106" y="57">Teach LV the checks</text>
-      <text class="s" x="106" y="79">the repo's tests and builds</text>
-
-      <rect class="nd" x="253" y="24" width="204" height="76" rx="12"/>
-      <text class="t" x="355" y="57">Replay 20 commits</text>
-      <text class="s" x="355" y="79">on LV and on Actions</text>
-
-      <rect class="nd lv" x="502" y="24" width="204" height="76" rx="12"/>
-      <text class="t" x="604" y="57">No disagreements?</text>
-      <text class="s" x="604" y="79">and no LV errors</text>
-
-      <rect class="nd" x="751" y="24" width="204" height="76" rx="12"/>
-      <text class="t" x="853" y="57">LV is the gate</text>
-      <text class="s" x="853" y="79">Actions switched off</text>
-
-      <line class="ar" x1="212" y1="62" x2="249" y2="62" marker-end="url(#m3d)"/>
-      <line class="ar" x1="461" y1="62" x2="498" y2="62" marker-end="url(#m3d)"/>
-      <line class="ar" x1="710" y1="62" x2="747" y2="62" marker-end="url(#m3d)"/>
-      <text class="s hl" x="728" y="54">yes</text>
-
-      <path class="ar" d="M604,102 V140 Q604,150 594,150 H365 Q355,150 355,140 V105" marker-end="url(#m3d)"/>
-      <text class="s" x="480" y="172">no: fix it and replay</text>
-    </svg>
-
-    <svg class="dg tall" viewBox="0 0 360 392" role="img" aria-labelledby="move-t">
-      <title id="move-t">First LV is taught the repo's tests and builds. Then the last 20 commits are replayed on LV and on GitHub Actions. If LV never disagrees with Actions and never errors, LV becomes the gate and Actions is switched off. If not, the problem is fixed and the replay runs again.</title>
-      <defs>
-        <marker id="m4d" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" markerUnits="userSpaceOnUse" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#9a99a6"/></marker>
-      </defs>
-      <rect class="nd" x="12" y="12" width="244" height="72" rx="12"/>
-      <text class="t" x="134" y="43">Teach LV the checks</text>
-      <text class="s" x="134" y="63">the repo's tests and builds</text>
-
-      <rect class="nd" x="12" y="112" width="244" height="72" rx="12"/>
-      <text class="t" x="134" y="143">Replay 20 commits</text>
-      <text class="s" x="134" y="163">on LV and on Actions</text>
-
-      <rect class="nd lv" x="12" y="212" width="244" height="72" rx="12"/>
-      <text class="t" x="134" y="243">No disagreements?</text>
-      <text class="s" x="134" y="263">and no LV errors</text>
-
-      <rect class="nd" x="12" y="312" width="244" height="72" rx="12"/>
-      <text class="t" x="134" y="343">LV is the gate</text>
-      <text class="s" x="134" y="363">Actions switched off</text>
-
-      <line class="ar" x1="134" y1="87" x2="134" y2="108" marker-end="url(#m4d)"/>
-      <line class="ar" x1="134" y1="187" x2="134" y2="208" marker-end="url(#m4d)"/>
-      <line class="ar" x1="134" y1="287" x2="134" y2="308" marker-end="url(#m4d)"/>
-      <text class="s hl st" x="146" y="302">yes</text>
-
-      <path class="ar" d="M258,248 H296 Q308,248 308,236 V160 Q308,148 296,148 H261" marker-end="url(#m4d)"/>
-      <rect class="mk" x="272" y="180" width="72" height="36" rx="6"/>
-      <text class="s sm" x="308" y="195">no: fix</text>
-      <text class="s sm" x="308" y="211">and replay</text>
-    </svg>
-
-    <p class="note">A repo switches when LV and Actions agree on at least one replayed commit, disagree on none, and LV never errors. The one exception is a disagreement the repo causes itself, such as a flaky test: it gets explained before the switch, not ignored.</p>
-    <p class="note">GitHub Actions ran <b>1,260+ hours</b> of workflows for 11 of my repos in the last 30 days.</p>
   </div>
 
   <h2>Measured against the research</h2>
@@ -622,10 +692,10 @@
     <div class="tw">
       <table>
         <thead>
-          <tr><th scope="col">Measure</th><th scope="col" class="n">GitHub Actions</th><th scope="col" class="n">LV</th><th scope="col" class="n">Faster by</th><th scope="col">Sample</th></tr>
+          <tr><th scope="col">Measure</th><th scope="col" class="n">CI/CD pipeline</th><th scope="col" class="n">LV</th><th scope="col" class="n">Faster by</th><th scope="col">Sample</th></tr>
         </thead>
         <tbody>
-          <tr><th scope="row">Typical check (median)</th><td class="n">5.9 min</td><td class="n">3.3 min</td><td class="n">1.8×</td><td class="sm">640 Actions pushes · 30 LV passes</td></tr>
+          <tr><th scope="row">Typical check (median)</th><td class="n">5.9 min</td><td class="n">3.3 min</td><td class="n">1.8×</td><td class="sm">640 pipeline pushes · 30 LV passes</td></tr>
           <tr><th scope="row">Full suite (median)</th><td class="n">5.8 min</td><td class="n">3.7 min</td><td class="n">1.6×</td><td class="sm">219 main pushes · 12 LV commits</td></tr>
           <tr><th scope="row">Slow day (90th percentile)</th><td class="n">20.4 min</td><td class="n">7.7 min</td><td class="n">2.6×</td><td class="sm">640 · 30</td></tr>
           <tr><th scope="row">After merge to main, push to result</th><td class="n">5.8 min</td><td class="n">2.1 min</td><td class="n">—</td><td class="sm">219 · 1 LV run so far</td></tr>
@@ -643,8 +713,11 @@
         </tbody>
       </table>
     </div>
-    <p class="note">GitHub Actions times run from push until the last check finished, queue included, over the 30 days before each repo switched. LV times run from start to verdict, except after merge, which is push to verdict for both. LV figures count passing runs that actually ran the checks, up to 1 Nov 2026 (for the finance app, from 30 Oct, when LV began checking it); the full suite counts the first full run of each commit. The race rows add LV's 20-second check for new pushes, counted in full. Small samples, so the ratios are rough.</p>
+    <p class="note">Pipeline times run from push until the last check finished, queue included, over the 30 days before each repo switched. LV times run from start to verdict, except after merge, which is push to verdict for both. LV figures count passing runs that actually ran the checks, up to 1 Nov 2026 (for the finance app, from 30 Oct, when LV began checking it); the full suite counts the first full run of each commit. The race rows add LV's 20-second check for new pushes, counted in full. Small samples, so the ratios are rough.</p>
   </details>
+
+  <footer>Checked 2 Nov 2026 · <a href="/">sam.toys</a></footer>
+</div>
 
   <footer>Checked 1 Nov 2026 · <a href="/">sam.toys</a></footer>
 </div>
@@ -695,19 +768,19 @@
   const sec = document.querySelector('.lanes')?.closest('section');
   if (sec) {
     const W = 21;
-    const NAME = { gh: 'Actions', lv: 'LV' };
+    const NAME = { gh: 'Pipeline', lv: 'LV' };
     const PICK = 'LV looks for new pushes every 20 seconds; counted at the full 20 s';
     const PASS = 'Median of 30 passing runs, start to verdict';
     const S = {
       typical: {
         answer: 'On a typical change, LV answers <em>about 2.3 minutes sooner</em>.',
-        label: { gh: 'GitHub Actions: 5.9 minutes from push', lv: 'LV: 3.6 minutes from push' },
+        label: { gh: 'CI/CD pipeline: 5.9 minutes from push', lv: 'LV: 3.6 minutes from push' },
         gh: [['run', 5.9, 'checks', 'Median push 5.9 min, 4 s of it waiting for a machine (640 pushes)']],
         lv: [['wait', 0.3, 'waiting', PICK], ['run', 3.3, 'checks', PASS]],
       },
       slow: {
         answer: 'On a slow day, LV answers <em>about 12 minutes sooner</em>.',
-        label: { gh: 'GitHub Actions: 20.4 minutes from push, about 9 of them waiting', lv: 'LV: 8.0 minutes from push' },
+        label: { gh: 'CI/CD pipeline: 20.4 minutes from push, about 9 of them waiting', lv: 'LV: 8.0 minutes from push' },
         gh: [
           ['wait', 8.8, 'waiting', 'Split estimated from 12 pushes of similar length with job timings', false, true],
           ['run', 11.6, 'checks', 'Split estimated; the 90th-percentile push took 20.4 min in all (640 pushes)', false, true],
@@ -716,7 +789,7 @@
       },
       fail: {
         answer: 'When a change fails, LV gets you to green <em>about 9.5 minutes sooner</em>.',
-        label: { gh: 'GitHub Actions: every check finished, failed, at 8.7 minutes, green at 15.2', lv: 'LV: failed at 2.1 minutes, green at 5.7' },
+        label: { gh: 'CI/CD pipeline: every check finished, failed, at 8.7 minutes, green at 15.2', lv: 'LV: failed at 2.1 minutes, green at 5.7' },
         gh: [
           ['run', 8.7, 'checks', 'Median failing push, until every check finished (54 pushes)', true],
           ['run', 6.5, 'green', 'Median next green push on the same branch (51 fixes)'],

@@ -53,22 +53,23 @@
   .card:hover .arrow,.build:hover .arrow{transform:translate(2px,-2px);color:var(--text)}
 
   /* ── bigger builds: screenshot cards ──────── */
-  .builds{display:grid;gap:16px;grid-template-columns:repeat(auto-fill,minmax(300px,1fr))}
+  .builds{display:grid;gap:12px;grid-template-columns:repeat(auto-fill,minmax(210px,1fr))}
   .build{display:flex;flex-direction:column;text-decoration:none;color:inherit;
     background:var(--card);border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;
     transition:transform .16s ease,border-color .16s ease}
   .build:hover{transform:translateY(-4px);border-color:#3a3a45}
   .shot{aspect-ratio:16/10;width:100%;object-fit:cover;object-position:top center;display:block;
     background:#0e0e14;border-bottom:1px solid var(--line)}
-  .build .body{padding:14px 16px 15px;display:flex;flex-direction:column;gap:5px}
-  .build .name{display:flex;align-items:center;gap:9px;font-size:17px;font-weight:700;letter-spacing:-.01em}
-  .build .logo{width:22px;height:22px;border-radius:6px;background:#fff;object-fit:contain;flex-shrink:0;
+  .build .body{padding:10px 12px 11px;display:flex;flex-direction:column;gap:5px}
+  .build .name{display:flex;align-items:center;gap:7px;font-size:15px;font-weight:700;letter-spacing:-.01em}
+  .build .logo{width:18px;height:18px;border-radius:5px;background:#fff;object-fit:contain;flex-shrink:0;
     box-shadow:0 0 0 1px var(--line)}
-  .build .desc{color:var(--dim);font-size:14px}
-  .build .foot{display:flex;align-items:center;justify-content:space-between;margin-top:5px}
+  .build .desc{color:var(--dim);font-size:13px;line-height:1.4}
+  .build .foot{display:flex;align-items:center;justify-content:space-between;margin-top:3px}
   .badge{font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:2px 7px;border-radius:999px;border:1px solid currentColor}
   .badge.new{color:var(--accent)} .badge.lock{color:var(--accent-2)}
 
+  @media (max-width:520px){.builds{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.build .body{padding:8px 10px 9px;gap:4px}.build .name{font-size:14px;gap:6px}.build .logo{width:16px;height:16px}.build .desc{font-size:12px}}
   @media (prefers-reduced-motion:reduce){.card,.build{transition:none}.card:hover,.build:hover{transform:none}}
   footer{margin-top:56px;color:var(--dim);font-size:13px;line-height:1.7}
   footer a{color:var(--dim)}
@@ -94,9 +95,8 @@
 
 <script>
 (function(){
-  // Curated from Cod's showcase (2026-07-16). Edit here to add/remove.
+  // Curated from Cod's showcase (2026-11-05). Newest activity first. Edit here to add/remove.
   var TOYS=[
-    {name:"Vroom", desc:"Find the car that fits — tune budget, age, pace and personality.", url:"https://vroom.fan/", host:"vroom.fan", dot:"#E8457D", badge:"new", internal:false},
     {name:"Tracks", desc:"Buy what you stream, find what you spin — Spotify to Beatport & back.", url:"/tracks", host:"sam.toys/tracks", dot:"#01ff95", badge:"new", internal:true},
     {name:"Voicenotes", desc:"Drop a WhatsApp voice note, get the gist in bullets.", url:"/voicenotes", host:"sam.toys/voicenotes", dot:"#25d366", internal:true},
     {name:"Out / London", desc:"London’s best bars, music, art & tables — a ranked top 5 per category, refreshed monthly by AI.", url:"/ldn", host:"sam.toys/ldn", dot:"#e0559b", internal:true},
@@ -105,15 +105,21 @@
     {name:"Tantra", desc:"The Loom of Union — a tantra journey in ink & gold.", url:"/tantra", host:"sam.toys/tantra", dot:"#c9a227", internal:true}
   ];
   var BUILDS=[
-    {name:"TradeGG", desc:"Options-trading dashboard with research, live pricing & a masterclass.", url:"https://trd.fun", host:"trd.fun", shot:"/assets/shots/trd.jpg"},
-    {name:"Splittt", desc:"One prompt, nine finished renders — drop a reference, type a lazy line, get the grid.", url:"https://splitt.fun", host:"splitt.fun", shot:"/assets/shots/splittt.jpg"},
+    {name:"Chillin", desc:"Get help with the customer support issues you would rather avoid.", url:"https://chillin.fun", host:"chillin.fun", shot:"/assets/shots/chillin.jpg"},
+    {name:"Vroom", desc:"Find your next UK or Europe car with a few sliders.", url:"https://vroom.fan", host:"vroom.fan", shot:"/assets/shots/vroom.jpg"},
+    {name:"UGAME", desc:"Explore immersive events in Ibiza, Burning Man and London.", url:"https://ugame.events", host:"ugame.events", shot:"/assets/shots/ugame.jpg"},
+    {name:"TradeGG", desc:"Get the bull case, the catch and the verdict on any ticker.", url:"https://trd.fun", host:"trd.fun", shot:"/assets/shots/trd.jpg"},
+    {name:"Splittt", desc:"Turn a presentation idea into a coherent set of visuals.", url:"https://splitt.fun", host:"splitt.fun", shot:"/assets/shots/splittt.jpg"},
     {name:"Taotime", desc:"The Watercourse Way — Taoism, the I Ching & daily stillness.", url:"https://taotime.me", host:"taotime.me", shot:"/assets/shots/taotime.jpg"},
     {name:"The Brief Brief", desc:"Your world, briefed by AI every morning.", url:"https://tbb.ceo", host:"tbb.ceo", shot:"/assets/shots/tbb.jpg"},
-    {name:"Hike Fan", desc:"Find your next hike in Ibiza.", url:"https://hike.fan", host:"hike.fan", shot:"/assets/shots/hike.jpg"},
     {name:"Finca", desc:"Browse beautiful Ibiza homes.", url:"https://finca.fan", host:"finca.fan", shot:"/assets/shots/finca.jpg"},
-    {name:"Drift & Sea", desc:"Ibiza property stays, done properly.", url:"https://driftsea.co", host:"driftsea.co", shot:"/assets/shots/driftsea.jpg"},
-    {name:"DrFit", desc:"Your pocket AI fitness coach.", url:"https://drfit.tips", host:"drfit.tips", shot:"/assets/shots/drfit.jpg"},
-    {name:"Seer", desc:"AI League of Legends draft & post-game coaching.", url:"https://seer.coach", host:"seer.coach", shot:"/assets/shots/seer.jpg", badge:"lock"}
+    {name:"DrFit", desc:"Your personal health dashboard with AI-powered insights.", url:"https://drfit.tips", host:"drfit.tips", shot:"/assets/shots/drfit.jpg"},
+    {name:"Drift & Sea", desc:"Distinctive properties in London and Ibiza.", url:"https://driftsea.co", host:"driftsea.co", shot:"/assets/shots/driftsea.jpg"},
+    {name:"Flick", desc:"Find a film to watch with a private recommender for friends.", url:"https://flick.fan", host:"flick.fan", shot:"/assets/shots/flick.jpg"},
+    {name:"Hike Fan", desc:"Find your next hike in Ibiza.", url:"https://hike.fan", host:"hike.fan", shot:"/assets/shots/hike.jpg"},
+    {name:"Knomi", desc:"Find steady awareness through ten short stages and practices.", url:"https://knomi.club", host:"knomi.club", shot:"/assets/shots/knomi.jpg"},
+    {name:"Seer", desc:"AI League of Legends draft & post-game coaching.", url:"https://seer.coach", host:"seer.coach", shot:"/assets/shots/seer.jpg", badge:"lock"},
+    {name:"Materiality", desc:"Explore an infinite mood board of interior design materials.", url:"https://materiality.cc", host:"materiality.cc", shot:"/assets/shots/materiality.jpg"}
   ];
   function esc(s){return String(s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
   function badgeHtml(b){ if(b==="new")return '<span class="badge new">new</span>'; if(b==="lock")return '<span class="badge lock">invite</span>'; return ''; }

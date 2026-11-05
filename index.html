@@ -35,7 +35,8 @@
     font-weight:700;margin:48px 0 16px}
 
   /* ── toys: compact text cards ─────────────── */
-  .grid{display:grid;gap:14px;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));grid-auto-rows:1fr}
+  .grid{display:grid;gap:14px;grid-template-columns:repeat(auto-fill,minmax(250px,1fr))}
+  @media (min-width:560px){.grid{grid-auto-rows:1fr}}
   .card{
     position:relative;display:flex;flex-direction:column;gap:6px;
     background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
@@ -45,11 +46,11 @@
   .card::before{content:"";position:absolute;inset:0 auto 0 0;width:3px;background:var(--dot,var(--accent));opacity:.85}
   .card:hover{transform:translateY(-3px);background:var(--card-hi);border-color:#37363f}
   .card:focus-visible,.build:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
-  .card .name{font-size:17px;font-weight:700;letter-spacing:-.01em;display:flex;align-items:center;gap:8px}
-  .card .desc{color:var(--dim);font-size:14px;flex:1}
-  .card .foot{display:flex;align-items:center;justify-content:space-between;margin-top:8px}
-  .card .host,.build .host{font-size:12px;color:var(--dim);font-variant-numeric:tabular-nums}
-  .card .arrow,.build .arrow{color:var(--dim);transition:transform .16s ease}
+  .card .name{text-wrap:balance;font-size:17px;font-weight:700;letter-spacing:-.01em;display:flex;align-items:center;gap:8px}
+  .card .desc{text-wrap:balance;color:var(--dim);font-size:14px;flex:1}
+  .card .foot{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:8px}
+  .card .host,.build .host{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px;color:var(--dim);font-variant-numeric:tabular-nums}
+  .card .arrow,.build .arrow{flex:none;color:var(--dim);transition:transform .16s ease}
   .card:hover .arrow,.build:hover .arrow{transform:translate(2px,-2px);color:var(--text)}
 
   /* ── bigger builds: screenshot cards ──────── */
@@ -61,14 +62,15 @@
   .shot{aspect-ratio:16/10;width:100%;object-fit:cover;object-position:top center;display:block;
     background:#0e0e14;border-bottom:1px solid var(--line)}
   .shot.brand{display:flex;align-items:center;justify-content:center;overflow:hidden}
-  .shot.brand img{width:24%;height:auto;aspect-ratio:1;border-radius:22%;box-shadow:0 6px 24px rgba(0,0,0,.28)}
+  .shot.brand img{width:28%;height:auto;aspect-ratio:1;border-radius:22%;box-shadow:0 6px 24px rgba(0,0,0,.28)}
+  .shot.brand.plain img{width:30%;border-radius:0;box-shadow:none}
   .build .body{flex:1;padding:10px 12px 11px;display:flex;flex-direction:column;gap:5px}
-  .build .name{display:flex;align-items:center;gap:7px;font-size:15px;font-weight:700;letter-spacing:-.01em}
+  .build .name{text-wrap:balance;display:flex;align-items:center;gap:7px;font-size:15px;font-weight:700;letter-spacing:-.01em}
   .build .logo{width:18px;height:18px;border-radius:5px;background:#fff;object-fit:contain;flex-shrink:0;
     box-shadow:0 0 0 1px var(--line)}
-  .build .desc{flex:1;color:var(--dim);font-size:13px;line-height:1.4}
+  .build .desc{text-wrap:balance;flex:1;color:var(--dim);font-size:13px;line-height:1.4}
   .build .mono{display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:#0e0e14;line-height:1}
-  .build .foot{display:flex;align-items:center;justify-content:space-between;margin-top:3px}
+  .build .foot{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:3px}
   .badge{font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:2px 7px;border-radius:999px;border:1px solid currentColor}
   .badge.new{color:var(--accent)} .badge.lock{color:var(--accent-2)}
 
@@ -111,8 +113,9 @@
     {name:"Chillin", desc:"Hand off the support calls you would rather avoid.", url:"https://chillin.fun", host:"chillin.fun", shot:"/assets/shots/chillin.jpg", logo:false},
     {name:"Vroom", desc:"Find your next car with a few sliders.", url:"https://vroom.fan", host:"vroom.fan", shot:"/assets/shots/vroom.jpg"},
     {name:"UGAME", desc:"Immersive events in Ibiza, Burning Man and London.", url:"https://ugame.events", host:"ugame.events", shot:"/assets/shots/ugame.jpg", logo:"/assets/logos/ugame.svg"},
+    {name:"Life, the Universe & Everything", desc:"One night under a total eclipse in Ibiza.", url:"https://www.theultimatequestion.guide", host:"theultimatequestion.guide", brand:"linear-gradient(135deg,#0B1440,#1B2A6B)", plain:true, logo:"/assets/logos/lue.svg", mark:"/assets/logos/lue-mark.svg"},
     {name:"TradeGG", desc:"Bull case, catch and verdict on any ticker.", url:"https://trd.fun", host:"trd.fun", shot:"/assets/shots/trd.jpg"},
-    {name:"Sparkli", desc:"Partnership research and brand intelligence for sponsorship.", url:"https://www.sparkli.fun", host:"sparkli.fun", brand:"linear-gradient(135deg,#8B5CF6,#3B82F6)", logo:"/assets/logos/sparkli.svg", badge:"lock"},
+    {name:"Sparkli", desc:"Partnership research and brand intelligence for sponsorship.", url:"https://www.sparkli.fun", host:"sparkli.fun", brand:"linear-gradient(135deg,#1D1538,#16224A)", logo:"/assets/logos/sparkli.svg", badge:"lock"},
     {name:"Splittt", desc:"Turn a talk idea into a set of visuals.", url:"https://splitt.fun", host:"splitt.fun", shot:"/assets/shots/splittt.jpg"},
     {name:"Taotime", desc:"Taoism, the I Ching and daily stillness.", url:"https://taotime.me", host:"taotime.me", shot:"/assets/shots/taotime.jpg", logo:"/assets/logos/taotime.svg"},
     {name:"The Brief Brief", desc:"Your world, briefed by AI every morning.", url:"https://tbb.ceo", host:"tbb.ceo", shot:"/assets/shots/tbb.jpg", logo:"/assets/logos/tbb.svg"},
@@ -123,7 +126,6 @@
     {name:"Flick", desc:"A private film recommender for friends.", url:"https://flick.fan", host:"flick.fan", shot:"/assets/shots/flick.jpg", logo:false},
     {name:"Hike Fan", desc:"Find your next hike in Ibiza.", url:"https://hike.fan", host:"hike.fan", shot:"/assets/shots/hike.jpg"},
     {name:"Knomi", desc:"Steady awareness in ten short stages.", url:"https://knomi.club", host:"knomi.club", shot:"/assets/shots/knomi.jpg", logo:"/assets/logos/knomi.png"},
-    {name:"Life, the Universe & Everything", desc:"One night under a total eclipse in Ibiza.", url:"https://www.theultimatequestion.guide", host:"theultimatequestion.guide", brand:"#0B1440", logo:"/assets/logos/lue.svg"},
     {name:"Seer", desc:"AI League of Legends draft & post-game coaching.", url:"https://seer.coach", host:"seer.coach", shot:"/assets/shots/seer.jpg", badge:"lock"},
     {name:"Materiality", desc:"An infinite mood board of interior materials.", url:"https://materiality.cc", host:"materiality.cc", shot:"/assets/shots/materiality.jpg", logo:"/assets/logos/materiality.svg"}
   ];
@@ -156,7 +158,7 @@
         : '<img class="logo" loading="lazy" alt="" src="'+esc(it.logo||fav)+'">';
       a.innerHTML=
         (it.brand
-          ? '<div class="shot brand" style="background:'+esc(it.brand)+'"><img loading="lazy" decoding="async" alt="" src="'+esc(it.logo)+'"></div>'
+          ? '<div class="shot brand'+(it.plain?' plain':'')+'" style="background:'+esc(it.brand)+'"><img loading="lazy" decoding="async" alt="" src="'+esc(it.mark||it.logo)+'"></div>'
           : '<img class="shot" loading="lazy" decoding="async" alt="" src="'+esc(it.shot)+'">')+
         '<div class="body">'+
           '<div class="name">'+logo+esc(it.name)+' '+badgeHtml(it.badge)+'</div>'+

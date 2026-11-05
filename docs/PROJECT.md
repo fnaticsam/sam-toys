@@ -1,4 +1,4 @@
-# fnaticsam/sam-toys (sam.toys, playa, sam-toys, samfun): checked 2026-11-02
+# fnaticsam/sam-toys (sam.toys, playa, sam-toys, samfun): checked 2026-11-05
 
 ## What exists
 
@@ -11,11 +11,12 @@
 - Gemini cost guard: Anonymous calls to transcription and track OCR are refused. IMPLEMENTED vercel.json
 - Awakening redirect: /awakening redirects to knomi.club. IMPLEMENTED vercel.json
 - Flights search: sam.toys/flights searches oneworld and BA-partner fares ranked by estimated £ per tier point. IMPLEMENTED vercel.json
-- Flights results: Flight cards show tier points, whole-city search, up to 100 flights, an oneworld toggle and sourced Starlink Wi-Fi likelihood. IMPLEMENTED vercel.json
+- Flights results: Flight cards show tier points, whole-city search, up to 100 flights, an oneworld toggle and sourced Starlink Wi-Fi likelihood. IMPLEMENTED index.html
 - LV explainer: sam.toys/lv explains how LV checks code and how much faster it is than GitHub Actions. IMPLEMENTED index.html
 - LV vs Actions race: sam.toys/lv races one change through GitHub Actions and LV on a finance app. IMPLEMENTED index.html
 - LV page accuracy: The LV page matches what is live and identifies the old CI as self-hosted with rented overflow. IMPLEMENTED index.html
 - Loop Validation rationale: The LV page explains why I built Loop Validation and compares it with a CI/CD pipeline, with new diagrams. MERGED #50
+- Sam Toys home page: The sam.toys home page now shows Sam's newest projects with fresh screenshots and smaller cards. MERGED #52
 
 ## Gaps
 
@@ -25,11 +26,11 @@
 
 ## Recent
 
+- 2026-11-05: The sam.toys home page now shows Sam's newest projects with fresh screenshots and smaller cards. MERGED #52
 - 2026-11-02: The LV page explains why I built Loop Validation and compares it with a CI/CD pipeline, with new diagrams. MERGED #50
 - 2026-11-02: The LV page now matches what is live and says old CI ran on self-hosted servers with rented overflow. IMPLEMENTED index.html
 - 2026-11-01: sam.toys/lv races one change through GitHub Actions and LV on a finance app. IMPLEMENTED index.html
 - 2026-11-01: sam.toys/lv explains how LV checks code and how much faster it is than GitHub Actions. IMPLEMENTED index.html
-- 2026-10-30: Flights received the v4 design with origin pills, calendar, nearby dates, filters and animation. IMPLEMENTED index.html
 
 ## Read deeper
 

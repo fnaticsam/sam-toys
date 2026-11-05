@@ -35,7 +35,7 @@
     font-weight:700;margin:48px 0 16px}
 
   /* ── toys: compact text cards ─────────────── */
-  .grid{display:grid;gap:14px;grid-template-columns:repeat(auto-fill,minmax(250px,1fr))}
+  .grid{display:grid;gap:14px;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));grid-auto-rows:1fr}
   .card{
     position:relative;display:flex;flex-direction:column;gap:6px;
     background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
@@ -60,6 +60,8 @@
   .build:hover{transform:translateY(-4px);border-color:#3a3a45}
   .shot{aspect-ratio:16/10;width:100%;object-fit:cover;object-position:top center;display:block;
     background:#0e0e14;border-bottom:1px solid var(--line)}
+  .shot.brand{display:flex;align-items:center;justify-content:center;overflow:hidden}
+  .shot.brand img{width:24%;height:auto;aspect-ratio:1;border-radius:22%;box-shadow:0 6px 24px rgba(0,0,0,.28)}
   .build .body{flex:1;padding:10px 12px 11px;display:flex;flex-direction:column;gap:5px}
   .build .name{display:flex;align-items:center;gap:7px;font-size:15px;font-weight:700;letter-spacing:-.01em}
   .build .logo{width:18px;height:18px;border-radius:5px;background:#fff;object-fit:contain;flex-shrink:0;
@@ -100,7 +102,7 @@
   var TOYS=[
     {name:"Tracks", desc:"Buy what you stream, find what you spin — Spotify to Beatport & back.", url:"/tracks", host:"sam.toys/tracks", dot:"#01ff95", badge:"new", internal:true},
     {name:"Voicenotes", desc:"Drop a WhatsApp voice note, get the gist in bullets.", url:"/voicenotes", host:"sam.toys/voicenotes", dot:"#25d366", internal:true},
-    {name:"Out / London", desc:"London’s best bars, music, art & tables — a ranked top 5 per category, refreshed monthly by AI.", url:"/ldn", host:"sam.toys/ldn", dot:"#e0559b", internal:true},
+    {name:"Out / London", desc:"London’s best bars, music, art & tables, ranked monthly by AI.", url:"/ldn", host:"sam.toys/ldn", dot:"#e0559b", internal:true},
     {name:"Co-produce", desc:"An AI co-producer that lives inside Ableton Live — fat basslines, clean sessions.", url:"/coproduce", host:"sam.toys/coproduce", dot:"#00e0c6", internal:true},
     {name:"Phone", desc:"A browser softphone — make & take calls, powered by Twilio.", url:"/phone", host:"sam.toys/phone", dot:"#4f9dff", internal:true},
     {name:"Tantra", desc:"The Loom of Union — a tantra journey in ink & gold.", url:"/tantra", host:"sam.toys/tantra", dot:"#c9a227", internal:true}
@@ -110,15 +112,18 @@
     {name:"Vroom", desc:"Find your next car with a few sliders.", url:"https://vroom.fan", host:"vroom.fan", shot:"/assets/shots/vroom.jpg"},
     {name:"UGAME", desc:"Immersive events in Ibiza, Burning Man and London.", url:"https://ugame.events", host:"ugame.events", shot:"/assets/shots/ugame.jpg", logo:"/assets/logos/ugame.svg"},
     {name:"TradeGG", desc:"Bull case, catch and verdict on any ticker.", url:"https://trd.fun", host:"trd.fun", shot:"/assets/shots/trd.jpg"},
+    {name:"Sparkli", desc:"Partnership research and brand intelligence for sponsorship.", url:"https://www.sparkli.fun", host:"sparkli.fun", brand:"linear-gradient(135deg,#8B5CF6,#3B82F6)", logo:"/assets/logos/sparkli.svg", badge:"lock"},
     {name:"Splittt", desc:"Turn a talk idea into a set of visuals.", url:"https://splitt.fun", host:"splitt.fun", shot:"/assets/shots/splittt.jpg"},
     {name:"Taotime", desc:"Taoism, the I Ching and daily stillness.", url:"https://taotime.me", host:"taotime.me", shot:"/assets/shots/taotime.jpg", logo:"/assets/logos/taotime.svg"},
     {name:"The Brief Brief", desc:"Your world, briefed by AI every morning.", url:"https://tbb.ceo", host:"tbb.ceo", shot:"/assets/shots/tbb.jpg", logo:"/assets/logos/tbb.svg"},
     {name:"Finca", desc:"Browse beautiful Ibiza homes.", url:"https://finca.fan", host:"finca.fan", shot:"/assets/shots/finca.jpg"},
+    {name:"Bijou", desc:"A private, map-first shortlist of Paris homes.", url:"https://bijou.fan", host:"bijou.fan", brand:"#F1E8D4", logo:"/assets/logos/bijou.svg", badge:"lock"},
     {name:"DrFit", desc:"Your health dashboard with AI insights.", url:"https://drfit.tips", host:"drfit.tips", shot:"/assets/shots/drfit.jpg"},
     {name:"Drift & Sea", desc:"Distinctive properties in London and Ibiza.", url:"https://driftsea.co", host:"driftsea.co", shot:"/assets/shots/driftsea.jpg"},
     {name:"Flick", desc:"A private film recommender for friends.", url:"https://flick.fan", host:"flick.fan", shot:"/assets/shots/flick.jpg", logo:false},
     {name:"Hike Fan", desc:"Find your next hike in Ibiza.", url:"https://hike.fan", host:"hike.fan", shot:"/assets/shots/hike.jpg"},
     {name:"Knomi", desc:"Steady awareness in ten short stages.", url:"https://knomi.club", host:"knomi.club", shot:"/assets/shots/knomi.jpg", logo:"/assets/logos/knomi.png"},
+    {name:"Life, the Universe & Everything", desc:"One night under a total eclipse in Ibiza.", url:"https://www.theultimatequestion.guide", host:"theultimatequestion.guide", brand:"#0B1440", logo:"/assets/logos/lue.svg"},
     {name:"Seer", desc:"AI League of Legends draft & post-game coaching.", url:"https://seer.coach", host:"seer.coach", shot:"/assets/shots/seer.jpg", badge:"lock"},
     {name:"Materiality", desc:"An infinite mood board of interior materials.", url:"https://materiality.cc", host:"materiality.cc", shot:"/assets/shots/materiality.jpg", logo:"/assets/logos/materiality.svg"}
   ];
@@ -150,7 +155,9 @@
         ? '<span class="logo mono" aria-hidden="true">'+esc(it.name.charAt(0))+'</span>'
         : '<img class="logo" loading="lazy" alt="" src="'+esc(it.logo||fav)+'">';
       a.innerHTML=
-        '<img class="shot" loading="lazy" decoding="async" alt="" src="'+esc(it.shot)+'">'+
+        (it.brand
+          ? '<div class="shot brand" style="background:'+esc(it.brand)+'"><img loading="lazy" decoding="async" alt="" src="'+esc(it.logo)+'"></div>'
+          : '<img class="shot" loading="lazy" decoding="async" alt="" src="'+esc(it.shot)+'">')+
         '<div class="body">'+
           '<div class="name">'+logo+esc(it.name)+' '+badgeHtml(it.badge)+'</div>'+
           '<div class="desc">'+esc(it.desc)+'</div>'+

@@ -622,6 +622,22 @@
     </div>
   </div>
 
+  <h2>Last week</h2>
+  <div class="card">
+    <div class="tw">
+      <table class="cmp two">
+        <tbody>
+          <tr><th scope="row">Verdicts</th><td>663 across 14 repos: 542 pass, 97 fail, 24 error</td></tr>
+          <tr><th scope="row">Typical check</th><td>1.9 min, and 10.1 min on a slow day</td></tr>
+          <tr><th scope="row">Merge to live</th><td>0.8 min, median of 85 deploys of the finance app</td></tr>
+          <tr><th scope="row">Pull requests merged</th><td>349</td></tr>
+          <tr><th scope="row">Bad deploy rolled back</th><td>In about a minute. I shipped a broken home page to this site on purpose, and LV put the previous version back by itself.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="note">3 to 10 November 2026. Only 5% of checks reused an earlier verdict and about half still ran everything, so that's the next speed-up.</p>
+  </div>
+
   <h2>Side by side</h2>
   <div class="card">
     <div class="tw">
@@ -634,7 +650,7 @@
           <tr><th scope="row">Where</th><td>My own servers, with rented machines when they're full</td><td>The same servers, with no rented overflow</td></tr>
           <tr><th scope="row">What runs</th><td>Each repo's own rules, often everything</td><td>Only the checks a change touches; everything when unsure</td></tr>
           <tr><th scope="row">Same code again</th><td>Runs it all again</td><td>Reuses the saved verdict</td></tr>
-          <tr><th scope="row">After it ships</th><td>Stops at merge</td><td>Can check the live site for 10 minutes, started by hand for now</td></tr>
+          <tr><th scope="row">After it ships</th><td>Stops at merge</td><td>Watches the live site for 10 minutes and rolls back a bad deploy (this site so far)</td></tr>
           <tr><th scope="row">Cost</th><td>Rented machines when busy, and paid Mac time as a last resort</td><td>Nothing beyond servers I already run</td></tr>
         </tbody>
       </table>
@@ -649,7 +665,7 @@
         <li>Faster, most of all on a slow day.</li>
         <li>A change reaches the repo already checked, so fewer fix-and-push rounds.</li>
         <li>No rented overflow machines to pay for, and nothing checked twice.</li>
-        <li>It can watch the live site after a deploy, started by hand for now.</li>
+        <li>It watches the live site after each deploy and rolls back a bad one, on this site so far.</li>
       </ul>
     </div>
     <div class="card con">
@@ -672,13 +688,13 @@
         </thead>
         <tbody>
           <tr><th scope="row">Check inside the agent's loop, before a pull request</th><td><b>Done.</b> This is the whole idea.</td></tr>
-          <tr><th scope="row">Run only the tests a change affects</th><td><b>Partly.</b> File patterns pick the checks, not a recorded map of which test touches which file, and about two runs in three still check everything.</td></tr>
+          <tr><th scope="row">Run only the tests a change affects</th><td><b>Partly.</b> File patterns pick the checks, not a recorded map of which test touches which file, and about half of runs still check everything.</td></tr>
           <tr><th scope="row">Run each check in a microVM</th><td><b>Not yet.</b> Each check runs as a throwaway, locked-down job with capped CPU and memory. The server can now run Firecracker microVMs; they aren't built yet.</td></tr>
           <tr><th scope="row">Never redo work</th><td><b>Done.</b> The same code reuses its verdict, and docs-only changes skip.</td></tr>
-          <tr><th scope="row">Feedback in under a minute</th><td><b>Not yet.</b> A typical check takes 3.3 minutes; a reused verdict is instant.</td></tr>
+          <tr><th scope="row">Feedback in under a minute</th><td><b>Not yet.</b> A typical check took 1.9 minutes last week; a reused verdict is instant.</td></tr>
           <tr><th scope="row">Faster type-checking and linting tools</th><td><b>Not yet.</b></td></tr>
           <tr><th scope="row">Shared staging with request routing</th><td><b>Not built.</b> These are single web apps, so it may not be needed.</td></tr>
-          <tr><th scope="row">Gradual rollout with automatic rollback</th><td><b>Partly.</b> A 10-minute live-site check exists, but it's started by hand and rollback is off.</td></tr>
+          <tr><th scope="row">Gradual rollout with automatic rollback</th><td><b>Partly.</b> After each deploy of this site, LV watches it for 10 minutes and rolls back a bad one by itself. Other repos aren't opted in yet, and there's no gradual rollout.</td></tr>
           <tr><th scope="row">A shared record of what agents plan and decide</th><td><b>Not yet.</b> LV keeps verdicts, not decisions.</td></tr>
           <tr><th scope="row">Merge queues and agent-ready source control</th><td><b>Skipped</b> for now.</td></tr>
         </tbody>
@@ -716,7 +732,7 @@
     <p class="note">Pipeline times run from push until the last check finished, queue included, over the 30 days before each repo switched. LV times run from start to verdict, except after merge, which is push to verdict for both. LV figures count passing runs that actually ran the checks, up to 1 Nov 2026 (for the finance app, from 30 Oct, when LV began checking it); the full suite counts the first full run of each commit. The race rows add LV's 20-second check for new pushes, counted in full. Small samples, so the ratios are rough.</p>
   </details>
 
-  <footer>Checked 2 Nov 2026 · <a href="/">sam.toys</a></footer>
+  <footer>Checked 10 Nov 2026 · <a href="/">sam.toys</a></footer>
 </div>
 
   <footer>Checked 1 Nov 2026 · <a href="/">sam.toys</a></footer>

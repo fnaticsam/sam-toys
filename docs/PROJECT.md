@@ -1,6 +1,4 @@
-# fnaticsam/sam-toys (sam.toys, playa, sam-toys, samfun): checked 2026-11-05
-
-- Small product surfaces and private media tools hosted from sam.toys.
+# fnaticsam/sam-toys (sam.toys, playa, sam-toys, samfun): checked 2026-11-10
 
 ## What exists
 
@@ -28,11 +26,11 @@
 
 ## Recent
 
-- 2026-11-05: The sam.toys project cards now line up, show each site's real logo and use shorter descriptions. MERGED #54
-- 2026-11-05: The sam.toys home page now shows Sparkli, Bijou and the eclipse night, fresh DrFit and Seer shots, and even Toys cards. MERGED #55
+- 2026-11-10: The sam.toys home page is deployed again after the third LV rollback drill. MERGED #62
+- 2026-11-10: The sam.toys home page is deployed again after the LV rollback drill. MERGED #60
 - 2026-11-05: The sam.toys home page brand tiles are calmer, the eclipse card sits next to UGAME, and long site names no longer collide on phones. MERGED #56
-- 2026-11-05: The sam.toys home page now shows Sam's newest projects with fresh screenshots and smaller cards. MERGED #52
-- 2026-11-02: The LV page explains why I built Loop Validation and compares it with a CI/CD pipeline, with new diagrams. MERGED #50
+- 2026-11-05: The sam.toys home page now shows Sparkli, Bijou and the eclipse night, fresh DrFit and Seer shots, and even Toys cards. MERGED #55
+- 2026-11-05: The sam.toys project cards now line up, show each site's real logo and use shorter descriptions. MERGED #54
 
 ## Read deeper
 

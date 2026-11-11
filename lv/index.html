@@ -259,7 +259,6 @@
   .dsv .hit{fill:transparent;cursor:crosshair}
   .dnote{margin-top:18px}
   .dnote:empty{display:none}
-  table.sr{min-width:0}
   .dly[hidden] + .dnote{margin-top:0}
 
   footer{margin-top:56px;color:var(--dim);font-size:13px;line-height:1.7}
@@ -685,7 +684,7 @@
         <div class="dch"><span>Verdicts</span><span class="legend" aria-hidden="true"><span><i class="sw pass"></i>pass</span><span><i class="sw fail"></i>fail</span><span><i class="sw err"></i>error</span></span></div>
         <svg class="dsv" data-c="verd" aria-hidden="true"></svg>
       </div>
-      <table class="sr"><caption>Daily numbers</caption><thead><tr><th scope="col">Day</th><th scope="col">Typical check, min</th><th scope="col">Slow-day check, min</th><th scope="col">Merge to live, min</th><th scope="col">Pass</th><th scope="col">Fail</th><th scope="col">Error</th><th scope="col">Pull requests merged</th></tr></thead><tbody></tbody></table>
+      <div class="sr"><table><caption>Daily numbers</caption><thead><tr><th scope="col">Day</th><th scope="col">Typical check, min</th><th scope="col">Slow-day check, min</th><th scope="col">Merge to live, min</th><th scope="col">Pass</th><th scope="col">Fail</th><th scope="col">Error</th><th scope="col">Pull requests merged</th></tr></thead><tbody></tbody></table></div>
     </div>
     <p class="note dnote" aria-live="polite"></p>
   </section>
@@ -1001,7 +1000,7 @@
     const svgs = [...fig.querySelectorAll('.dsv')];
     const MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
     const WD = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-    const H = { check: 120, live: 72, verd: 84 };
+    const H = { check: 120, live: 84, verd: 96 };
     const num = (v) => (typeof v === 'number' && Number.isFinite(v) ? v : null);
     const cnt = (v) => (num(v) !== null && v >= 0 ? Math.round(v) : 0);
     const dd = (d) => `${d.getUTCDate()} ${MON[d.getUTCMonth()]}`;

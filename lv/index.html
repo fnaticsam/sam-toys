@@ -14,6 +14,8 @@
     --radius:16px;
     /* series: validated against #0b0b0f */
     --gh:#8b7cff; --lv:#c9822e;
+    /* verdicts: pass stays quiet; fail and error checked for CVD against --card */
+    --pass:#6b6a7b; --fail:#e5604d; --err:#d0b05a;
   }
   *{margin:0;padding:0;box-sizing:border-box}
   html{-webkit-text-size-adjust:100%}
@@ -97,7 +99,7 @@
     padding:8px 11px;font-size:13px;line-height:1.4;box-shadow:0 8px 24px rgba(0,0,0,.4)}
   .tip[hidden]{display:none}
   .tip b{display:block;font-weight:650}
-  .tip span{color:var(--dim)}
+  .tip span{color:var(--dim);white-space:pre-line}
 
   /* ── diagrams ─────────────── */
   .dg{display:block;width:100%;height:auto}
@@ -231,6 +233,35 @@
     .raxis .tick .u{display:none}
   }
 
+
+  /* ── daily ─────────────── */
+  .dly{outline:none;animation:fade .4s ease both}
+  .dly:focus-visible{outline:2px solid var(--accent);outline-offset:8px;border-radius:8px}
+  .dly[hidden]{display:none}
+  .dc + .dc{margin-top:22px}
+  .dch{display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:4px 18px;font-size:14px;margin-bottom:6px}
+  .dch .legend{gap:14px}
+  .ln{display:inline-block;width:14px;height:2px;border-radius:1px;background:var(--lv);margin-right:7px;vertical-align:4px}
+  .ln.q{opacity:.45}
+  .sw.pass{background:var(--pass)} .sw.fail{background:var(--fail)} .sw.err{background:var(--err)}
+  .dsv{display:block;width:100%;overflow:visible;touch-action:pan-y}
+  .dsv .gl{stroke:var(--line);stroke-width:1}
+  .dsv .yl,.dsv .xl{fill:var(--dim);font-size:12px;font-variant-numeric:tabular-nums}
+  .dsv .el{fill:var(--text);font-size:12px;font-variant-numeric:tabular-nums}
+  .dsv .el.q{fill:var(--dim)}
+  .dsv .p50{fill:none;stroke:var(--lv);stroke-width:2;stroke-linejoin:round;stroke-linecap:round}
+  .dsv .p90{fill:none;stroke:var(--lv);stroke-width:1.5;stroke-linejoin:round;stroke-linecap:round;opacity:.45}
+  .dsv circle.p50,.dsv circle.p90{fill:var(--lv);stroke:none}
+  .dsv .end{fill:var(--lv);stroke:var(--card);stroke-width:2}
+  .dsv .vp{fill:var(--pass)} .dsv .vf{fill:var(--fail)} .dsv .ve{fill:var(--err)}
+  .dsv .xh{stroke:var(--dim);stroke-width:1;stroke-dasharray:2 3}
+  .dsv .on{filter:brightness(1.25)}
+  .dsv .hit{fill:transparent;cursor:crosshair}
+  .dnote{margin-top:18px}
+  .dnote:empty{display:none}
+  table.sr{min-width:0}
+  .dly[hidden] + .dnote{margin-top:0}
+
   footer{margin-top:56px;color:var(--dim);font-size:13px;line-height:1.7}
   footer a{color:var(--dim)}
 
@@ -241,6 +272,7 @@
     .fl.c{transform:scaleX(1)}
     details.more summary::before{transition:none}
     .replay{display:none}
+    .dly{animation:none}
   }
   .lead,.turn{font-size:19px;line-height:1.5;max-width:62ch}
   .turn{margin-top:20px}
@@ -638,6 +670,26 @@
     <p class="note">3 to 10 November 2026. Only 5% of checks reused an earlier verdict and about half still ran everything, so that's the next speed-up.</p>
   </div>
 
+  <h2 id="daily-h">Daily</h2>
+  <section class="card" id="daily" aria-labelledby="daily-h">
+    <div class="dly" tabindex="0" role="group" aria-label="Daily charts. Left and right arrows step through the days; the table below has every number." hidden>
+      <div class="dc">
+        <div class="dch"><span>Check time</span><span class="legend" aria-hidden="true"><span><i class="ln"></i>typical</span><span><i class="ln q"></i>slow day</span></span></div>
+        <svg class="dsv" data-c="check" aria-hidden="true"></svg>
+      </div>
+      <div class="dc">
+        <div class="dch"><span>Merge to live</span></div>
+        <svg class="dsv" data-c="live" aria-hidden="true"></svg>
+      </div>
+      <div class="dc">
+        <div class="dch"><span>Verdicts</span><span class="legend" aria-hidden="true"><span><i class="sw pass"></i>pass</span><span><i class="sw fail"></i>fail</span><span><i class="sw err"></i>error</span></span></div>
+        <svg class="dsv" data-c="verd" aria-hidden="true"></svg>
+      </div>
+      <table class="sr"><caption>Daily numbers</caption><thead><tr><th scope="col">Day</th><th scope="col">Typical check, min</th><th scope="col">Slow-day check, min</th><th scope="col">Merge to live, min</th><th scope="col">Pass</th><th scope="col">Fail</th><th scope="col">Error</th><th scope="col">Pull requests merged</th></tr></thead><tbody></tbody></table>
+    </div>
+    <p class="note dnote" aria-live="polite"></p>
+  </section>
+
   <h2>Side by side</h2>
   <div class="card">
     <div class="tw">
@@ -940,6 +992,214 @@
       }, { threshold: 0.4 });
       io.observe(sec);
     }
+  }
+  // Daily: read the nightly /lv/metrics.json; one quiet line when it isn't there yet.
+  const daily = document.getElementById('daily');
+  if (daily) {
+    const fig = daily.querySelector('.dly');
+    const note = daily.querySelector('.dnote');
+    const svgs = [...fig.querySelectorAll('.dsv')];
+    const MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const WD = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    const H = { check: 120, live: 72, verd: 84 };
+    const num = (v) => (typeof v === 'number' && Number.isFinite(v) ? v : null);
+    const cnt = (v) => (num(v) !== null && v >= 0 ? Math.round(v) : 0);
+    const dd = (d) => `${d.getUTCDate()} ${MON[d.getUTCMonth()]}`;
+    const f1 = (v) => (v === null ? '–' : v.toFixed(1));
+    let days = [];
+    let at = -1;
+    let geo = null;
+
+    function clean(j) {
+      if (!j || !Array.isArray(j.days)) return [];
+      return j.days.filter((r) => r && /^\d{4}-\d{2}-\d{2}$/.test(r.date)).map((r) => ({
+        d: new Date(r.date + 'T00:00:00Z'),
+        p50: num(r.check_p50_min), p90: num(r.check_p90_min), live: num(r.live_p50_min),
+        pass: cnt(r.pass), fail: cnt(r.fail), err: cnt(r.error), prs: cnt(r.prs_merged),
+      })).filter((r) => !isNaN(r.d));
+    }
+    function nice(max) {
+      const raw = Math.max(max, 1e-9) / 3;
+      const m = 10 ** Math.floor(Math.log10(raw));
+      const step = [1, 2, 2.5, 5, 10].map((k) => k * m).find((k) => k >= raw);
+      return { step, top: Math.ceil(max / step) * step || step };
+    }
+    function line(vals, x, y, cls) {
+      let d = '';
+      let dots = '';
+      vals.forEach((v, i) => {
+        if (v === null) return;
+        const first = i === 0 || vals[i - 1] === null;
+        const last = i === vals.length - 1 || vals[i + 1] === null;
+        if (first && last) dots += `<circle class="${cls}" cx="${x(i)}" cy="${y(v)}" r="2.5"/>`;
+        else d += `${first ? 'M' : 'L'}${x(i).toFixed(1)},${y(v).toFixed(1)}`;
+      });
+      return (d ? `<path class="${cls}" d="${d}"/>` : '') + dots;
+    }
+    function grid(top, step, y, w, unit) {
+      let g = '';
+      for (let v = step; v <= top + 1e-9; v += step) {
+        const yy = y(v).toFixed(1);
+        const lab = +v.toFixed(2) + (unit && v + step > top + 1e-9 ? ` ${unit}` : '');
+        g += `<line class="gl" x1="0" x2="${w}" y1="${yy}" y2="${yy}"/><text class="yl" x="0" y="${yy - 4}">${lab}</text>`;
+      }
+      return g;
+    }
+    function endLabel(vals, x, y, cls, avoid) {
+      let i = vals.length - 1;
+      while (i >= 0 && vals[i] === null) i--;
+      if (i < 0) return { s: '', y: null };
+      const yy = y(vals[i]);
+      if (avoid !== null && Math.abs(yy - avoid) < 14) return { s: '', y: null };
+      return { s: `<text class="el${cls}" x="${x(i) + 8}" y="${yy + 4}">${vals[i].toFixed(1)}</text>`, y: yy };
+    }
+    function draw() {
+      const n = days.length;
+      const W = Math.round(svgs[0].getBoundingClientRect().width) || 600;
+      const pr = 40;
+      const band = (W - pr) / n;
+      const x = (i) => +(band * (i + 0.5)).toFixed(1);
+      geo = { band, W, pr };
+      for (const svg of svgs) {
+        const c = svg.dataset.c;
+        const h = H[c];
+        const pt = 16;
+        const pb = c === 'verd' ? 22 : 2;
+        const ph = h - pt - pb;
+        let body = '';
+        if (c === 'verd') {
+          const tot = days.map((r) => r.pass + r.fail + r.err);
+          const { step, top } = nice(Math.max(...tot));
+          const k = ph / top;
+          body += grid(top, step, (v) => pt + ph - v * k, W - pr, '');
+          const bw = Math.max(2, Math.min(band * 0.62, 18));
+          days.forEach((r, i) => {
+            let base = pt + ph;
+            const parts = [['vp', r.pass], ['vf', r.fail], ['ve', r.err]].filter((p) => p[1] > 0);
+            let g = '';
+            parts.forEach(([cls, v], j) => {
+              const hh = Math.max(1.5, v * k - (j ? 2 : 0));
+              const y0 = base - (j ? 2 : 0) - hh;
+              const x0 = (x(i) - bw / 2).toFixed(1);
+              if (j === parts.length - 1) {
+                const rr = Math.min(4, bw / 2, hh);
+                g += `<path class="${cls}" d="M${x0},${(y0 + hh).toFixed(1)}V${(y0 + rr).toFixed(1)}a${rr},${rr} 0 0 1 ${rr},${-rr}h${(bw - 2 * rr).toFixed(1)}a${rr},${rr} 0 0 1 ${rr},${rr}V${(y0 + hh).toFixed(1)}Z"/>`;
+              } else g += `<rect class="${cls}" x="${x0}" y="${y0.toFixed(1)}" width="${bw.toFixed(1)}" height="${hh.toFixed(1)}"/>`;
+              base = y0;
+            });
+            body += `<g data-i="${i}">${g}</g>`;
+          });
+          const every = W < 480 ? 14 : 7;
+          for (let i = n - 1; i >= 0; i -= every) {
+            const xx = x(i);
+            const anc = xx > W - pr - 24 ? 'end' : xx < 24 ? 'start' : 'middle';
+            body += `<text class="xl" x="${anc === 'end' ? Math.min(xx + bw / 2, W - pr) : xx}" y="${h - 4}" text-anchor="${anc}">${dd(days[i].d)}</text>`;
+          }
+        } else {
+          const a = days.map((r) => (c === 'check' ? r.p50 : r.live));
+          const b = c === 'check' ? days.map((r) => r.p90) : [];
+          const vals = a.concat(b).filter((v) => v !== null);
+          const { step, top } = nice(vals.length ? Math.max(...vals) : 1);
+          const y = (v) => pt + ph - (v / top) * ph;
+          body += grid(top, step, y, W - pr, 'min');
+          if (b.length) body += line(b, x, y, 'p90');
+          body += line(a, x, y, 'p50');
+          const e1 = endLabel(a, x, y, '', null);
+          body += e1.s;
+          if (b.length) body += endLabel(b, x, y, ' q', e1.y).s;
+          let li = a.length - 1;
+          while (li >= 0 && a[li] === null) li--;
+          if (li >= 0) body += `<circle class="end" cx="${x(li)}" cy="${y(a[li])}" r="3.5"/>`;
+        }
+        body += `<line class="xh" x1="0" x2="0" y1="${pt - 6}" y2="${pt + ph}" visibility="hidden"/>`;
+        body += `<rect class="hit" x="0" y="0" width="${W - pr}" height="${h}"/>`;
+        svg.setAttribute('viewBox', `0 0 ${W} ${h}`);
+        svg.setAttribute('height', h);
+        svg.innerHTML = body;
+      }
+      if (at >= 0) mark(at, null);
+    }
+    function mark(i, svg) {
+      at = i;
+      for (const s of svgs) {
+        const xh = s.querySelector('.xh');
+        if (i < 0) { xh.setAttribute('visibility', 'hidden'); continue; }
+        const xx = (geo.band * (i + 0.5)).toFixed(1);
+        xh.setAttribute('x1', xx);
+        xh.setAttribute('x2', xx);
+        xh.setAttribute('visibility', 'visible');
+        s.querySelectorAll('g.on').forEach((g) => g.classList.remove('on'));
+        s.querySelector(`g[data-i="${i}"]`)?.classList.add('on');
+      }
+      if (i < 0) return;
+      const r = days[i];
+      const tot = r.pass + r.fail + r.err;
+      const xh = (svg || svgs[0]).querySelector('.xh');
+      xh.dataset.k = `${WD[r.d.getUTCDay()]} ${dd(r.d)}`;
+      xh.dataset.d = [
+        r.p50 === null ? 'No checks' : `Check ${f1(r.p50)} min typical, ${f1(r.p90)} on a slow run`,
+        r.live === null ? 'No deploys measured' : `Merge to live ${f1(r.live)} min`,
+        `${tot} verdicts: ${r.pass} pass, ${r.fail} fail, ${r.err} error`,
+        `${r.prs} pull requests merged`,
+      ].join('\n');
+      show(xh);
+    }
+    function clear() {
+      mark(-1, null);
+      hide();
+    }
+    function table() {
+      fig.querySelector('tbody').innerHTML = days.map((r) => `<tr><th scope="row">${dd(r.d)} ${r.d.getUTCFullYear()}</th><td>${f1(r.p50)}</td><td>${f1(r.p90)}</td><td>${f1(r.live)}</td><td>${r.pass}</td><td>${r.fail}</td><td>${r.err}</td><td>${r.prs}</td></tr>`).join('');
+    }
+    function pick(e, svg) {
+      const b = svg.getBoundingClientRect();
+      const px = ((e.clientX - b.left) / b.width) * geo.W;
+      if (px < 0 || px > geo.W - geo.pr) return;
+      mark(Math.max(0, Math.min(days.length - 1, Math.floor(px / geo.band))), svg);
+    }
+    for (const svg of svgs) {
+      svg.addEventListener('pointermove', (e) => pick(e, svg));
+      svg.addEventListener('pointerdown', (e) => pick(e, svg));
+      svg.addEventListener('pointerleave', (e) => { if (e.pointerType === 'mouse') clear(); });
+    }
+    fig.addEventListener('focus', () => mark(at >= 0 ? at : days.length - 1, null));
+    fig.addEventListener('blur', clear);
+    document.addEventListener('pointerdown', (e) => { if (at >= 0 && !fig.contains(e.target)) clear(); });
+    fig.addEventListener('keydown', (e) => {
+      const i = { ArrowLeft: at - 1, ArrowRight: at + 1, Home: 0, End: days.length - 1 }[e.key];
+      if (e.key === 'Escape') { clear(); return; }
+      if (i === undefined) return;
+      e.preventDefault();
+      mark(Math.max(0, Math.min(days.length - 1, i)), null);
+    });
+
+    fetch('/lv/metrics.json', { cache: 'no-store' })
+      .then((r) => (r.ok ? r.json() : null))
+      .catch(() => null)
+      .then((j) => {
+        days = clean(j);
+        if (days.length < 2) {
+          note.textContent = 'Daily numbers appear after the first nightly run.';
+          return;
+        }
+        const g = new Date(j.generated);
+        if (!isNaN(g)) {
+          const t = `${String(g.getUTCHours()).padStart(2, '0')}:${String(g.getUTCMinutes()).padStart(2, '0')}`;
+          note.textContent = `Updated ${dd(g)} ${g.getUTCFullYear()} at ${t} UTC.`;
+        }
+        fig.hidden = false;
+        table();
+        draw();
+        let rq = 0;
+        let lastW = geo.W;
+        addEventListener('resize', () => {
+          cancelAnimationFrame(rq);
+          rq = requestAnimationFrame(() => {
+            const w = Math.round(svgs[0].getBoundingClientRect().width);
+            if (w && w !== lastW) { lastW = w; draw(); }
+          });
+        });
+      });
   }
   addEventListener('keydown', (e) => { if (e.key === 'Escape') hide(); });
   addEventListener('scroll', place, { passive: true });

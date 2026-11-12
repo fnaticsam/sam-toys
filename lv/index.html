@@ -247,6 +247,7 @@
   .dsv{display:block;width:100%;overflow:visible;touch-action:pan-y}
   .dsv .gl{stroke:var(--line);stroke-width:1}
   .dsv .yl,.dsv .xl{fill:var(--dim);font-size:12px;font-variant-numeric:tabular-nums}
+  .dsv .yl{paint-order:stroke;stroke:var(--card);stroke-width:4px;stroke-linejoin:round}
   .dsv .el{fill:var(--text);font-size:12px;font-variant-numeric:tabular-nums}
   .dsv .el.q{fill:var(--dim)}
   .dsv .p50{fill:none;stroke:var(--lv);stroke-width:2;stroke-linejoin:round;stroke-linecap:round}
@@ -673,7 +674,7 @@
   <section class="card" id="daily" aria-labelledby="daily-h">
     <div class="dly" tabindex="0" role="group" aria-label="Daily charts. Left and right arrows step through the days; the table below has every number." hidden>
       <div class="dc">
-        <div class="dch"><span>Check time</span><span class="legend" aria-hidden="true"><span><i class="ln"></i>typical</span><span><i class="ln q"></i>slow day</span></span></div>
+        <div class="dch"><span>Check time</span><span class="legend" aria-hidden="true"><span><i class="ln"></i>typical</span><span><i class="ln q"></i>slow run</span></span></div>
         <svg class="dsv" data-c="check" aria-hidden="true"></svg>
       </div>
       <div class="dc">
@@ -684,7 +685,7 @@
         <div class="dch"><span>Verdicts</span><span class="legend" aria-hidden="true"><span><i class="sw pass"></i>pass</span><span><i class="sw fail"></i>fail</span><span><i class="sw err"></i>error</span></span></div>
         <svg class="dsv" data-c="verd" aria-hidden="true"></svg>
       </div>
-      <div class="sr"><table><caption>Daily numbers</caption><thead><tr><th scope="col">Day</th><th scope="col">Typical check, min</th><th scope="col">Slow-day check, min</th><th scope="col">Merge to live, min</th><th scope="col">Pass</th><th scope="col">Fail</th><th scope="col">Error</th><th scope="col">Pull requests merged</th></tr></thead><tbody></tbody></table></div>
+      <div class="sr"><table><caption>Daily numbers</caption><thead><tr><th scope="col">Day</th><th scope="col">Typical check, min</th><th scope="col">Slow-run check, min</th><th scope="col">Merge to live, min</th><th scope="col">Pass</th><th scope="col">Fail</th><th scope="col">Error</th><th scope="col">Pull requests merged</th></tr></thead><tbody></tbody></table></div>
     </div>
     <p class="note dnote" aria-live="polite"></p>
   </section>
@@ -1036,13 +1037,15 @@
       return (d ? `<path class="${cls}" d="${d}"/>` : '') + dots;
     }
     function grid(top, step, y, w, unit) {
-      let g = '';
+      let g = `<line class="gl" x1="0" x2="${w}" y1="${y(0).toFixed(1)}" y2="${y(0).toFixed(1)}"/>`;
+      let t = '';
       for (let v = step; v <= top + 1e-9; v += step) {
         const yy = y(v).toFixed(1);
         const lab = +v.toFixed(2) + (unit && v + step > top + 1e-9 ? ` ${unit}` : '');
-        g += `<line class="gl" x1="0" x2="${w}" y1="${yy}" y2="${yy}"/><text class="yl" x="0" y="${yy - 4}">${lab}</text>`;
+        g += `<line class="gl" x1="0" x2="${w}" y1="${yy}" y2="${yy}"/>`;
+        t += `<text class="yl" x="0" y="${yy - 4}">${lab}</text>`;
       }
-      return g;
+      return [g, t];
     }
     function endLabel(vals, x, y, cls, avoid) {
       let i = vals.length - 1;
@@ -1070,7 +1073,8 @@
           const tot = days.map((r) => r.pass + r.fail + r.err);
           const { step, top } = nice(Math.max(...tot));
           const k = ph / top;
-          body += grid(top, step, (v) => pt + ph - v * k, W - pr, '');
+          const [gl, gt] = grid(top, step, (v) => pt + ph - v * k, W - pr, '');
+          body += gl;
           const bw = Math.max(2, Math.min(band * 0.62, 18));
           days.forEach((r, i) => {
             let base = pt + ph;
@@ -1094,15 +1098,18 @@
             const anc = xx > W - pr - 24 ? 'end' : xx < 24 ? 'start' : 'middle';
             body += `<text class="xl" x="${anc === 'end' ? Math.min(xx + bw / 2, W - pr) : xx}" y="${h - 4}" text-anchor="${anc}">${dd(days[i].d)}</text>`;
           }
+          body += gt;
         } else {
           const a = days.map((r) => (c === 'check' ? r.p50 : r.live));
           const b = c === 'check' ? days.map((r) => r.p90) : [];
           const vals = a.concat(b).filter((v) => v !== null);
           const { step, top } = nice(vals.length ? Math.max(...vals) : 1);
           const y = (v) => pt + ph - (v / top) * ph;
-          body += grid(top, step, y, W - pr, 'min');
+          const [gl, gt] = grid(top, step, y, W - pr, 'min');
+          body += gl;
           if (b.length) body += line(b, x, y, 'p90');
           body += line(a, x, y, 'p50');
+          body += gt;
           const e1 = endLabel(a, x, y, '', null);
           body += e1.s;
           if (b.length) body += endLabel(b, x, y, ' q', e1.y).s;
@@ -1136,7 +1143,7 @@
       const xh = (svg || svgs[0]).querySelector('.xh');
       xh.dataset.k = `${WD[r.d.getUTCDay()]} ${dd(r.d)}`;
       xh.dataset.d = [
-        r.p50 === null ? 'No checks' : `Check ${f1(r.p50)} min typical, ${f1(r.p90)} on a slow run`,
+        r.p50 === null ? 'No checks' : `Check ${f1(r.p50)} min, slow run ${f1(r.p90)}`,
         r.live === null ? 'No deploys measured' : `Merge to live ${f1(r.live)} min`,
         `${tot} verdicts: ${r.pass} pass, ${r.fail} fail, ${r.err} error`,
         `${r.prs} pull requests merged`,
